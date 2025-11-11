@@ -39,6 +39,9 @@
   <ItemGroup>
     <Compile Include="Program.cs" />
     <Compile Include="Forms\MainForm.cs" />
+    <Compile Include="Forms\ItemCreateForm.cs" />
+    <Compile Include="Controls\DynamicFormPanel.cs" />
+    <Compile Include="Controls\CategoryTreeComboBox.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
