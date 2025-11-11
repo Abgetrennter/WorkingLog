@@ -55,7 +55,7 @@ namespace WorkLogApp.UI.Forms
                 var dataDir = Path.Combine(baseDir, "Data");
                 if (!Directory.Exists(dataDir)) Directory.CreateDirectory(dataDir);
 
-                // CSV 导出（按月文件）
+                // Excel 导出（按月文件、按日 Sheet）
                 IImportExportService exportService = new ImportExportService();
                 exportService.ExportMonth(_item.LogDate, new[] { _item }, dataDir);
 
@@ -65,7 +65,7 @@ namespace WorkLogApp.UI.Forms
                 var filePath = Path.Combine(dataDir, fileName);
                 File.WriteAllText(filePath, _item.ItemContent);
 
-                MessageBox.Show(this, $"已保存到 CSV 与文本备份:\n{Path.Combine(dataDir, "worklog_" + _item.LogDate.ToString("yyyyMM") + ".csv")}\n{filePath}", "保存成功", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show(this, $"已保存到 Excel 与文本备份:\n{Path.Combine(dataDir, "worklog_" + _item.LogDate.ToString("yyyyMM") + ".xlsx")}\n{filePath}", "保存成功", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 DialogResult = DialogResult.OK;
                 Close();
             }
