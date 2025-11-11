@@ -60,9 +60,9 @@
       "frameworks": {
         "net472": {
           "dependencies": {
-            "Newtonsoft.Json": {
+            "NPOI": {
               "target": "Package",
-              "version": "[13.0.3, )"
+              "version": "[2.6.1, )"
             }
           }
         }
