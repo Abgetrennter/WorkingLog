@@ -1,0 +1,7 @@
+{
+  "Environment": "dev",
+  "DataDirectory": "Data",
+  "ExcelFilePrefix": "worklog_",
+  "TemplatesPath": "Templates/templates.json",
+  "Notes": "开发环境配置"
+}

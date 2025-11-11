@@ -1,0 +1,6 @@
+C:\Users\Administrator\source\repos\WorkingLog\WorkLogApp.Core\bin\Debug\WorkLogApp.Core.dll
+C:\Users\Administrator\source\repos\WorkingLog\WorkLogApp.Core\bin\Debug\WorkLogApp.Core.pdb
+C:\Users\Administrator\source\repos\WorkingLog\WorkLogApp.Core\obj\Debug\WorkLogApp.Core.csproj.AssemblyReference.cache
+C:\Users\Administrator\source\repos\WorkingLog\WorkLogApp.Core\obj\Debug\WorkLogApp.Core.csproj.CoreCompileInputs.cache
+C:\Users\Administrator\source\repos\WorkingLog\WorkLogApp.Core\obj\Debug\WorkLogApp.Core.dll
+C:\Users\Administrator\source\repos\WorkingLog\WorkLogApp.Core\obj\Debug\WorkLogApp.Core.pdb

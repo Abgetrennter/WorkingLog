@@ -1,0 +1,30 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WorkLogApp.UI", "WorkLogApp.UI\\WorkLogApp.UI.csproj", "{2CFE396A-7AC3-4BA3-8D39-79E0B946EA5D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WorkLogApp.Core", "WorkLogApp.Core\\WorkLogApp.Core.csproj", "{91288E47-3D54-48BE-9FB7-DBBE61AC6362}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WorkLogApp.Services", "WorkLogApp.Services\\WorkLogApp.Services.csproj", "{A032F8D8-0E41-4872-8D49-87E5E6AB2F71}"
+EndProject
+Global
+    GlobalSection(SolutionConfigurationPlatforms) = preSolution
+        Debug|Any CPU = Debug|Any CPU
+        Release|Any CPU = Release|Any CPU
+    EndGlobalSection
+    GlobalSection(ProjectConfigurationPlatforms) = postSolution
+        {2CFE396A-7AC3-4BA3-8D39-79E0B946EA5D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+        {2CFE396A-7AC3-4BA3-8D39-79E0B946EA5D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+        {2CFE396A-7AC3-4BA3-8D39-79E0B946EA5D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+        {2CFE396A-7AC3-4BA3-8D39-79E0B946EA5D}.Release|Any CPU.Build.0 = Release|Any CPU
+        {91288E47-3D54-48BE-9FB7-DBBE61AC6362}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+        {91288E47-3D54-48BE-9FB7-DBBE61AC6362}.Debug|Any CPU.Build.0 = Debug|Any CPU
+        {91288E47-3D54-48BE-9FB7-DBBE61AC6362}.Release|Any CPU.ActiveCfg = Release|Any CPU
+        {91288E47-3D54-48BE-9FB7-DBBE61AC6362}.Release|Any CPU.Build.0 = Release|Any CPU
+        {A032F8D8-0E41-4872-8D49-87E5E6AB2F71}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+        {A032F8D8-0E41-4872-8D49-87E5E6AB2F71}.Debug|Any CPU.Build.0 = Debug|Any CPU
+        {A032F8D8-0E41-4872-8D49-87E5E6AB2F71}.Release|Any CPU.ActiveCfg = Release|Any CPU
+        {A032F8D8-0E41-4872-8D49-87E5E6AB2F71}.Release|Any CPU.Build.0 = Release|Any CPU
+    EndGlobalSection
+EndGlobal
