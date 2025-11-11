@@ -100,6 +100,49 @@ namespace WorkLogApp.Services.Implementations
             return list;
         }
 
+        public IEnumerable<WorkLogItem> ImportFromFile(string filePath)
+        {
+            var list = new List<WorkLogItem>();
+            if (string.IsNullOrWhiteSpace(filePath)) return list;
+            if (!File.Exists(filePath)) return list;
+
+            using (var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+            {
+                var wb = new XSSFWorkbook(fs);
+                for (int i = 0; i < wb.NumberOfSheets; i++)
+                {
+                    var sheet = wb.GetSheetAt(i);
+                    if (sheet == null) continue;
+                    DateTime logDate;
+                    if (!DateTime.TryParseExact(sheet.SheetName, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out logDate))
+                        continue;
+
+                    var firstRow = sheet.GetRow(0);
+                    int startRow = 1;
+                    if (firstRow == null || firstRow.PhysicalNumberOfCells == 0)
+                        startRow = 0;
+
+                    for (int r = startRow; r <= sheet.LastRowNum; r++)
+                    {
+                        var row = sheet.GetRow(r);
+                        if (row == null) continue;
+                        var item = new WorkLogItem { LogDate = logDate };
+                        item.ItemTitle = GetString(row, 1);
+                        item.ItemContent = GetString(row, 2);
+                        item.Status = ParseStatus(GetString(row, 3));
+                        item.CategoryId = ParseInt(GetString(row, 4));
+                        item.Progress = ParseNullableInt(GetString(row, 5));
+                        item.StartTime = ParseNullableDateTime(GetString(row, 6));
+                        item.EndTime = ParseNullableDateTime(GetString(row, 7));
+                        item.Tags = GetString(row, 8);
+                        item.SortOrder = ParseNullableInt(GetString(row, 9));
+                        list.Add(item);
+                    }
+                }
+            }
+            return list;
+        }
+
         private static void WriteItem(IWorkbook wb, WorkLogItem item)
         {
             var sheetName = item.LogDate.ToString("yyyy-MM-dd");
