@@ -9,50 +9,30 @@ using WorkLogApp.UI.UI;
 
 namespace WorkLogApp.UI.Forms
 {
-    public class ItemEditForm : Form
+    public partial class ItemEditForm : Form
     {
         private readonly WorkLogItem _item;
-        private readonly TextBox _titleBox;
-        private readonly RichTextBox _summaryBox;
-        private readonly RichTextBox _contentBox;
-        private readonly Button _btnSave;
-        private readonly Button _btnCancel;
+        
+        // 设计期支持：提供无参构造，便于设计器实例化
+        public ItemEditForm()
+        {
+            _item = new WorkLogItem { LogDate = DateTime.Now.Date };
+            InitializeComponent();
+            UIStyleManager.ApplyVisualEnhancements(this);
+        }
 
+        
         public ItemEditForm(WorkLogItem item, string initialContent)
         {
             _item = item ?? new WorkLogItem { LogDate = DateTime.Now.Date };
-            Text = "编辑日志事项";
-            Width = 900;
-            Height = 650;
+            InitializeComponent();
 
-            var lblTitle = new Label { Text = "标题：", Left = 10, Top = 15, AutoSize = true };
-            _titleBox = new TextBox { Left = 60, Top = 10, Width = 800 };
             _titleBox.Text = _item.ItemTitle ?? string.Empty;
-
-            var lblSummary = new Label { Text = "当日总结（仅第一条记录写入）：", Left = 10, Top = 45, AutoSize = true };
-            _summaryBox = new RichTextBox { Left = 10, Top = 70, Width = 850, Height = 120, ScrollBars = RichTextBoxScrollBars.Vertical, BorderStyle = BorderStyle.FixedSingle };
-
-            var lblContent = new Label { Text = "内容：", Left = 10, Top = 200, AutoSize = true };
-            _contentBox = new RichTextBox { Left = 10, Top = 225, Width = 850, Height = 325, ScrollBars = RichTextBoxScrollBars.Both, BorderStyle = BorderStyle.FixedSingle };
-            _contentBox.Text = initialContent ?? _item.ItemContent ?? string.Empty;
             _summaryBox.Text = _item.DailySummary ?? string.Empty;
+            _contentBox.Text = initialContent ?? _item.ItemContent ?? string.Empty;
 
-            _btnSave = new Button { Text = "保存", Left = 10, Top = 565, Width = 100, Height = 35 };
-            _btnCancel = new Button { Text = "取消", Left = 120, Top = 565, Width = 100, Height = 35 };
-            _btnSave.Click += OnSaveClick;
-            _btnCancel.Click += (s, e) => { DialogResult = DialogResult.Cancel; Close(); };
-
-            Controls.Add(lblTitle);
-            Controls.Add(_titleBox);
-            Controls.Add(lblSummary);
-            Controls.Add(_summaryBox);
-            Controls.Add(lblContent);
-            Controls.Add(_contentBox);
-            Controls.Add(_btnSave);
-            Controls.Add(_btnCancel);
-            
             // 应用统一样式并设置 1.5 倍行距
-            UIStyleManager.ApplyVisualEnhancements(this, 1.25f);
+            UIStyleManager.ApplyVisualEnhancements(this);
         }
 
         private void OnSaveClick(object sender, EventArgs e)
@@ -93,6 +73,12 @@ namespace WorkLogApp.UI.Forms
             var invalid = new string(Path.GetInvalidFileNameChars());
             var pattern = "[" + Regex.Escape(invalid) + "]";
             return Regex.Replace(name, pattern, "_");
+        }
+
+        private void OnCancelClick(object sender, EventArgs e)
+        {
+            DialogResult = DialogResult.Cancel;
+            Close();
         }
     }
 }

@@ -7,18 +7,35 @@ namespace WorkLogApp.UI.Controls
 {
     public class CategoryTreeComboBox : ComboBox
     {
-        private readonly ITemplateService _templateService;
+        private ITemplateService _templateService;
 
-        public CategoryTreeComboBox(ITemplateService templateService)
+        public CategoryTreeComboBox()
         {
-            _templateService = templateService;
             DropDownStyle = ComboBoxStyle.DropDownList;
-            ReloadCategories();
+        }
+
+        public CategoryTreeComboBox(ITemplateService templateService) : this()
+        {
+            TemplateService = templateService;
+        }
+
+        public ITemplateService TemplateService
+        {
+            get => _templateService;
+            set
+            {
+                _templateService = value;
+                if (_templateService != null)
+                {
+                    ReloadCategories();
+                }
+            }
         }
 
         public void ReloadCategories()
         {
             Items.Clear();
+            if (_templateService == null) return;
             var names = _templateService.GetCategoryNames() ?? Enumerable.Empty<string>();
             foreach (var n in names)
             {

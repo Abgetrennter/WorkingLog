@@ -6,64 +6,56 @@ using System.Windows.Forms;
 using WorkLogApp.Core.Models;
 using WorkLogApp.Services.Interfaces;
 using WorkLogApp.Services.Implementations;
+using WorkLogApp.UI.UI;
 
 namespace WorkLogApp.UI.Forms
 {
-    public class MainForm : Form
+    public partial class MainForm : Form
     {
         private readonly ITemplateService _templateService;
-        private readonly ListView _listView;
-        private readonly DateTimePicker _monthPicker;
-        private readonly Button _btnCreate;
-        private readonly Button _btnImport;
-        private readonly Button _btnMerge;
-        private readonly Button _btnCategoryManage;
-        private readonly Button _btnImportWizard;
+
+        // 设计期支持：提供无参构造，方便设计器实例化
+        public MainForm() : this(new TemplateService())
+        {
+        }
 
         public MainForm(ITemplateService templateService)
         {
             _templateService = templateService;
-            Text = "工作日志 - 主界面";
-            Width = 1000;
-            Height = 700;
+            InitializeComponent();
 
-            var topPanel = new Panel { Dock = DockStyle.Top, Height = 48, Padding = new Padding(8, 8, 8, 4) };
-
-            _btnCreate = new Button { Text = "创建事项", Width = 100, Height = 32, Location = new Point(8, 8) };
-            _btnCreate.Click += OnCreateItemClick;
-
-            _monthPicker = new DateTimePicker { Format = DateTimePickerFormat.Custom, CustomFormat = "yyyy-MM", ShowUpDown = true, Width = 100, Height = 28, Location = new Point(120, 10), Value = DateTime.Today };
-
-            _btnImport = new Button { Text = "刷新当月", Width = 100, Height = 32, Location = new Point(230, 8) };
-            _btnImport.Click += OnImportMonthClick;
-
-            _btnMerge = new Button { Text = "合并其他日志", Width = 120, Height = 32, Location = new Point(340, 8) };
-            _btnMerge.Click += OnMergeOtherClick;
-
-            _btnCategoryManage = new Button { Text = "分类管理", Width = 100, Height = 32, Location = new Point(470, 8) };
-            _btnCategoryManage.Click += OnCategoryManageClick;
-
-            _btnImportWizard = new Button { Text = "导入向导", Width = 100, Height = 32, Location = new Point(580, 8) };
-            _btnImportWizard.Click += OnImportWizardClick;
-
-            topPanel.Controls.Add(_btnCreate);
-            topPanel.Controls.Add(_monthPicker);
-            topPanel.Controls.Add(_btnImport);
-            topPanel.Controls.Add(_btnMerge);
-            topPanel.Controls.Add(_btnCategoryManage);
-            topPanel.Controls.Add(_btnImportWizard);
-
-            _listView = new ListView { Dock = DockStyle.Fill, View = View.Details, FullRowSelect = true, GridLines = true };
-            _listView.Columns.Add("日期", 100);
-            _listView.Columns.Add("标题", 200);
-            _listView.Columns.Add("内容", 400);
-            _listView.Columns.Add("状态", 80);
-            _listView.Columns.Add("标签", 120);
-            _listView.Columns.Add("开始", 120);
-            _listView.Columns.Add("结束", 120);
-
-            Controls.Add(_listView);
-            Controls.Add(topPanel);
+            // 设计期：填充 ListView 示例数据，便于在设计器中预览布局
+            if (UIStyleManager.IsDesignMode)
+            {
+                try
+                {
+                    _listView.BeginUpdate();
+                    _listView.Items.Clear();
+                    _listView.Items.Add(new ListViewItem(new[]
+                    {
+                        DateTime.Today.ToString("yyyy-MM-dd"),
+                        "示例：需求评审会议",
+                        "讨论近期版本目标与测试范围……",
+                        "InProgress",
+                        "会议;需求",
+                        DateTime.Today.AddHours(9).ToString("yyyy-MM-dd HH:mm"),
+                        DateTime.Today.AddHours(10).ToString("yyyy-MM-dd HH:mm")
+                    }));
+                    _listView.Items.Add(new ListViewItem(new[]
+                    {
+                        DateTime.Today.AddDays(-1).ToString("yyyy-MM-dd"),
+                        "示例：接口联调",
+                        "修复返回格式，补充缺失字段",
+                        "Done",
+                        "研发;联调",
+                        DateTime.Today.AddDays(-1).AddHours(14).ToString("yyyy-MM-dd HH:mm"),
+                        DateTime.Today.AddDays(-1).AddHours(16).ToString("yyyy-MM-dd HH:mm")
+                    }));
+                    _listView.EndUpdate();
+                }
+                catch { }
+                return;
+            }
         }
 
         private void OnCreateItemClick(object sender, EventArgs e)
@@ -187,6 +179,11 @@ namespace WorkLogApp.UI.Forms
                 _listView.Items.Add(lv);
             }
             _listView.EndUpdate();
+        }
+
+        private void _monthPicker_ValueChanged(object sender, EventArgs e)
+        {
+
         }
     }
 }
