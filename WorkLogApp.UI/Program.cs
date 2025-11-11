@@ -11,18 +11,61 @@ namespace WorkLogApp.UI
         [STAThread]
         static void Main()
         {
-            var env = ConfigurationManager.AppSettings["ConfigEnvironment"] ?? "dev";
-            var baseDir = AppDomain.CurrentDomain.BaseDirectory;
-            var configPath = Path.Combine(baseDir, "Configs", $"{env}.config.json");
-            var templatesPath = Path.Combine(baseDir, "Templates", "templates.json");
-
-            var templateService = new TemplateService();
-            // 仅做加载存在性检查，后续完善为真实 JSON 解析
-            templateService.LoadTemplates(templatesPath);
-
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new Forms.MainForm(templateService));
+
+            // 全局异常捕获，避免启动时静默失败
+            Application.SetUnhandledExceptionMode(UnhandledExceptionMode.CatchException);
+            Application.ThreadException += (s, e) =>
+            {
+                try
+                {
+                    var baseDir = AppDomain.CurrentDomain.BaseDirectory;
+                    var logDir = Path.Combine(baseDir, "Logs");
+                    Directory.CreateDirectory(logDir);
+                    File.WriteAllText(Path.Combine(logDir, "thread_exception.log"), e.Exception?.ToString());
+                }
+                catch { }
+                MessageBox.Show($"UI线程异常:\n{e.Exception}", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            };
+            AppDomain.CurrentDomain.UnhandledException += (s, e) =>
+            {
+                var ex = e.ExceptionObject as Exception;
+                try
+                {
+                    var baseDir = AppDomain.CurrentDomain.BaseDirectory;
+                    var logDir = Path.Combine(baseDir, "Logs");
+                    Directory.CreateDirectory(logDir);
+                    File.WriteAllText(Path.Combine(logDir, "unhandled_exception.log"), ex?.ToString());
+                }
+                catch { }
+                MessageBox.Show($"未处理异常:\n{ex}", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            };
+
+            try
+            {
+                var env = ConfigurationManager.AppSettings["ConfigEnvironment"] ?? "dev";
+                var baseDir = AppDomain.CurrentDomain.BaseDirectory;
+                var configPath = Path.Combine(baseDir, "Configs", $"{env}.config.json");
+                var templatesPath = Path.Combine(baseDir, "Templates", "templates.json");
+
+                var templateService = new TemplateService();
+                templateService.LoadTemplates(templatesPath);
+
+                Application.Run(new Forms.MainForm(templateService));
+            }
+            catch (Exception ex)
+            {
+                try
+                {
+                    var baseDir = AppDomain.CurrentDomain.BaseDirectory;
+                    var logDir = Path.Combine(baseDir, "Logs");
+                    Directory.CreateDirectory(logDir);
+                    File.WriteAllText(Path.Combine(logDir, "startup_error.log"), ex.ToString());
+                }
+                catch { }
+                MessageBox.Show($"启动失败:\n{ex}", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
     }
 }

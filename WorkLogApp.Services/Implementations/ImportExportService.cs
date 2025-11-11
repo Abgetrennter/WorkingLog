@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using NPOI.SS.UserModel;
+using NPOI.XSSF.UserModel;
 using WorkLogApp.Core.Enums;
 using WorkLogApp.Core.Models;
 using WorkLogApp.Services.Interfaces;
@@ -23,35 +25,32 @@ namespace WorkLogApp.Services.Implementations
             Directory.CreateDirectory(outputDirectory);
 
             var monthStart = new DateTime(month.Year, month.Month, 1);
-            var fileName = FilePrefix + monthStart.ToString("yyyyMM") + ".csv";
+            var fileName = FilePrefix + monthStart.ToString("yyyyMM") + ".xlsx";
             var filePath = Path.Combine(outputDirectory, fileName);
 
-            var existed = File.Exists(filePath);
-            using (var sw = new StreamWriter(filePath, append: true))
+            IWorkbook wb = null;
+            if (File.Exists(filePath))
             {
-                if (!existed)
+                using (var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
                 {
-                    sw.WriteLine(string.Join(",", Header));
+                    wb = new XSSFWorkbook(fs);
                 }
-                foreach (var item in items)
-                {
-                    if (item == null) continue;
-                    if (item.LogDate.Year != month.Year || item.LogDate.Month != month.Month) continue;
-                    var row = new string[]
-                    {
-                        item.LogDate.ToString("yyyy-MM-dd"),
-                        EscapeCsv(item.ItemTitle ?? string.Empty),
-                        EscapeCsv(item.ItemContent ?? string.Empty),
-                        item.Status.ToString(),
-                        (item.CategoryId).ToString(),
-                        (item.Progress ?? 0).ToString(),
-                        item.StartTime.HasValue ? item.StartTime.Value.ToString("yyyy-MM-dd HH:mm") : string.Empty,
-                        item.EndTime.HasValue ? item.EndTime.Value.ToString("yyyy-MM-dd HH:mm") : string.Empty,
-                        EscapeCsv(item.Tags ?? string.Empty),
-                        (item.SortOrder ?? 0).ToString()
-                    };
-                    sw.WriteLine(string.Join(",", row));
-                }
+            }
+            else
+            {
+                wb = new XSSFWorkbook();
+            }
+
+            foreach (var item in items)
+            {
+                if (item == null) continue;
+                if (item.LogDate.Year != month.Year || item.LogDate.Month != month.Month) continue;
+                WriteItem(wb, item);
+            }
+
+            using (var outFs = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.None))
+            {
+                wb.Write(outFs);
             }
             return true;
         }
@@ -61,90 +60,78 @@ namespace WorkLogApp.Services.Implementations
             var list = new List<WorkLogItem>();
             if (string.IsNullOrWhiteSpace(inputDirectory)) return list;
             var monthStart = new DateTime(month.Year, month.Month, 1);
-            var fileName = FilePrefix + monthStart.ToString("yyyyMM") + ".csv";
+            var fileName = FilePrefix + monthStart.ToString("yyyyMM") + ".xlsx";
             var filePath = Path.Combine(inputDirectory, fileName);
             if (!File.Exists(filePath)) return list;
 
-            using (var sr = new StreamReader(filePath))
+            using (var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
             {
-                string line;
-                bool isHeader = true;
-                while ((line = sr.ReadLine()) != null)
+                var wb = new XSSFWorkbook(fs);
+                for (int i = 0; i < wb.NumberOfSheets; i++)
                 {
-                    if (isHeader) { isHeader = false; continue; }
-                    var parts = ParseCsvLine(line);
-                    if (parts.Length < Header.Length) continue;
-                    var item = new WorkLogItem();
-                    item.LogDate = DateTime.ParseExact(parts[0], "yyyy-MM-dd", CultureInfo.InvariantCulture);
-                    item.ItemTitle = parts[1];
-                    item.ItemContent = parts[2];
-                    item.Status = ParseStatus(parts[3]);
-                    item.CategoryId = ParseInt(parts[4]);
-                    item.Progress = ParseNullableInt(parts[5]);
-                    item.StartTime = ParseNullableDateTime(parts[6]);
-                    item.EndTime = ParseNullableDateTime(parts[7]);
-                    item.Tags = parts[8];
-                    item.SortOrder = ParseNullableInt(parts[9]);
-                    list.Add(item);
+                    var sheet = wb.GetSheetAt(i);
+                    if (sheet == null) continue;
+                    DateTime logDate;
+                    if (!DateTime.TryParseExact(sheet.SheetName, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out logDate))
+                        continue;
+                    var firstRow = sheet.GetRow(0);
+                    int startRow = 1;
+                    if (firstRow == null || firstRow.PhysicalNumberOfCells == 0)
+                        startRow = 0; // 无表头则从0开始
+
+                    for (int r = startRow; r <= sheet.LastRowNum; r++)
+                    {
+                        var row = sheet.GetRow(r);
+                        if (row == null) continue;
+                        var item = new WorkLogItem { LogDate = logDate };
+                        item.ItemTitle = GetString(row, 1);
+                        item.ItemContent = GetString(row, 2);
+                        item.Status = ParseStatus(GetString(row, 3));
+                        item.CategoryId = ParseInt(GetString(row, 4));
+                        item.Progress = ParseNullableInt(GetString(row, 5));
+                        item.StartTime = ParseNullableDateTime(GetString(row, 6));
+                        item.EndTime = ParseNullableDateTime(GetString(row, 7));
+                        item.Tags = GetString(row, 8);
+                        item.SortOrder = ParseNullableInt(GetString(row, 9));
+                        list.Add(item);
+                    }
                 }
             }
             return list;
         }
 
-        private static string EscapeCsv(string input)
+        private static void WriteItem(IWorkbook wb, WorkLogItem item)
         {
-            if (input == null) return string.Empty;
-            var needsQuote = input.Contains(",") || input.Contains("\n") || input.Contains("\r") || input.Contains("\"");
-            var escaped = input.Replace("\"", "\"\"");
-            return needsQuote ? $"\"{escaped}\"" : escaped;
-        }
-
-        private static string[] ParseCsvLine(string line)
-        {
-            var result = new List<string>();
-            bool inQuotes = false;
-            var current = new System.Text.StringBuilder();
-            for (int i = 0; i < line.Length; i++)
+            var sheetName = item.LogDate.ToString("yyyy-MM-dd");
+            var sheet = wb.GetSheet(sheetName) ?? wb.CreateSheet(sheetName);
+            if (sheet.PhysicalNumberOfRows == 0)
             {
-                var c = line[i];
-                if (inQuotes)
+                var header = sheet.CreateRow(0);
+                for (int i = 0; i < Header.Length; i++)
                 {
-                    if (c == '"')
-                    {
-                        if (i + 1 < line.Length && line[i + 1] == '"')
-                        {
-                            current.Append('"');
-                            i++; // skip escaped quote
-                        }
-                        else
-                        {
-                            inQuotes = false;
-                        }
-                    }
-                    else
-                    {
-                        current.Append(c);
-                    }
-                }
-                else
-                {
-                    if (c == ',')
-                    {
-                        result.Add(current.ToString());
-                        current.Clear();
-                    }
-                    else if (c == '"')
-                    {
-                        inQuotes = true;
-                    }
-                    else
-                    {
-                        current.Append(c);
-                    }
+                    header.CreateCell(i).SetCellValue(Header[i]);
                 }
             }
-            result.Add(current.ToString());
-            return result.ToArray();
+            var rowIndex = Math.Max(sheet.LastRowNum + 1, 1);
+            var row = sheet.CreateRow(rowIndex);
+            row.CreateCell(0).SetCellValue(item.LogDate.ToString("yyyy-MM-dd"));
+            row.CreateCell(1).SetCellValue(item.ItemTitle ?? string.Empty);
+            row.CreateCell(2).SetCellValue(item.ItemContent ?? string.Empty);
+            row.CreateCell(3).SetCellValue(item.Status.ToString());
+            row.CreateCell(4).SetCellValue(item.CategoryId);
+            row.CreateCell(5).SetCellValue(item.Progress.HasValue ? item.Progress.Value : 0);
+            row.CreateCell(6).SetCellValue(item.StartTime.HasValue ? item.StartTime.Value.ToString("yyyy-MM-dd HH:mm") : string.Empty);
+            row.CreateCell(7).SetCellValue(item.EndTime.HasValue ? item.EndTime.Value.ToString("yyyy-MM-dd HH:mm") : string.Empty);
+            row.CreateCell(8).SetCellValue(item.Tags ?? string.Empty);
+            row.CreateCell(9).SetCellValue(item.SortOrder.HasValue ? item.SortOrder.Value : 0);
+        }
+
+        private static string GetString(IRow row, int index)
+        {
+            var cell = row.GetCell(index);
+            if (cell == null) return string.Empty;
+            cell.SetCellType(CellType.String);
+            return cell.StringCellValue ?? string.Empty;
         }
 
         private static int ParseInt(string s)
