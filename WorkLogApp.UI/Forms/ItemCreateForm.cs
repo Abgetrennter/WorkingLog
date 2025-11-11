@@ -88,7 +88,8 @@ namespace WorkLogApp.UI.Forms
                 var result = editor.ShowDialog(this);
                 if (result == DialogResult.OK)
                 {
-                    MessageBox.Show(this, "已生成并保存。", "成功", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    // 编辑窗口已提示保存成功并关闭，此处直接关闭创建界面
+                    Close();
                 }
             }
         }
