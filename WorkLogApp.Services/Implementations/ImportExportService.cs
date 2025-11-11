@@ -15,7 +15,8 @@ namespace WorkLogApp.Services.Implementations
         private const string FilePrefix = "worklog_";
         private static readonly string[] Header = new[]
         {
-            "LogDate","ItemTitle","ItemContent","Status","CategoryId","Progress","StartTime","EndTime","Tags","SortOrder"
+            // 按设计文档的列顺序（并追加 DailySummary）
+            "LogDate","ItemTitle","ItemContent","CategoryId","Status","Progress","StartTime","EndTime","Tags","SortOrder","DailySummary"
         };
 
         public bool ExportMonth(DateTime month, IEnumerable<WorkLogItem> items, string outputDirectory)
@@ -76,23 +77,29 @@ namespace WorkLogApp.Services.Implementations
                         continue;
                     var firstRow = sheet.GetRow(0);
                     int startRow = 1;
-                    if (firstRow == null || firstRow.PhysicalNumberOfCells == 0)
+                    var hasHeader = !(firstRow == null || firstRow.PhysicalNumberOfCells == 0);
+                    if (!hasHeader)
                         startRow = 0; // 无表头则从0开始
+
+                    var indexes = GetHeaderIndexes(sheet);
 
                     for (int r = startRow; r <= sheet.LastRowNum; r++)
                     {
                         var row = sheet.GetRow(r);
                         if (row == null) continue;
                         var item = new WorkLogItem { LogDate = logDate };
-                        item.ItemTitle = GetString(row, 1);
-                        item.ItemContent = GetString(row, 2);
-                        item.Status = ParseStatus(GetString(row, 3));
-                        item.CategoryId = ParseInt(GetString(row, 4));
-                        item.Progress = ParseNullableInt(GetString(row, 5));
-                        item.StartTime = ParseNullableDateTime(GetString(row, 6));
-                        item.EndTime = ParseNullableDateTime(GetString(row, 7));
-                        item.Tags = GetString(row, 8);
-                        item.SortOrder = ParseNullableInt(GetString(row, 9));
+                        item.ItemTitle = GetString(row, indexes["ItemTitle"]);
+                        item.ItemContent = GetString(row, indexes["ItemContent"]);
+                        item.CategoryId = ParseInt(GetString(row, indexes["CategoryId"]));
+                        item.Status = ParseStatus(GetString(row, indexes["Status"]));
+                        item.Progress = ParseNullableInt(GetString(row, indexes["Progress"]));
+                        item.StartTime = ParseNullableDateTime(GetString(row, indexes["StartTime"]));
+                        item.EndTime = ParseNullableDateTime(GetString(row, indexes["EndTime"]));
+                        item.Tags = GetString(row, indexes["Tags"]);
+                        item.SortOrder = ParseNullableInt(GetString(row, indexes["SortOrder"]));
+                        var isFirstDataRow = hasHeader ? (r == 1) : (r == 0);
+                        if (indexes.ContainsKey("DailySummary") && isFirstDataRow)
+                            item.DailySummary = GetString(row, indexes["DailySummary"]);
                         list.Add(item);
                     }
                 }
@@ -119,23 +126,29 @@ namespace WorkLogApp.Services.Implementations
 
                     var firstRow = sheet.GetRow(0);
                     int startRow = 1;
-                    if (firstRow == null || firstRow.PhysicalNumberOfCells == 0)
+                    var hasHeader = !(firstRow == null || firstRow.PhysicalNumberOfCells == 0);
+                    if (!hasHeader)
                         startRow = 0;
+
+                    var indexes = GetHeaderIndexes(sheet);
 
                     for (int r = startRow; r <= sheet.LastRowNum; r++)
                     {
                         var row = sheet.GetRow(r);
                         if (row == null) continue;
                         var item = new WorkLogItem { LogDate = logDate };
-                        item.ItemTitle = GetString(row, 1);
-                        item.ItemContent = GetString(row, 2);
-                        item.Status = ParseStatus(GetString(row, 3));
-                        item.CategoryId = ParseInt(GetString(row, 4));
-                        item.Progress = ParseNullableInt(GetString(row, 5));
-                        item.StartTime = ParseNullableDateTime(GetString(row, 6));
-                        item.EndTime = ParseNullableDateTime(GetString(row, 7));
-                        item.Tags = GetString(row, 8);
-                        item.SortOrder = ParseNullableInt(GetString(row, 9));
+                        item.ItemTitle = GetString(row, indexes["ItemTitle"]);
+                        item.ItemContent = GetString(row, indexes["ItemContent"]);
+                        item.CategoryId = ParseInt(GetString(row, indexes["CategoryId"]));
+                        item.Status = ParseStatus(GetString(row, indexes["Status"]));
+                        item.Progress = ParseNullableInt(GetString(row, indexes["Progress"]));
+                        item.StartTime = ParseNullableDateTime(GetString(row, indexes["StartTime"]));
+                        item.EndTime = ParseNullableDateTime(GetString(row, indexes["EndTime"]));
+                        item.Tags = GetString(row, indexes["Tags"]);
+                        item.SortOrder = ParseNullableInt(GetString(row, indexes["SortOrder"]));
+                        var isFirstDataRow = hasHeader ? (r == 1) : (r == 0);
+                        if (indexes.ContainsKey("DailySummary") && isFirstDataRow)
+                            item.DailySummary = GetString(row, indexes["DailySummary"]);
                         list.Add(item);
                     }
                 }
@@ -157,16 +170,23 @@ namespace WorkLogApp.Services.Implementations
             }
             var rowIndex = Math.Max(sheet.LastRowNum + 1, 1);
             var row = sheet.CreateRow(rowIndex);
+            // 使用新列顺序
             row.CreateCell(0).SetCellValue(item.LogDate.ToString("yyyy-MM-dd"));
             row.CreateCell(1).SetCellValue(item.ItemTitle ?? string.Empty);
             row.CreateCell(2).SetCellValue(item.ItemContent ?? string.Empty);
-            row.CreateCell(3).SetCellValue(item.Status.ToString());
-            row.CreateCell(4).SetCellValue(item.CategoryId);
+            row.CreateCell(3).SetCellValue(item.CategoryId);
+            row.CreateCell(4).SetCellValue((int)item.Status);
             row.CreateCell(5).SetCellValue(item.Progress.HasValue ? item.Progress.Value : 0);
             row.CreateCell(6).SetCellValue(item.StartTime.HasValue ? item.StartTime.Value.ToString("yyyy-MM-dd HH:mm") : string.Empty);
             row.CreateCell(7).SetCellValue(item.EndTime.HasValue ? item.EndTime.Value.ToString("yyyy-MM-dd HH:mm") : string.Empty);
             row.CreateCell(8).SetCellValue(item.Tags ?? string.Empty);
             row.CreateCell(9).SetCellValue(item.SortOrder.HasValue ? item.SortOrder.Value : 0);
+            // 当日总结仅在第一条记录中写入
+            var dailySummaryCell = row.CreateCell(10);
+            if (rowIndex == 1)
+                dailySummaryCell.SetCellValue(item.DailySummary ?? string.Empty);
+            else
+                dailySummaryCell.SetCellValue(string.Empty);
         }
 
         private static string GetString(IRow row, int index)
@@ -194,8 +214,51 @@ namespace WorkLogApp.Services.Implementations
 
         private static StatusEnum ParseStatus(string s)
         {
+            // 优先尝试解析为数值枚举
+            if (int.TryParse(s, out var iv))
+            {
+                if (Enum.IsDefined(typeof(StatusEnum), iv))
+                    return (StatusEnum)iv;
+            }
+            // 兼容旧文件以字符串方式存储
             if (Enum.TryParse<StatusEnum>(s, out var status)) return status;
             return StatusEnum.Todo;
+        }
+
+        private static Dictionary<string, int> GetHeaderIndexes(ISheet sheet)
+        {
+            var dict = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+            var headerRow = sheet.GetRow(0);
+            if (headerRow == null || headerRow.PhysicalNumberOfCells == 0)
+            {
+                // 无表头，使用默认顺序（兼容旧格式）
+                for (int i = 0; i < Header.Length; i++) dict[Header[i]] = i;
+                // 兼容旧列顺序（没有 DailySummary，Status 在 CategoryId 之前）
+                if (!dict.ContainsKey("DailySummary"))
+                {
+                    dict["DailySummary"] = 10; // 不存在时占位
+                }
+                return dict;
+            }
+            for (int c = 0; c < headerRow.LastCellNum; c++)
+            {
+                var name = GetString(headerRow, c);
+                if (!string.IsNullOrWhiteSpace(name))
+                {
+                    if (!dict.ContainsKey(name)) dict[name] = c;
+                }
+            }
+            // 确保所有关键列都有索引（若缺失则用当前设计默认）
+            foreach (var col in Header)
+            {
+                if (!dict.ContainsKey(col))
+                {
+                    // 回退到当前设计的固定索引
+                    var idx = Array.IndexOf(Header, col);
+                    dict[col] = idx >= 0 ? idx : dict.Count;
+                }
+            }
+            return dict;
         }
     }
 }

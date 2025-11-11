@@ -11,6 +11,7 @@ namespace WorkLogApp.Services.Implementations
     public class TemplateService : ITemplateService
     {
         private TemplateRoot _templateRoot;
+        private string _templatesPath;
 
         public bool LoadTemplates(string templatesJsonPath)
         {
@@ -18,7 +19,27 @@ namespace WorkLogApp.Services.Implementations
             var json = File.ReadAllText(templatesJsonPath);
             var serializer = new JavaScriptSerializer();
             _templateRoot = serializer.Deserialize<TemplateRoot>(json);
+            _templatesPath = templatesJsonPath;
             return _templateRoot?.Templates != null;
+        }
+
+        public bool SaveTemplates()
+        {
+            if (_templateRoot == null || _templateRoot.Templates == null) return false;
+            if (string.IsNullOrWhiteSpace(_templatesPath)) return false;
+            try
+            {
+                var serializer = new JavaScriptSerializer();
+                var json = serializer.Serialize(_templateRoot);
+                var dir = Path.GetDirectoryName(_templatesPath);
+                if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
+                File.WriteAllText(_templatesPath, json);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
         }
 
         public string Render(string formatTemplate, Dictionary<string, object> fieldValues, WorkLogItem item)
@@ -70,6 +91,20 @@ namespace WorkLogApp.Services.Implementations
             if (_templateRoot?.Templates == null) yield break;
             foreach (var key in _templateRoot.Templates.Keys)
                 yield return key;
+        }
+
+        public bool AddOrUpdateCategoryTemplate(string categoryName, CategoryTemplate template)
+        {
+            if (_templateRoot == null) _templateRoot = new TemplateRoot { Templates = new Dictionary<string, TemplateCategory>() };
+            if (_templateRoot.Templates == null) _templateRoot.Templates = new Dictionary<string, TemplateCategory>();
+            _templateRoot.Templates[categoryName] = new TemplateCategory { CategoryTemplate = template };
+            return true;
+        }
+
+        public bool RemoveCategory(string categoryName)
+        {
+            if (_templateRoot?.Templates == null) return false;
+            return _templateRoot.Templates.Remove(categoryName);
         }
     }
 }
