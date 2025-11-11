@@ -53,7 +53,7 @@ namespace WorkLogApp.UI.Forms
                 _formPanel.BuildForm(new System.Collections.Generic.Dictionary<string, string>());
                 return;
             }
-            _formPanel.BuildForm(catTpl.Placeholders);
+            _formPanel.BuildForm(catTpl.Placeholders, catTpl.Options);
         }
 
         private void OnGenerateAndSave(object sender, EventArgs e)

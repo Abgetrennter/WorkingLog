@@ -55,7 +55,8 @@ namespace WorkLogApp.UI.Forms
 
             _listView = new ListView { Dock = DockStyle.Fill, View = View.Details, FullRowSelect = true, GridLines = true };
             _listView.Columns.Add("日期", 100);
-            _listView.Columns.Add("标题", 250);
+            _listView.Columns.Add("标题", 200);
+            _listView.Columns.Add("内容", 400);
             _listView.Columns.Add("状态", 80);
             _listView.Columns.Add("标签", 120);
             _listView.Columns.Add("开始", 120);
@@ -171,10 +172,13 @@ namespace WorkLogApp.UI.Forms
             _listView.Items.Clear();
             foreach (var it in items)
             {
+                var content = (it.ItemContent ?? string.Empty).Replace("\r", " ").Replace("\n", " ");
+                if (content.Length > 200) content = content.Substring(0, 200) + "...";
                 var lv = new ListViewItem(new[]
                 {
                     it.LogDate.ToString("yyyy-MM-dd"),
                     it.ItemTitle ?? string.Empty,
+                    content,
                     it.Status.ToString(),
                     it.Tags ?? string.Empty,
                     it.StartTime.HasValue ? it.StartTime.Value.ToString("yyyy-MM-dd HH:mm") : string.Empty,

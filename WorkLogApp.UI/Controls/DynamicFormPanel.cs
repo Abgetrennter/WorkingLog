@@ -11,6 +11,11 @@ namespace WorkLogApp.UI.Controls
 
         public void BuildForm(Dictionary<string, string> placeholders)
         {
+            BuildForm(placeholders, null);
+        }
+
+        public void BuildForm(Dictionary<string, string> placeholders, Dictionary<string, System.Collections.Generic.List<string>> options)
+        {
             Controls.Clear();
             _controls.Clear();
 
@@ -36,6 +41,23 @@ namespace WorkLogApp.UI.Controls
                         break;
                     case "datetime":
                         input = new DateTimePicker { Format = DateTimePickerFormat.Custom, CustomFormat = "yyyy-MM-dd HH:mm" };
+                        break;
+                    case "select":
+                        var combo = new ComboBox { Width = 500, DropDownStyle = ComboBoxStyle.DropDownList };
+                        if (options != null && options.TryGetValue(name, out var list) && list != null)
+                        {
+                            foreach (var opt in list) combo.Items.Add(opt);
+                            if (combo.Items.Count > 0) combo.SelectedIndex = 0;
+                        }
+                        input = combo;
+                        break;
+                    case "checkbox":
+                        var clb = new CheckedListBox { Width = 500, Height = 80 };
+                        if (options != null && options.TryGetValue(name, out var olist) && olist != null)
+                        {
+                            foreach (var opt in olist) clb.Items.Add(opt, false);
+                        }
+                        input = clb;
                         break;
                     default:
                         input = new TextBox { Width = 500 };
