@@ -1,0 +1,72 @@
+{
+  "format": 1,
+  "restore": {
+    "C:\\Users\\Administrator\\source\\repos\\WorkingLog\\WorkLogApp.Services\\WorkLogApp.Services.csproj": {}
+  },
+  "projects": {
+    "C:\\Users\\Administrator\\source\\repos\\WorkingLog\\WorkLogApp.Core\\WorkLogApp.Core.csproj": {
+      "restore": {
+        "projectUniqueName": "C:\\Users\\Administrator\\source\\repos\\WorkingLog\\WorkLogApp.Core\\WorkLogApp.Core.csproj",
+        "projectName": "WorkLogApp.Core",
+        "projectPath": "C:\\Users\\Administrator\\source\\repos\\WorkingLog\\WorkLogApp.Core\\WorkLogApp.Core.csproj",
+        "UsingMicrosoftNETSdk": false,
+        "frameworks": {
+          "net472": {
+            "projectReferences": {}
+          }
+        }
+      },
+      "frameworks": {
+        "net472": {}
+      }
+    },
+    "C:\\Users\\Administrator\\source\\repos\\WorkingLog\\WorkLogApp.Services\\WorkLogApp.Services.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "C:\\Users\\Administrator\\source\\repos\\WorkingLog\\WorkLogApp.Services\\WorkLogApp.Services.csproj",
+        "projectName": "WorkLogApp.Services",
+        "projectPath": "C:\\Users\\Administrator\\source\\repos\\WorkingLog\\WorkLogApp.Services\\WorkLogApp.Services.csproj",
+        "packagesPath": "C:\\Users\\Administrator\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\Administrator\\source\\repos\\WorkingLog\\WorkLogApp.Services\\obj\\",
+        "projectStyle": "PackageReference",
+        "skipContentFileWrite": true,
+        "UsingMicrosoftNETSdk": false,
+        "configFilePaths": [
+          "C:\\Users\\Administrator\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+        ],
+        "originalTargetFrameworks": [
+          "net472"
+        ],
+        "sources": {
+          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net472": {
+            "projectReferences": {
+              "C:\\Users\\Administrator\\source\\repos\\WorkingLog\\WorkLogApp.Core\\WorkLogApp.Core.csproj": {
+                "projectPath": "C:\\Users\\Administrator\\source\\repos\\WorkingLog\\WorkLogApp.Core\\WorkLogApp.Core.csproj"
+              }
+            }
+          }
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        }
+      },
+      "frameworks": {
+        "net472": {
+          "dependencies": {
+            "Newtonsoft.Json": {
+              "target": "Package",
+              "version": "[13.0.3, )"
+            }
+          }
+        }
+      }
+    }
+  }
+}

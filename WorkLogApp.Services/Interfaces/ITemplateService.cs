@@ -7,5 +7,7 @@ namespace WorkLogApp.Services.Interfaces
     {
         bool LoadTemplates(string templatesJsonPath);
         string Render(string formatTemplate, Dictionary<string, object> fieldValues, WorkLogItem item);
+        CategoryTemplate GetCategoryTemplate(string categoryName);
+        IEnumerable<string> GetCategoryNames();
     }
 }

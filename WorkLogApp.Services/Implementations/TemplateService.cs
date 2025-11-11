@@ -1,5 +1,8 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text.RegularExpressions;
+using System.Web.Script.Serialization;
 using WorkLogApp.Core.Models;
 using WorkLogApp.Services.Interfaces;
 
@@ -7,10 +10,15 @@ namespace WorkLogApp.Services.Implementations
 {
     public class TemplateService : ITemplateService
     {
+        private TemplateRoot _templateRoot;
+
         public bool LoadTemplates(string templatesJsonPath)
         {
-            // 仅检查文件是否存在；后续接入 Newtonsoft.Json 解析
-            return File.Exists(templatesJsonPath);
+            if (!File.Exists(templatesJsonPath)) return false;
+            var json = File.ReadAllText(templatesJsonPath);
+            var serializer = new JavaScriptSerializer();
+            _templateRoot = serializer.Deserialize<TemplateRoot>(json);
+            return _templateRoot?.Templates != null;
         }
 
         public string Render(string formatTemplate, Dictionary<string, object> fieldValues, WorkLogItem item)
@@ -18,15 +26,50 @@ namespace WorkLogApp.Services.Implementations
             var result = formatTemplate ?? string.Empty;
             if (fieldValues != null)
             {
-                foreach (var kv in fieldValues)
+                // 支持 {字段} 与 {字段:格式}（主要用于日期时间）
+                result = Regex.Replace(result, "\\{([^:{}]+)(?::([^{}]+))?\\}", match =>
                 {
-                    var placeholder = "{" + kv.Key + "}";
-                    result = result.Replace(placeholder, kv.Value?.ToString() ?? string.Empty);
-                }
+                    var name = match.Groups[1].Value;
+                    var format = match.Groups[2].Success ? match.Groups[2].Value : null;
+                    object value = null;
+                    if (fieldValues.ContainsKey(name)) value = fieldValues[name];
+
+                    if (value == null) return string.Empty;
+
+                    if (format != null)
+                    {
+                        // 日期格式化优先
+                        if (value is DateTime dt)
+                            return dt.ToString(format);
+                        // 尝试解析字符串为日期
+                        if (value is string s && DateTime.TryParse(s, out var parsed))
+                            return parsed.ToString(format);
+                        // 其他类型按 ToString 输出
+                        return Convert.ToString(value);
+                    }
+                    return Convert.ToString(value);
+                });
             }
             // 系统字段占位符示例
             result = result.Replace("{ItemTitle}", item?.ItemTitle ?? string.Empty);
             return result;
+        }
+
+        public CategoryTemplate GetCategoryTemplate(string categoryName)
+        {
+            if (_templateRoot == null || _templateRoot.Templates == null) return null;
+            if (_templateRoot.Templates.TryGetValue(categoryName, out var cat))
+            {
+                return cat?.CategoryTemplate;
+            }
+            return null;
+        }
+
+        public IEnumerable<string> GetCategoryNames()
+        {
+            if (_templateRoot?.Templates == null) yield break;
+            foreach (var key in _templateRoot.Templates.Keys)
+                yield return key;
         }
     }
 }
