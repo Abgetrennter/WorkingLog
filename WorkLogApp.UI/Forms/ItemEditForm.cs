@@ -12,6 +12,7 @@ namespace WorkLogApp.UI.Forms
     {
         private readonly WorkLogItem _item;
         private readonly TextBox _titleBox;
+        private readonly TextBox _summaryBox;
         private readonly TextBox _contentBox;
         private readonly Button _btnSave;
         private readonly Button _btnCancel;
@@ -27,9 +28,13 @@ namespace WorkLogApp.UI.Forms
             _titleBox = new TextBox { Left = 60, Top = 10, Width = 800 };
             _titleBox.Text = _item.ItemTitle ?? string.Empty;
 
-            var lblContent = new Label { Text = "内容：", Left = 10, Top = 45, AutoSize = true };
-            _contentBox = new TextBox { Left = 10, Top = 70, Width = 850, Height = 480, Multiline = true, ScrollBars = ScrollBars.Both };
+            var lblSummary = new Label { Text = "当日总结（仅第一条记录写入）：", Left = 10, Top = 45, AutoSize = true };
+            _summaryBox = new TextBox { Left = 10, Top = 70, Width = 850, Height = 120, Multiline = true, ScrollBars = ScrollBars.Vertical };
+
+            var lblContent = new Label { Text = "内容：", Left = 10, Top = 200, AutoSize = true };
+            _contentBox = new TextBox { Left = 10, Top = 225, Width = 850, Height = 325, Multiline = true, ScrollBars = ScrollBars.Both };
             _contentBox.Text = initialContent ?? _item.ItemContent ?? string.Empty;
+            _summaryBox.Text = _item.DailySummary ?? string.Empty;
 
             _btnSave = new Button { Text = "保存", Left = 10, Top = 565, Width = 100, Height = 35 };
             _btnCancel = new Button { Text = "取消", Left = 120, Top = 565, Width = 100, Height = 35 };
@@ -38,6 +43,8 @@ namespace WorkLogApp.UI.Forms
 
             Controls.Add(lblTitle);
             Controls.Add(_titleBox);
+            Controls.Add(lblSummary);
+            Controls.Add(_summaryBox);
             Controls.Add(lblContent);
             Controls.Add(_contentBox);
             Controls.Add(_btnSave);
@@ -50,6 +57,7 @@ namespace WorkLogApp.UI.Forms
             {
                 _item.ItemTitle = _titleBox.Text?.Trim();
                 _item.ItemContent = _contentBox.Text ?? string.Empty;
+                _item.DailySummary = _summaryBox.Text ?? string.Empty;
 
                 var baseDir = AppDomain.CurrentDomain.BaseDirectory;
                 var dataDir = Path.Combine(baseDir, "Data");

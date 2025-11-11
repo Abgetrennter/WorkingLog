@@ -6,8 +6,11 @@ namespace WorkLogApp.Services.Interfaces
     public interface ITemplateService
     {
         bool LoadTemplates(string templatesJsonPath);
+        bool SaveTemplates();
         string Render(string formatTemplate, Dictionary<string, object> fieldValues, WorkLogItem item);
         CategoryTemplate GetCategoryTemplate(string categoryName);
         IEnumerable<string> GetCategoryNames();
+        bool AddOrUpdateCategoryTemplate(string categoryName, CategoryTemplate template);
+        bool RemoveCategory(string categoryName);
     }
 }

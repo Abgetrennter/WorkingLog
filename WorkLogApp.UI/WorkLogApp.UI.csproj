@@ -41,6 +41,8 @@
     <Compile Include="Forms\MainForm.cs" />
     <Compile Include="Forms\ItemCreateForm.cs" />
     <Compile Include="Forms\ItemEditForm.cs" />
+    <Compile Include="Forms\CategoryManageForm.cs" />
+    <Compile Include="Forms\ImportWizardForm.cs" />
     <Compile Include="Controls\DynamicFormPanel.cs" />
     <Compile Include="Controls\CategoryTreeComboBox.cs" />
   </ItemGroup>

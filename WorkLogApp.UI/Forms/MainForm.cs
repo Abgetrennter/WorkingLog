@@ -17,6 +17,8 @@ namespace WorkLogApp.UI.Forms
         private readonly Button _btnCreate;
         private readonly Button _btnImport;
         private readonly Button _btnMerge;
+        private readonly Button _btnCategoryManage;
+        private readonly Button _btnImportWizard;
 
         public MainForm(ITemplateService templateService)
         {
@@ -38,10 +40,18 @@ namespace WorkLogApp.UI.Forms
             _btnMerge = new Button { Text = "合并其他日志", Width = 120, Height = 32, Location = new Point(340, 8) };
             _btnMerge.Click += OnMergeOtherClick;
 
+            _btnCategoryManage = new Button { Text = "分类管理", Width = 100, Height = 32, Location = new Point(470, 8) };
+            _btnCategoryManage.Click += OnCategoryManageClick;
+
+            _btnImportWizard = new Button { Text = "导入向导", Width = 100, Height = 32, Location = new Point(580, 8) };
+            _btnImportWizard.Click += OnImportWizardClick;
+
             topPanel.Controls.Add(_btnCreate);
             topPanel.Controls.Add(_monthPicker);
             topPanel.Controls.Add(_btnImport);
             topPanel.Controls.Add(_btnMerge);
+            topPanel.Controls.Add(_btnCategoryManage);
+            topPanel.Controls.Add(_btnImportWizard);
 
             _listView = new ListView { Dock = DockStyle.Fill, View = View.Details, FullRowSelect = true, GridLines = true };
             _listView.Columns.Add("日期", 100);
@@ -114,6 +124,25 @@ namespace WorkLogApp.UI.Forms
             catch (Exception ex)
             {
                 MessageBox.Show(this, "合并失败：" + ex.Message, "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void OnCategoryManageClick(object sender, EventArgs e)
+        {
+            using (var form = new CategoryManageForm(_templateService))
+            {
+                form.StartPosition = FormStartPosition.CenterParent;
+                form.ShowDialog(this);
+            }
+        }
+
+        private void OnImportWizardClick(object sender, EventArgs e)
+        {
+            using (var form = new ImportWizardForm())
+            {
+                form.StartPosition = FormStartPosition.CenterParent;
+                form.ShowDialog(this);
+                RefreshMonthItems();
             }
         }
 
