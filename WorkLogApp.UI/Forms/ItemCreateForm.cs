@@ -4,6 +4,7 @@ using System.Windows.Forms;
 using WorkLogApp.Core.Models;
 using WorkLogApp.Services.Interfaces;
 using WorkLogApp.UI.Controls;
+using WorkLogApp.UI.UI;
 
 namespace WorkLogApp.UI.Forms
 {
@@ -42,6 +43,9 @@ namespace WorkLogApp.UI.Forms
             Controls.Add(_btnGenerateSave);
 
             BuildFormForCategory();
+
+            // 应用统一样式（字体、缩放、抗锯齿）
+            UIStyleManager.ApplyVisualEnhancements(this, 1.25f);
         }
 
         private void BuildFormForCategory()

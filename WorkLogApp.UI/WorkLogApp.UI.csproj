@@ -45,6 +45,7 @@
     <Compile Include="Forms\ImportWizardForm.cs" />
     <Compile Include="Controls\DynamicFormPanel.cs" />
     <Compile Include="Controls\CategoryTreeComboBox.cs" />
+    <Compile Include="UI\UIStyleManager.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

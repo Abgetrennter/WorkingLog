@@ -3,6 +3,7 @@ using System.Configuration;
 using System.IO;
 using System.Windows.Forms;
 using WorkLogApp.Services.Implementations;
+using WorkLogApp.UI.UI;
 
 namespace WorkLogApp.UI
 {
@@ -13,6 +14,8 @@ namespace WorkLogApp.UI
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
+            // 初始化全局样式（字体、缩放、渲染）
+            UIStyleManager.Initialize();
 
             // 全局异常捕获，避免启动时静默失败
             Application.SetUnhandledExceptionMode(UnhandledExceptionMode.CatchException);
@@ -52,7 +55,9 @@ namespace WorkLogApp.UI
                 var templateService = new TemplateService();
                 templateService.LoadTemplates(templatesPath);
 
-                Application.Run(new Forms.MainForm(templateService));
+                var main = new Forms.MainForm(templateService);
+                UIStyleManager.ApplyVisualEnhancements(main, 1.25f);
+                Application.Run(main);
             }
             catch (Exception ex)
             {

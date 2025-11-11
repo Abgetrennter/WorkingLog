@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Drawing.Drawing2D;
 using System.Windows.Forms;
+using WorkLogApp.UI.UI;
 
 namespace WorkLogApp.UI.Controls
 {
@@ -31,13 +33,17 @@ namespace WorkLogApp.UI.Controls
                     Location = new Point(10, y + 4),
                     AutoSize = true
                 };
+                label.UseCompatibleTextRendering = true;
+                label.Font = UIStyleManager.BodyFont;
                 Controls.Add(label);
 
                 Control input;
                 switch (type)
                 {
                     case "textarea":
-                        input = new TextBox { Multiline = true, Width = 500, Height = 80 };
+                        var rtb = new RichTextBox { Width = 500, Height = 80, ScrollBars = RichTextBoxScrollBars.Vertical, BorderStyle = BorderStyle.FixedSingle };
+                        UIStyleManager.SetLineSpacing(rtb, 1.5f);
+                        input = rtb;
                         break;
                     case "datetime":
                         input = new DateTimePicker { Format = DateTimePickerFormat.Custom, CustomFormat = "yyyy-MM-dd HH:mm" };
@@ -64,6 +70,7 @@ namespace WorkLogApp.UI.Controls
                         break;
                 }
                 input.Location = new Point(120, y);
+                input.Font = UIStyleManager.BodyFont;
                 Controls.Add(input);
                 _controls[name] = input;
 
@@ -80,6 +87,7 @@ namespace WorkLogApp.UI.Controls
                 var ctrl = kv.Value;
                 object val = null;
                 if (ctrl is TextBox tb) val = tb.Text;
+                else if (ctrl is RichTextBox rtb) val = rtb.Text;
                 else if (ctrl is DateTimePicker dt) val = dt.Value;
                 else if (ctrl is ComboBox cb) val = cb.SelectedItem?.ToString();
                 else if (ctrl is CheckedListBox clb)
@@ -91,6 +99,12 @@ namespace WorkLogApp.UI.Controls
                 dict[kv.Key] = val;
             }
             return dict;
+        }
+
+        protected override void OnPaint(PaintEventArgs e)
+        {
+            e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+            base.OnPaint(e);
         }
     }
 }
