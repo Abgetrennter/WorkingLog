@@ -70,6 +70,8 @@ namespace WorkLogApp.UI.Forms
                 var type = Convert.ToString(row.Cells["colType"].Value)?.Trim();
                 if (string.IsNullOrEmpty(name)) return;
                 InsertPlaceholderToken(name, type);
+                // 双击后将焦点切换到模板编辑器，便于继续编辑
+                _txtFormatTemplate.Focus();
             };
             _gridPlaceholders.RowsAdded += (s, e) => RefreshPlaceholderInsertList();
             _gridPlaceholders.RowsRemoved += (s, e) => RefreshPlaceholderInsertList();
