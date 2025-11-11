@@ -35,11 +35,6 @@
     <Reference Include="System.Drawing" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Configuration" />
-    <!-- 显式添加 Services 的程序集引用以确保复制到输出目录 -->
-    <Reference Include="WorkLogApp.Services">
-      <HintPath>..\WorkLogApp.Services\bin\$(Configuration)\net472\WorkLogApp.Services.dll</HintPath>
-      <Private>true</Private>
-    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Program.cs" />
@@ -68,6 +63,10 @@
     <ProjectReference Include="..\WorkLogApp.Core\WorkLogApp.Core.csproj">
       <Project>{91288E47-3D54-48BE-9FB7-DBBE61AC6362}</Project>
       <Name>WorkLogApp.Core</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\WorkLogApp.Services\WorkLogApp.Services.csproj">
+      <Project>{A032F8D8-0E41-4872-8D49-87E5E6AB2F71}</Project>
+      <Name>WorkLogApp.Services</Name>
     </ProjectReference>
   </ItemGroup>
   

@@ -16,6 +16,7 @@ namespace WorkLogApp.UI.Forms
         private readonly DateTimePicker _monthPicker;
         private readonly Button _btnCreate;
         private readonly Button _btnImport;
+        private readonly Button _btnMerge;
 
         public MainForm(ITemplateService templateService)
         {
@@ -31,12 +32,16 @@ namespace WorkLogApp.UI.Forms
 
             _monthPicker = new DateTimePicker { Format = DateTimePickerFormat.Custom, CustomFormat = "yyyy-MM", ShowUpDown = true, Width = 100, Height = 28, Location = new Point(120, 10), Value = DateTime.Today };
 
-            _btnImport = new Button { Text = "导入当月 Excel", Width = 140, Height = 32, Location = new Point(230, 8) };
+            _btnImport = new Button { Text = "刷新当月", Width = 100, Height = 32, Location = new Point(230, 8) };
             _btnImport.Click += OnImportMonthClick;
+
+            _btnMerge = new Button { Text = "合并其他日志", Width = 120, Height = 32, Location = new Point(340, 8) };
+            _btnMerge.Click += OnMergeOtherClick;
 
             topPanel.Controls.Add(_btnCreate);
             topPanel.Controls.Add(_monthPicker);
             topPanel.Controls.Add(_btnImport);
+            topPanel.Controls.Add(_btnMerge);
 
             _listView = new ListView { Dock = DockStyle.Fill, View = View.Details, FullRowSelect = true, GridLines = true };
             _listView.Columns.Add("日期", 100);
@@ -64,6 +69,52 @@ namespace WorkLogApp.UI.Forms
         private void OnImportMonthClick(object sender, EventArgs e)
         {
             RefreshMonthItems();
+        }
+
+        protected override void OnShown(EventArgs e)
+        {
+            base.OnShown(e);
+            // 打开应用时自动读取当前月份数据
+            RefreshMonthItems();
+        }
+
+        private void OnMergeOtherClick(object sender, EventArgs e)
+        {
+            try
+            {
+                using (var dlg = new OpenFileDialog())
+                {
+                    dlg.Filter = "Excel 文件 (*.xlsx)|*.xlsx|所有文件 (*.*)|*.*";
+                    dlg.Title = "选择要合并的工作日志 Excel";
+                    if (dlg.ShowDialog(this) != DialogResult.OK) return;
+
+                    var sourcePath = dlg.FileName;
+                    IImportExportService svc = new ImportExportService();
+                    var imported = svc.ImportFromFile(sourcePath) ?? Enumerable.Empty<WorkLogItem>();
+
+                    // 仅合并当前月份的数据
+                    var month = _monthPicker.Value;
+                    var monthItems = imported.Where(it => it.LogDate.Year == month.Year && it.LogDate.Month == month.Month).ToList();
+                    if (monthItems.Count == 0)
+                    {
+                        MessageBox.Show(this, "所选文件中无当前月份的数据。", "提示", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        return;
+                    }
+
+                    var baseDir = AppDomain.CurrentDomain.BaseDirectory;
+                    var dataDir = Path.Combine(baseDir, "Data");
+                    Directory.CreateDirectory(dataDir);
+
+                    // 追加写入到本地月份文件
+                    svc.ExportMonth(month, monthItems, dataDir);
+                    RefreshMonthItems();
+                    MessageBox.Show(this, "已合并并刷新当前月份列表。", "成功", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(this, "合并失败：" + ex.Message, "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
 
         private void RefreshMonthItems()
