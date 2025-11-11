@@ -58,6 +58,7 @@ namespace WorkLogApp.UI.Forms
             var typeCol = new DataGridViewComboBoxColumn { HeaderText = "类型", Name = "colType" };
             typeCol.Items.AddRange(_placeholderTypes);
             _gridPlaceholders.Columns.Add(typeCol);
+            _gridPlaceholders.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "选项（|分隔）", Name = "colOptions" });
             _gridPlaceholders.CellDoubleClick += (s, e) =>
             {
                 if (e.RowIndex < 0) return;
@@ -108,14 +109,19 @@ namespace WorkLogApp.UI.Forms
         {
             var name = _lstCategories.SelectedItem?.ToString();
             if (string.IsNullOrEmpty(name)) return;
-            var tpl = _templateService.GetCategoryTemplate(name) ?? new CategoryTemplate { FormatTemplate = string.Empty, Placeholders = new Dictionary<string, string>() };
+            var tpl = _templateService.GetCategoryTemplate(name) ?? new CategoryTemplate { FormatTemplate = string.Empty, Placeholders = new Dictionary<string, string>(), Options = new Dictionary<string, List<string>>() };
             _txtFormatTemplate.Text = tpl.FormatTemplate ?? string.Empty;
             _gridPlaceholders.Rows.Clear();
             if (tpl.Placeholders != null)
             {
                 foreach (var kv in tpl.Placeholders)
                 {
-                    _gridPlaceholders.Rows.Add(kv.Key, kv.Value);
+                    string opt = null;
+                    if (tpl.Options != null && tpl.Options.TryGetValue(kv.Key, out var list) && list != null)
+                    {
+                        opt = string.Join("|", list);
+                    }
+                    _gridPlaceholders.Rows.Add(kv.Key, kv.Value, opt);
                 }
             }
             RefreshPlaceholderInsertList();
@@ -224,20 +230,31 @@ namespace WorkLogApp.UI.Forms
             }
 
             var placeholders = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            var options = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
             foreach (DataGridViewRow row in _gridPlaceholders.Rows)
             {
                 if (row.IsNewRow) continue;
                 var key = Convert.ToString(row.Cells["colName"].Value)?.Trim();
                 var type = Convert.ToString(row.Cells["colType"].Value)?.Trim();
+                var optStr = Convert.ToString(row.Cells["colOptions"].Value)?.Trim();
                 if (string.IsNullOrEmpty(key)) continue;
                 if (string.IsNullOrEmpty(type) || !_placeholderTypes.Contains(type)) type = "text";
                 placeholders[key] = type;
+                if (!string.IsNullOrEmpty(optStr))
+                {
+                    var list = optStr.Split(new[] { '|' }, StringSplitOptions.RemoveEmptyEntries)
+                                     .Select(s => s.Trim())
+                                     .Where(s => s.Length > 0)
+                                     .ToList();
+                    if (list.Count > 0) options[key] = list;
+                }
             }
 
             var tpl = new CategoryTemplate
             {
                 FormatTemplate = _txtFormatTemplate.Text ?? string.Empty,
-                Placeholders = placeholders
+                Placeholders = placeholders,
+                Options = options
             };
             _templateService.AddOrUpdateCategoryTemplate(name, tpl);
             if (_templateService.SaveTemplates())
