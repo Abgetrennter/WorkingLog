@@ -66,22 +66,30 @@ namespace WorkLogApp.UI.Forms
                 return;
             }
 
+            if (string.IsNullOrWhiteSpace(_titleBox.Text))
+            {
+                MessageBox.Show(this, "请填写标题", "提示", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
             var values = _formPanel.GetFieldValues();
             var item = new WorkLogItem
             {
                 LogDate = DateTime.Now.Date,
-                ItemTitle = _titleBox.Text,
+                ItemTitle = _titleBox.Text?.Trim(),
                 CategoryId = 0
             };
             var content = _templateService.Render(catTpl.FormatTemplate, values, item);
 
-            // 先展示生成内容，后续接入 Excel 保存
-            using (var preview = new Form { Text = "预览内容", Width = 800, Height = 600 })
+            // 打开编辑窗口，允许再次修改并保存纯文本
+            using (var editor = new ItemEditForm(item, content))
             {
-                var tb = new TextBox { Multiline = true, Dock = DockStyle.Fill, ScrollBars = ScrollBars.Both, Text = content };
-                preview.Controls.Add(tb);
-                preview.StartPosition = FormStartPosition.CenterParent;
-                preview.ShowDialog(this);
+                editor.StartPosition = FormStartPosition.CenterParent;
+                var result = editor.ShowDialog(this);
+                if (result == DialogResult.OK)
+                {
+                    MessageBox.Show(this, "已生成并保存。", "成功", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
             }
         }
     }
