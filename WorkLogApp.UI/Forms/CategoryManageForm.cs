@@ -14,6 +14,8 @@ namespace WorkLogApp.UI.Forms
         private readonly ListBox _lstCategories;
         private readonly TextBox _txtFormatTemplate;
         private readonly DataGridView _gridPlaceholders;
+        private readonly ComboBox _cmbInsert;
+        private readonly Button _btnInsert;
         private readonly Button _btnAdd;
         private readonly Button _btnRemove;
         private readonly Button _btnSave;
@@ -46,17 +48,44 @@ namespace WorkLogApp.UI.Forms
             var lblFormat = new Label { Text = "格式模板：", AutoSize = true, Location = new Point(8, 8) };
             _txtFormatTemplate = new TextBox { Multiline = true, ScrollBars = ScrollBars.Vertical, Location = new Point(8, 28), Width = 620, Height = 200, Font = new Font(FontFamily.GenericMonospace, 9f) };
 
-            _gridPlaceholders = new DataGridView { Location = new Point(8, 240), Width = 620, Height = 250, AllowUserToAddRows = true, AllowUserToDeleteRows = true, AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill };
+            var lblQuick = new Label { Text = "快速插入占位符：", AutoSize = true, Location = new Point(8, 232) };
+            _cmbInsert = new ComboBox { Location = new Point(120, 228), Width = 320, DropDownStyle = ComboBoxStyle.DropDownList };
+            _btnInsert = new Button { Text = "插入所选", Location = new Point(450, 226), Width = 90, Height = 26 };
+            _btnInsert.Click += (s, e) => InsertSelectedPlaceholder();
+
+            _gridPlaceholders = new DataGridView { Location = new Point(8, 260), Width = 620, Height = 230, AllowUserToAddRows = true, AllowUserToDeleteRows = true, AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill };
             _gridPlaceholders.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "占位符名称", Name = "colName" });
             var typeCol = new DataGridViewComboBoxColumn { HeaderText = "类型", Name = "colType" };
             typeCol.Items.AddRange(_placeholderTypes);
             _gridPlaceholders.Columns.Add(typeCol);
+            _gridPlaceholders.CellDoubleClick += (s, e) =>
+            {
+                if (e.RowIndex < 0) return;
+                var row = _gridPlaceholders.Rows[e.RowIndex];
+                var name = Convert.ToString(row.Cells["colName"].Value)?.Trim();
+                var type = Convert.ToString(row.Cells["colType"].Value)?.Trim();
+                if (string.IsNullOrEmpty(name)) return;
+                InsertPlaceholderToken(name, type);
+            };
+            _gridPlaceholders.RowsAdded += (s, e) => RefreshPlaceholderInsertList();
+            _gridPlaceholders.RowsRemoved += (s, e) => RefreshPlaceholderInsertList();
+            _gridPlaceholders.CellValueChanged += (s, e) => RefreshPlaceholderInsertList();
+            _gridPlaceholders.CurrentCellDirtyStateChanged += (s, e) =>
+            {
+                if (_gridPlaceholders.IsCurrentCellDirty)
+                {
+                    _gridPlaceholders.CommitEdit(DataGridViewDataErrorContexts.Commit);
+                }
+            };
 
             _btnSave = new Button { Text = "保存", Location = new Point(8, 500), Width = 120, Height = 34 };
             _btnSave.Click += OnSaveCategory;
 
             rightPanel.Controls.Add(lblFormat);
             rightPanel.Controls.Add(_txtFormatTemplate);
+            rightPanel.Controls.Add(lblQuick);
+            rightPanel.Controls.Add(_cmbInsert);
+            rightPanel.Controls.Add(_btnInsert);
             rightPanel.Controls.Add(_gridPlaceholders);
             rightPanel.Controls.Add(_btnSave);
 
@@ -64,6 +93,7 @@ namespace WorkLogApp.UI.Forms
             Controls.Add(leftPanel);
 
             LoadCategories();
+            RefreshPlaceholderInsertList();
         }
 
         private void LoadCategories()
@@ -88,6 +118,7 @@ namespace WorkLogApp.UI.Forms
                     _gridPlaceholders.Rows.Add(kv.Key, kv.Value);
                 }
             }
+            RefreshPlaceholderInsertList();
         }
 
         private void OnAddCategory(object sender, EventArgs e)
@@ -104,6 +135,73 @@ namespace WorkLogApp.UI.Forms
             _templateService.SaveTemplates();
             LoadCategories();
             _lstCategories.SelectedItem = name;
+        }
+
+        private void RefreshPlaceholderInsertList()
+        {
+            var names = new List<string>();
+            foreach (DataGridViewRow row in _gridPlaceholders.Rows)
+            {
+                if (row.IsNewRow) continue;
+                var key = Convert.ToString(row.Cells["colName"].Value)?.Trim();
+                if (!string.IsNullOrEmpty(key)) names.Add(key);
+            }
+            _cmbInsert.BeginUpdate();
+            _cmbInsert.Items.Clear();
+            foreach (var n in names.Distinct()) _cmbInsert.Items.Add(n);
+            if (_cmbInsert.Items.Count > 0 && _cmbInsert.SelectedIndex == -1) _cmbInsert.SelectedIndex = 0;
+            _cmbInsert.EndUpdate();
+        }
+
+        private void InsertSelectedPlaceholder()
+        {
+            var name = _cmbInsert.SelectedItem?.ToString();
+            if (string.IsNullOrEmpty(name)) return;
+            // 查找类型以便为 datetime 添加默认格式
+            string type = null;
+            foreach (DataGridViewRow row in _gridPlaceholders.Rows)
+            {
+                if (row.IsNewRow) continue;
+                var key = Convert.ToString(row.Cells["colName"].Value)?.Trim();
+                if (string.Equals(key, name, StringComparison.OrdinalIgnoreCase))
+                {
+                    type = Convert.ToString(row.Cells["colType"].Value)?.Trim();
+                    break;
+                }
+            }
+            InsertPlaceholderToken(name, type);
+        }
+
+        private void InsertPlaceholderToken(string name, string type)
+        {
+            var token = "{" + name;
+            if (string.Equals(type, "datetime", StringComparison.OrdinalIgnoreCase))
+            {
+                token += ":yyyy-MM-dd HH:mm";
+            }
+            token += "}";
+            InsertTextAtCaret(_txtFormatTemplate, token);
+        }
+
+        private static void InsertTextAtCaret(TextBox textBox, string text)
+        {
+            if (textBox == null) return;
+            var selStart = textBox.SelectionStart;
+            var selLength = textBox.SelectionLength;
+            var current = textBox.Text ?? string.Empty;
+            string next;
+            if (selLength > 0)
+            {
+                next = current.Substring(0, selStart) + text + current.Substring(selStart + selLength);
+            }
+            else
+            {
+                next = current.Substring(0, selStart) + text + current.Substring(selStart);
+            }
+            textBox.Text = next;
+            textBox.SelectionStart = selStart + text.Length;
+            textBox.SelectionLength = 0;
+            textBox.Focus();
         }
 
         private void OnRemoveCategory(object sender, EventArgs e)
