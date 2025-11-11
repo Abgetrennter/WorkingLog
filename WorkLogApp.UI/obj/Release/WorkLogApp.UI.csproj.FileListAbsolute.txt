@@ -1,0 +1,15 @@
+C:\Users\Administrator\source\repos\WorkingLog\WorkLogApp.UI\bin\Release\Configs\dev.config.json
+C:\Users\Administrator\source\repos\WorkingLog\WorkLogApp.UI\bin\Release\Configs\prod.config.json
+C:\Users\Administrator\source\repos\WorkingLog\WorkLogApp.UI\bin\Release\Templates\templates.json
+C:\Users\Administrator\source\repos\WorkingLog\WorkLogApp.UI\bin\Release\WorkLogApp.UI.exe.config
+C:\Users\Administrator\source\repos\WorkingLog\WorkLogApp.UI\bin\Release\WorkLogApp.UI.exe
+C:\Users\Administrator\source\repos\WorkingLog\WorkLogApp.UI\bin\Release\WorkLogApp.UI.pdb
+C:\Users\Administrator\source\repos\WorkingLog\WorkLogApp.UI\bin\Release\WorkLogApp.Core.dll
+C:\Users\Administrator\source\repos\WorkingLog\WorkLogApp.UI\bin\Release\WorkLogApp.Services.dll
+C:\Users\Administrator\source\repos\WorkingLog\WorkLogApp.UI\bin\Release\WorkLogApp.Core.pdb
+C:\Users\Administrator\source\repos\WorkingLog\WorkLogApp.UI\bin\Release\WorkLogApp.Services.pdb
+C:\Users\Administrator\source\repos\WorkingLog\WorkLogApp.UI\obj\Release\WorkLogApp.UI.csproj.AssemblyReference.cache
+C:\Users\Administrator\source\repos\WorkingLog\WorkLogApp.UI\obj\Release\WorkLogApp.UI.csproj.CoreCompileInputs.cache
+C:\Users\Administrator\source\repos\WorkingLog\WorkLogApp.UI\obj\Release\WorkLogA.0AF81624.Up2Date
+C:\Users\Administrator\source\repos\WorkingLog\WorkLogApp.UI\obj\Release\WorkLogApp.UI.exe
+C:\Users\Administrator\source\repos\WorkingLog\WorkLogApp.UI\obj\Release\WorkLogApp.UI.pdb

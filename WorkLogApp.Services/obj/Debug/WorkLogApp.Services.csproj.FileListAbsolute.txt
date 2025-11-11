@@ -1,0 +1,9 @@
+C:\Users\Administrator\source\repos\WorkingLog\WorkLogApp.Services\bin\Debug\WorkLogApp.Services.dll
+C:\Users\Administrator\source\repos\WorkingLog\WorkLogApp.Services\bin\Debug\WorkLogApp.Services.pdb
+C:\Users\Administrator\source\repos\WorkingLog\WorkLogApp.Services\bin\Debug\WorkLogApp.Core.dll
+C:\Users\Administrator\source\repos\WorkingLog\WorkLogApp.Services\bin\Debug\WorkLogApp.Core.pdb
+C:\Users\Administrator\source\repos\WorkingLog\WorkLogApp.Services\obj\Debug\WorkLogApp.Services.csproj.AssemblyReference.cache
+C:\Users\Administrator\source\repos\WorkingLog\WorkLogApp.Services\obj\Debug\WorkLogApp.Services.csproj.CoreCompileInputs.cache
+C:\Users\Administrator\source\repos\WorkingLog\WorkLogApp.Services\obj\Debug\WorkLogA.E7823704.Up2Date
+C:\Users\Administrator\source\repos\WorkingLog\WorkLogApp.Services\obj\Debug\WorkLogApp.Services.dll
+C:\Users\Administrator\source\repos\WorkingLog\WorkLogApp.Services\obj\Debug\WorkLogApp.Services.pdb
