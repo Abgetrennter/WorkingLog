@@ -61,8 +61,11 @@ namespace WorkLogApp.UI.Forms
             _gridPlaceholders.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "选项（|分隔）", Name = "colOptions" });
             _gridPlaceholders.CellDoubleClick += (s, e) =>
             {
-                if (e.RowIndex < 0) return;
+                // 仅当双击的是“占位符名称”列的有效行时才插入
+                if (e.RowIndex < 0) return; // 跳过表头
+                if (e.ColumnIndex != _gridPlaceholders.Columns["colName"].Index) return; // 仅名称列生效
                 var row = _gridPlaceholders.Rows[e.RowIndex];
+                if (row.IsNewRow) return; // 跳过新建行
                 var name = Convert.ToString(row.Cells["colName"].Value)?.Trim();
                 var type = Convert.ToString(row.Cells["colType"].Value)?.Trim();
                 if (string.IsNullOrEmpty(name)) return;
