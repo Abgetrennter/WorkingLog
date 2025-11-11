@@ -5,6 +5,7 @@ using System.Linq;
 using System.Windows.Forms;
 using WorkLogApp.Core.Models;
 using WorkLogApp.Services.Interfaces;
+using WorkLogApp.UI.UI;
 
 namespace WorkLogApp.UI.Forms
 {
@@ -12,7 +13,7 @@ namespace WorkLogApp.UI.Forms
     {
         private readonly ITemplateService _templateService;
         private readonly ListBox _lstCategories;
-        private readonly TextBox _txtFormatTemplate;
+        private readonly RichTextBox _txtFormatTemplate;
         private readonly DataGridView _gridPlaceholders;
         private readonly ComboBox _cmbInsert;
         private readonly Button _btnInsert;
@@ -46,7 +47,8 @@ namespace WorkLogApp.UI.Forms
             leftPanel.Controls.Add(_btnAdd);
 
             var lblFormat = new Label { Text = "格式模板：", AutoSize = true, Location = new Point(8, 8) };
-            _txtFormatTemplate = new TextBox { Multiline = true, ScrollBars = ScrollBars.Vertical, Location = new Point(8, 28), Width = 620, Height = 200, Font = new Font(FontFamily.GenericMonospace, 9f) };
+            _txtFormatTemplate = new RichTextBox { ScrollBars = RichTextBoxScrollBars.Vertical, Location = new Point(8, 28), Width = 620, Height = 200, BorderStyle = BorderStyle.FixedSingle };
+            UIStyleManager.SetLineSpacing(_txtFormatTemplate, 1.5f);
 
             var lblQuick = new Label { Text = "快速插入占位符：", AutoSize = true, Location = new Point(8, 232) };
             _cmbInsert = new ComboBox { Location = new Point(120, 228), Width = 320, DropDownStyle = ComboBoxStyle.DropDownList };
@@ -97,6 +99,9 @@ namespace WorkLogApp.UI.Forms
 
             Controls.Add(rightPanel);
             Controls.Add(leftPanel);
+
+            // 应用统一样式（字体、缩放、抗锯齿）
+            UIStyleManager.ApplyVisualEnhancements(this, 1.25f);
 
             LoadCategories();
             RefreshPlaceholderInsertList();
@@ -194,7 +199,7 @@ namespace WorkLogApp.UI.Forms
             InsertTextAtCaret(_txtFormatTemplate, token);
         }
 
-        private static void InsertTextAtCaret(TextBox textBox, string text)
+        private static void InsertTextAtCaret(TextBoxBase textBox, string text)
         {
             if (textBox == null) return;
             var selStart = textBox.SelectionStart;

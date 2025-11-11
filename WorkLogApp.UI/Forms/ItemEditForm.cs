@@ -5,6 +5,7 @@ using System.Windows.Forms;
 using WorkLogApp.Core.Models;
 using WorkLogApp.Services.Implementations;
 using WorkLogApp.Services.Interfaces;
+using WorkLogApp.UI.UI;
 
 namespace WorkLogApp.UI.Forms
 {
@@ -12,8 +13,8 @@ namespace WorkLogApp.UI.Forms
     {
         private readonly WorkLogItem _item;
         private readonly TextBox _titleBox;
-        private readonly TextBox _summaryBox;
-        private readonly TextBox _contentBox;
+        private readonly RichTextBox _summaryBox;
+        private readonly RichTextBox _contentBox;
         private readonly Button _btnSave;
         private readonly Button _btnCancel;
 
@@ -29,10 +30,10 @@ namespace WorkLogApp.UI.Forms
             _titleBox.Text = _item.ItemTitle ?? string.Empty;
 
             var lblSummary = new Label { Text = "当日总结（仅第一条记录写入）：", Left = 10, Top = 45, AutoSize = true };
-            _summaryBox = new TextBox { Left = 10, Top = 70, Width = 850, Height = 120, Multiline = true, ScrollBars = ScrollBars.Vertical };
+            _summaryBox = new RichTextBox { Left = 10, Top = 70, Width = 850, Height = 120, ScrollBars = RichTextBoxScrollBars.Vertical, BorderStyle = BorderStyle.FixedSingle };
 
             var lblContent = new Label { Text = "内容：", Left = 10, Top = 200, AutoSize = true };
-            _contentBox = new TextBox { Left = 10, Top = 225, Width = 850, Height = 325, Multiline = true, ScrollBars = ScrollBars.Both };
+            _contentBox = new RichTextBox { Left = 10, Top = 225, Width = 850, Height = 325, ScrollBars = RichTextBoxScrollBars.Both, BorderStyle = BorderStyle.FixedSingle };
             _contentBox.Text = initialContent ?? _item.ItemContent ?? string.Empty;
             _summaryBox.Text = _item.DailySummary ?? string.Empty;
 
@@ -49,6 +50,9 @@ namespace WorkLogApp.UI.Forms
             Controls.Add(_contentBox);
             Controls.Add(_btnSave);
             Controls.Add(_btnCancel);
+            
+            // 应用统一样式并设置 1.5 倍行距
+            UIStyleManager.ApplyVisualEnhancements(this, 1.25f);
         }
 
         private void OnSaveClick(object sender, EventArgs e)
