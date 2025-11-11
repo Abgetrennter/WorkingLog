@@ -3,3 +3,4 @@
 *.up2date
 *.cache
 *.xlsx
+.vs/

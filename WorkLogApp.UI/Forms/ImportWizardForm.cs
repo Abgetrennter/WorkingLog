@@ -11,45 +11,33 @@ using WorkLogApp.UI.UI;
 
 namespace WorkLogApp.UI.Forms
 {
-    public class ImportWizardForm : Form
+    public partial class ImportWizardForm : Form
     {
-        private readonly ListView _previewList;
-        private readonly Button _btnChoose;
-        private readonly Button _btnImport;
-        private readonly Label _lblFile;
         private string _sourcePath;
         private List<WorkLogItem> _imported;
 
         public ImportWizardForm()
         {
-            Text = "导入向导（基础版）";
-            Width = 800;
-            Height = 600;
-
-            var top = new Panel { Dock = DockStyle.Top, Height = 48, Padding = new Padding(8) };
-            _lblFile = new Label { Text = "未选择文件", AutoSize = true, Location = new Point(8, 16) };
-            _btnChoose = new Button { Text = "选择文件", Width = 100, Height = 30, Location = new Point(620, 10) };
-            _btnChoose.Click += OnChooseFile;
-            top.Controls.Add(_lblFile);
-            top.Controls.Add(_btnChoose);
-
-            _previewList = new ListView { Dock = DockStyle.Fill, View = View.Details, FullRowSelect = true, GridLines = true };
-            _previewList.Columns.Add("日期", 120);
-            _previewList.Columns.Add("标题", 260);
-            _previewList.Columns.Add("状态", 120);
-            _previewList.Columns.Add("标签", 200);
-
-            var bottom = new Panel { Dock = DockStyle.Bottom, Height = 52, Padding = new Padding(8) };
-            _btnImport = new Button { Text = "开始导入", Width = 120, Height = 34, Enabled = false };
-            _btnImport.Click += OnImport;
-            bottom.Controls.Add(_btnImport);
-
-            Controls.Add(_previewList);
-            Controls.Add(bottom);
-            Controls.Add(top);
-
+            InitializeComponent();
             // 应用统一样式（字体、缩放、抗锯齿）
-            UIStyleManager.ApplyVisualEnhancements(this, 1.25f);
+            UIStyleManager.ApplyVisualEnhancements(this);
+
+            // 设计期：填充示例文件名与预览项，便于在设计器中查看列表布局
+            if (UIStyleManager.IsDesignMode)
+            {
+                try
+                {
+                    _lblFile.Text = "示例.xlsx";
+                    _previewList.BeginUpdate();
+                    _previewList.Items.Clear();
+                    _previewList.Items.Add(new ListViewItem(new[] { DateTime.Today.ToString("yyyy-MM-dd"), "示例：周会记录", "Done", "团队;沟通" }));
+                    _previewList.Items.Add(new ListViewItem(new[] { DateTime.Today.AddDays(-2).ToString("yyyy-MM-dd"), "示例：Bug 修复", "InProgress", "缺陷;修复" }));
+                    _previewList.EndUpdate();
+                    _btnImport.Enabled = false;
+                }
+                catch { }
+                return;
+            }
         }
 
         private void OnChooseFile(object sender, EventArgs e)
@@ -128,6 +116,11 @@ namespace WorkLogApp.UI.Forms
             {
                 MessageBox.Show(this, "导入失败：" + ex.Message, "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
+        }
+
+        private void topPanel_Paint(object sender, PaintEventArgs e)
+        {
+
         }
     }
 }

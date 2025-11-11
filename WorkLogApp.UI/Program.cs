@@ -56,7 +56,7 @@ namespace WorkLogApp.UI
                 templateService.LoadTemplates(templatesPath);
 
                 var main = new Forms.MainForm(templateService);
-                UIStyleManager.ApplyVisualEnhancements(main, 1.25f);
+                UIStyleManager.ApplyVisualEnhancements(main);
                 Application.Run(main);
             }
             catch (Exception ex)

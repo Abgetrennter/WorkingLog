@@ -5,74 +5,73 @@ using System.Linq;
 using System.Windows.Forms;
 using WorkLogApp.Core.Models;
 using WorkLogApp.Services.Interfaces;
+using WorkLogApp.Services.Implementations;
 using WorkLogApp.UI.UI;
 
 namespace WorkLogApp.UI.Forms
 {
-    public class CategoryManageForm : Form
+    public partial class CategoryManageForm : Form
     {
         private readonly ITemplateService _templateService;
-        private readonly ListBox _lstCategories;
-        private readonly RichTextBox _txtFormatTemplate;
-        private readonly DataGridView _gridPlaceholders;
-        private readonly ComboBox _cmbInsert;
-        private readonly Button _btnInsert;
-        private readonly Button _btnAdd;
-        private readonly Button _btnRemove;
-        private readonly Button _btnSave;
 
         private readonly string[] _placeholderTypes = new[] { "text", "textarea", "select", "checkbox", "datetime" };
+
+        // 设计期支持：提供无参构造，便于设计器实例化
+        public CategoryManageForm() : this(new TemplateService())
+        {
+        }
 
         public CategoryManageForm(ITemplateService templateService)
         {
             _templateService = templateService;
-            Text = "分类与模板管理";
-            Width = 900;
-            Height = 600;
+            InitializeComponent();
 
-            var leftPanel = new Panel { Dock = DockStyle.Left, Width = 220, Padding = new Padding(8) };
-            var rightPanel = new Panel { Dock = DockStyle.Fill, Padding = new Padding(8) };
+            // 运行时增强：字体、缩放、抗锯齿
+            UIStyleManager.ApplyVisualEnhancements(this);
 
-            _lstCategories = new ListBox { Dock = DockStyle.Fill };
-            _lstCategories.SelectedIndexChanged += (s, e) => LoadSelectedCategory();
-
-            _btnAdd = new Button { Text = "新增分类", Dock = DockStyle.Top, Height = 32 };
-            _btnAdd.Click += OnAddCategory;
-
-            _btnRemove = new Button { Text = "删除分类", Dock = DockStyle.Top, Height = 32 };
-            _btnRemove.Click += OnRemoveCategory;
-
-            leftPanel.Controls.Add(_lstCategories);
-            leftPanel.Controls.Add(_btnRemove);
-            leftPanel.Controls.Add(_btnAdd);
-
-            var lblFormat = new Label { Text = "格式模板：", AutoSize = true, Location = new Point(8, 8) };
-            _txtFormatTemplate = new RichTextBox { ScrollBars = RichTextBoxScrollBars.Vertical, Location = new Point(8, 28), Width = 620, Height = 200, BorderStyle = BorderStyle.FixedSingle };
+            // 设计时避免调用（仅运行时执行）
             UIStyleManager.SetLineSpacing(_txtFormatTemplate, 1.5f);
 
-            var lblQuick = new Label { Text = "快速插入占位符：", AutoSize = true, Location = new Point(8, 232) };
-            _cmbInsert = new ComboBox { Location = new Point(120, 228), Width = 320, DropDownStyle = ComboBoxStyle.DropDownList };
-            _btnInsert = new Button { Text = "插入所选", Location = new Point(450, 226), Width = 90, Height = 26 };
-            _btnInsert.Click += (s, e) => InsertSelectedPlaceholder();
+            // 为“类型”列填充下拉选项
+            var typeCol = _gridPlaceholders.Columns["colType"] as DataGridViewComboBoxColumn;
+            if (typeCol != null)
+            {
+                typeCol.Items.AddRange(_placeholderTypes);
+            }
 
-            _gridPlaceholders = new DataGridView { Location = new Point(8, 260), Width = 620, Height = 230, AllowUserToAddRows = true, AllowUserToDeleteRows = true, AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill };
-            _gridPlaceholders.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "占位符名称", Name = "colName" });
-            var typeCol = new DataGridViewComboBoxColumn { HeaderText = "类型", Name = "colType" };
-            typeCol.Items.AddRange(_placeholderTypes);
-            _gridPlaceholders.Columns.Add(typeCol);
-            _gridPlaceholders.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "选项（|分隔）", Name = "colOptions" });
+            // 设计期：填充示例分类与占位符行，便于在设计器中预览
+            if (UIStyleManager.IsDesignMode)
+            {
+                try
+                {
+                    _lstCategories.Items.Clear();
+                    _lstCategories.Items.AddRange(new object[] { "通用", "任务", "会议" });
+                    if (_lstCategories.Items.Count > 0) _lstCategories.SelectedIndex = 0;
+
+                    _txtFormatTemplate.Text = "【示例模板】{标题} - {日期:yyyy-MM-dd}\\r\\n状态：{状态}\\r\\n标签：{标签}\\r\\n内容：{内容}";
+                    _gridPlaceholders.Rows.Clear();
+                    _gridPlaceholders.Rows.Add("标题", "text", "");
+                    _gridPlaceholders.Rows.Add("状态", "select", "未开始|进行中|已完成");
+                    _gridPlaceholders.Rows.Add("标签", "checkbox", "研发|测试|部署");
+                    _gridPlaceholders.Rows.Add("日期", "datetime", "");
+                    _gridPlaceholders.Rows.Add("内容", "textarea", "");
+                    RefreshPlaceholderInsertList();
+                }
+                catch { }
+                return;
+            }
+
+            // 复杂事件在代码中绑定，保留原有行为
             _gridPlaceholders.CellDoubleClick += (s, e) =>
             {
-                // 仅当双击的是“占位符名称”列的有效行时才插入
-                if (e.RowIndex < 0) return; // 跳过表头
-                if (e.ColumnIndex != _gridPlaceholders.Columns["colName"].Index) return; // 仅名称列生效
+                if (e.RowIndex < 0) return;
+                if (e.ColumnIndex != _gridPlaceholders.Columns["colName"].Index) return;
                 var row = _gridPlaceholders.Rows[e.RowIndex];
-                if (row.IsNewRow) return; // 跳过新建行
+                if (row.IsNewRow) return;
                 var name = Convert.ToString(row.Cells["colName"].Value)?.Trim();
                 var type = Convert.ToString(row.Cells["colType"].Value)?.Trim();
                 if (string.IsNullOrEmpty(name)) return;
                 InsertPlaceholderToken(name, type);
-                // 双击后将焦点切换到模板编辑器，便于继续编辑
                 _txtFormatTemplate.Focus();
             };
             _gridPlaceholders.RowsAdded += (s, e) => RefreshPlaceholderInsertList();
@@ -86,25 +85,22 @@ namespace WorkLogApp.UI.Forms
                 }
             };
 
-            _btnSave = new Button { Text = "保存", Location = new Point(8, 500), Width = 120, Height = 34 };
-            _btnSave.Click += OnSaveCategory;
-
-            rightPanel.Controls.Add(lblFormat);
-            rightPanel.Controls.Add(_txtFormatTemplate);
-            rightPanel.Controls.Add(lblQuick);
-            rightPanel.Controls.Add(_cmbInsert);
-            rightPanel.Controls.Add(_btnInsert);
-            rightPanel.Controls.Add(_gridPlaceholders);
-            rightPanel.Controls.Add(_btnSave);
-
-            Controls.Add(rightPanel);
-            Controls.Add(leftPanel);
-
-            // 应用统一样式（字体、缩放、抗锯齿）
-            UIStyleManager.ApplyVisualEnhancements(this, 1.25f);
-
+            // 初始数据加载
             LoadCategories();
             RefreshPlaceholderInsertList();
+        }
+
+        private void OnCategoriesSelectedIndexChanged(object sender, EventArgs e)
+        {
+            LoadSelectedCategory();
+        }
+
+        private void OnInsertPlaceholderClick(object sender, EventArgs e)
+        {
+            var selected = Convert.ToString(_cmbInsert.SelectedItem)?.Trim();
+            if (string.IsNullOrEmpty(selected)) return;
+            InsertPlaceholderToken(selected, null);
+            _txtFormatTemplate.Focus();
         }
 
         private void LoadCategories()

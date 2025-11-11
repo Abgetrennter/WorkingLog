@@ -1,6 +1,8 @@
 using System;
 using System.Drawing;
 using System.Drawing.Text;
+using System.ComponentModel;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
 
@@ -11,33 +13,56 @@ namespace WorkLogApp.UI.UI
         private static PrivateFontCollection _pfc;
         private static FontFamily _customFamily;
 
+        // 全局缩放比例常量（修改此值可统一调整 UI 缩放）
+        public static float ScaleFactor { get; set; } = 1.0f;
+
         public static Font BodyFont { get; private set; }
+        public static Font CompactFont { get; private set; }
         public static Font Heading1 { get; private set; }
         public static Font Heading2 { get; private set; }
         public static Font Heading3 { get; private set; }
+
+        // 统一的设计期检测：在设计器中返回 true
+        public static bool IsDesignMode
+        {
+            get
+            {
+                try
+                {
+                    if (LicenseManager.UsageMode == LicenseUsageMode.Designtime) return true;
+                    var procName = Process.GetCurrentProcess()?.ProcessName ?? string.Empty;
+                    if (procName.Equals("devenv", StringComparison.OrdinalIgnoreCase)) return true;
+                }
+                catch { }
+                return false;
+            }
+        }
 
         public static void Initialize()
         {
             TryLoadCustomFont();
             var family = _customFamily ?? GetPreferredDefaultFamily();
-            // 略微增大基础字体，并相应调整标题字号
-            BodyFont = new Font(family, 17f, FontStyle.Regular, GraphicsUnit.Point);
-            Heading1 = new Font(family, 26f, FontStyle.Bold, GraphicsUnit.Point);
-            Heading2 = new Font(family, 21f, FontStyle.Bold, GraphicsUnit.Point);
-            Heading3 = new Font(family, 19f, FontStyle.Bold, GraphicsUnit.Point);
+            // 以更接近系统默认的字号作为基础，避免在高 DPI 环境下出现过度放大
+            BodyFont = new Font(family, 10f, FontStyle.Regular, GraphicsUnit.Point);
+            // 紧凑字体用于工具栏按钮等需要更小字号的控件
+            CompactFont = new Font(family, 9f, FontStyle.Regular, GraphicsUnit.Point);
+            // 标题字号适度增大，但不至于导致整体控件高度剧增
+            Heading1 = new Font(family, 16f, FontStyle.Bold, GraphicsUnit.Point);
+            Heading2 = new Font(family, 14f, FontStyle.Bold, GraphicsUnit.Point);
+            Heading3 = new Font(family, 12f, FontStyle.Bold, GraphicsUnit.Point);
+        }
+
+        // 便捷重载：使用全局缩放比例
+        public static void ApplyVisualEnhancements(Form form)
+        {
+            ApplyVisualEnhancements(form, ScaleFactor);
         }
 
         public static void ApplyVisualEnhancements(Form form, float scaleFactor = 1.5f)
         {
             if (BodyFont == null) Initialize();
-            // 统一缩放到 150%
-            if (scaleFactor > 1f)
-            {
-                form.Scale(new SizeF(scaleFactor, scaleFactor));
-            }
-
-            // 字体与自动缩放
-            form.AutoScaleMode = AutoScaleMode.Font;
+            // 使用 DPI 自动缩放，避免与手动 Scale 叠加造成重复缩放
+            form.AutoScaleMode = AutoScaleMode.Dpi;
             form.Font = BodyFont;
 
             // 减少闪烁
@@ -64,10 +89,18 @@ namespace WorkLogApp.UI.UI
                     tbb.Font = BodyFont;
                 }
 
-                // 列表、按钮、下拉框等统一字体
+                // 列表、按钮、下拉框等统一字体（支持紧凑模式：Tag == "compact"）
                 if (c is ListView || c is Button || c is ComboBox || c is DateTimePicker || c is DataGridView)
                 {
-                    c.Font = BodyFont;
+                    var tagStr = c.Tag as string;
+                    if (!string.IsNullOrWhiteSpace(tagStr) && string.Equals(tagStr.Trim(), "compact", StringComparison.OrdinalIgnoreCase))
+                    {
+                        c.Font = CompactFont;
+                    }
+                    else
+                    {
+                        c.Font = BodyFont;
+                    }
                 }
 
                 // 富文本框设置 1.5 倍行距

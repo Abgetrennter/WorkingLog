@@ -38,15 +38,45 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Program.cs" />
-    <Compile Include="Forms\MainForm.cs" />
-    <Compile Include="Forms\ItemCreateForm.cs" />
-    <Compile Include="Forms\ItemEditForm.cs" />
-    <Compile Include="Forms\CategoryManageForm.cs" />
-    <Compile Include="Forms\ImportWizardForm.cs" />
-    <Compile Include="Controls\DynamicFormPanel.cs" />
-    <Compile Include="Controls\CategoryTreeComboBox.cs" />
+    <Compile Include="Forms\MainForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\MainForm.Designer.cs">
+      <DependentUpon>MainForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Forms\ItemCreateForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\ItemCreateForm.Designer.cs">
+      <DependentUpon>ItemCreateForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Forms\ItemEditForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\ItemEditForm.Designer.cs">
+      <DependentUpon>ItemEditForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Forms\CategoryManageForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\CategoryManageForm.Designer.cs">
+      <DependentUpon>CategoryManageForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Forms\ImportWizardForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\ImportWizardForm.Designer.cs">
+      <DependentUpon>ImportWizardForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\DynamicFormPanel.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\CategoryTreeComboBox.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="UI\UIStyleManager.cs" />
   </ItemGroup>
+  <!-- 为避免在 dotnet build 下触发 x86 GenerateResource 宿主问题，暂不编译 resx。若需使用 VS 设计器自动资源，请在本地 VS 环境启用。 -->
   <ItemGroup>
     <None Include="App.config" />
     <None Include="..\Configs\dev.config.json">
@@ -72,7 +102,6 @@
       <Name>WorkLogApp.Services</Name>
     </ProjectReference>
   </ItemGroup>
-  
   <!-- 复制 SDK 样式 Services 项目的输出到 UI 输出目录，解决混合项目引用不自动复制的问题 -->
   <Target Name="CopyServicesOutput" AfterTargets="Build">
     <ItemGroup>
@@ -88,6 +117,9 @@
     <Content Include="..\WorkLogApp.Services\bin\$(Configuration)\net472\WorkLogApp.Services.pdb">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <!-- 设计时使用的 resx 不在 dotnet CLI 下编译，以避免 GenerateResource 的 x86 宿主问题 -->
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
