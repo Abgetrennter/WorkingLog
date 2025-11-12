@@ -50,7 +50,7 @@ namespace WorkLogApp.UI.UI
             }
             var family = _customFamily ?? GetPreferredDefaultFamily();
             // 以更接近系统默认的字号作为基础，避免在高 DPI 环境下出现过度放大
-            BodyFont = new Font(family, 12f, FontStyle.Regular, GraphicsUnit.Point);
+            BodyFont = new Font(family, 15f, FontStyle.Regular, GraphicsUnit.Point);
             // 紧凑字体用于工具栏按钮等需要更小字号的控件
             CompactFont = new Font(family, 15f, FontStyle.Regular, GraphicsUnit.Point);
             // 标题字号适度增大，但不至于导致整体控件高度剧增

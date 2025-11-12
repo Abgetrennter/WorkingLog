@@ -1266,11 +1266,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "c:\\Users\\Administrator\\source\\repos\\WorkingLog\\WorkLogApp.Services\\WorkLogApp.Services.csproj",
+      "projectUniqueName": "C:\\Users\\Administrator\\source\\repos\\WorkingLog\\WorkLogApp.Services\\WorkLogApp.Services.csproj",
       "projectName": "WorkLogApp.Services",
-      "projectPath": "c:\\Users\\Administrator\\source\\repos\\WorkingLog\\WorkLogApp.Services\\WorkLogApp.Services.csproj",
+      "projectPath": "C:\\Users\\Administrator\\source\\repos\\WorkingLog\\WorkLogApp.Services\\WorkLogApp.Services.csproj",
       "packagesPath": "C:\\Users\\Administrator\\.nuget\\packages\\",
-      "outputPath": "c:\\Users\\Administrator\\source\\repos\\WorkingLog\\WorkLogApp.Services\\obj\\",
+      "outputPath": "C:\\Users\\Administrator\\source\\repos\\WorkingLog\\WorkLogApp.Services\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "C:\\Users\\Administrator\\AppData\\Roaming\\NuGet\\NuGet.Config",
@@ -1287,8 +1287,8 @@
         "net472": {
           "targetAlias": "net472",
           "projectReferences": {
-            "c:\\Users\\Administrator\\source\\repos\\WorkingLog\\WorkLogApp.Core\\WorkLogApp.Core.csproj": {
-              "projectPath": "c:\\Users\\Administrator\\source\\repos\\WorkingLog\\WorkLogApp.Core\\WorkLogApp.Core.csproj"
+            "C:\\Users\\Administrator\\source\\repos\\WorkingLog\\WorkLogApp.Core\\WorkLogApp.Core.csproj": {
+              "projectPath": "C:\\Users\\Administrator\\source\\repos\\WorkingLog\\WorkLogApp.Core\\WorkLogApp.Core.csproj"
             }
           }
         }
