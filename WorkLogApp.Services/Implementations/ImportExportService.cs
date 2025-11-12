@@ -19,13 +19,13 @@ namespace WorkLogApp.Services.Implementations
         private const string SheetName = "工作日志";
         private static readonly string[] Header = new[]
         {
-            // 按设计文档的列顺序（并追加 DailySummary）
-            "LogDate","ItemTitle","ItemContent","CategoryId","Status","Progress","StartTime","EndTime","Tags","SortOrder","DailySummary"
+            // 新结构：移除 DailySummary 列
+            "LogDate","ItemTitle","ItemContent","CategoryId","Status","Progress","StartTime","EndTime","Tags","SortOrder"
         };
         private static readonly string[] HeaderZh = new[]
         {
-            // 与 Header 对应的中文显示名称
-            "日期","标题","内容","分类ID","状态","进度","开始时间","结束时间","标签","排序","当日总结"
+            // 与 Header 对应的中文显示名称（移除 当日总结）
+            "日期","标题","内容","分类ID","状态","进度","开始时间","结束时间","标签","排序"
         };
         private static readonly Dictionary<string, string> HeaderNameMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         {
@@ -38,8 +38,7 @@ namespace WorkLogApp.Services.Implementations
             {"开始时间","StartTime"},
             {"结束时间","EndTime"},
             {"标签","Tags"},
-            {"排序","SortOrder"},
-            {"当日总结","DailySummary"}
+            {"排序","SortOrder"}
         };
 
         public bool ExportMonth(DateTime month, IEnumerable<WorkLogItem> items, string outputDirectory)
@@ -88,7 +87,8 @@ namespace WorkLogApp.Services.Implementations
             var header = sheet.CreateRow(0);
             for (int i = 0; i < HeaderZh.Length; i++)
             {
-                header.CreateCell(i).SetCellValue(HeaderZh[i]);
+                var hc = header.CreateCell(i);
+                hc.SetCellValue(HeaderZh[i]);
             }
 
             // 样式：两种块背景色 + 加粗的日期标识行
@@ -101,6 +101,10 @@ namespace WorkLogApp.Services.Implementations
             markerStyleA.FillForegroundColor = IndexedColors.LightCornflowerBlue.Index;
             markerStyleA.Alignment = HorizontalAlignment.Center;
             markerStyleA.VerticalAlignment = VerticalAlignment.Center;
+            markerStyleA.BorderTop = BorderStyle.Thin;
+            markerStyleA.BorderBottom = BorderStyle.Thin;
+            markerStyleA.BorderLeft = BorderStyle.Thin;
+            markerStyleA.BorderRight = BorderStyle.Thin;
 
             var markerStyleB = wb.CreateCellStyle();
             markerStyleB.SetFont(boldFont);
@@ -108,16 +112,70 @@ namespace WorkLogApp.Services.Implementations
             markerStyleB.FillForegroundColor = IndexedColors.LightYellow.Index;
             markerStyleB.Alignment = HorizontalAlignment.Center;
             markerStyleB.VerticalAlignment = VerticalAlignment.Center;
+            markerStyleB.BorderTop = BorderStyle.Thin;
+            markerStyleB.BorderBottom = BorderStyle.Thin;
+            markerStyleB.BorderLeft = BorderStyle.Thin;
+            markerStyleB.BorderRight = BorderStyle.Thin;
+
+            // 表头样式：加粗、居中、带边框
+            var headerStyle = wb.CreateCellStyle();
+            headerStyle.SetFont(boldFont);
+            headerStyle.Alignment = HorizontalAlignment.Center;
+            headerStyle.VerticalAlignment = VerticalAlignment.Center;
+            headerStyle.BorderTop = BorderStyle.Thin;
+            headerStyle.BorderBottom = BorderStyle.Thin;
+            headerStyle.BorderLeft = BorderStyle.Thin;
+            headerStyle.BorderRight = BorderStyle.Thin;
+            for (int i = 0; i < HeaderZh.Length; i++)
+            {
+                header.GetCell(i).CellStyle = headerStyle;
+            }
 
             var blockStyleA = wb.CreateCellStyle();
             blockStyleA.FillPattern = FillPattern.SolidForeground;
             blockStyleA.FillForegroundColor = IndexedColors.LightCornflowerBlue.Index;
             blockStyleA.WrapText = true;
+            blockStyleA.Alignment = HorizontalAlignment.Left;
+            blockStyleA.VerticalAlignment = VerticalAlignment.Top;
+            blockStyleA.BorderTop = BorderStyle.Thin;
+            blockStyleA.BorderBottom = BorderStyle.Thin;
+            blockStyleA.BorderLeft = BorderStyle.Thin;
+            blockStyleA.BorderRight = BorderStyle.Thin;
 
             var blockStyleB = wb.CreateCellStyle();
             blockStyleB.FillPattern = FillPattern.SolidForeground;
             blockStyleB.FillForegroundColor = IndexedColors.LightYellow.Index;
             blockStyleB.WrapText = true;
+            blockStyleB.Alignment = HorizontalAlignment.Left;
+            blockStyleB.VerticalAlignment = VerticalAlignment.Top;
+            blockStyleB.BorderTop = BorderStyle.Thin;
+            blockStyleB.BorderBottom = BorderStyle.Thin;
+            blockStyleB.BorderLeft = BorderStyle.Thin;
+            blockStyleB.BorderRight = BorderStyle.Thin;
+
+            // 数字列样式（居中，带边框，继承块底色）
+            var numberStyleA = wb.CreateCellStyle();
+            numberStyleA.CloneStyleFrom(blockStyleA);
+            numberStyleA.Alignment = HorizontalAlignment.Center;
+            var numberStyleB = wb.CreateCellStyle();
+            numberStyleB.CloneStyleFrom(blockStyleB);
+            numberStyleB.Alignment = HorizontalAlignment.Center;
+
+            // 时间列样式（右对齐，带边框，继承块底色）
+            var timeStyleA = wb.CreateCellStyle();
+            timeStyleA.CloneStyleFrom(blockStyleA);
+            timeStyleA.Alignment = HorizontalAlignment.Right;
+            var timeStyleB = wb.CreateCellStyle();
+            timeStyleB.CloneStyleFrom(blockStyleB);
+            timeStyleB.Alignment = HorizontalAlignment.Right;
+
+            // 标题列样式（加粗）
+            var titleStyleA = wb.CreateCellStyle();
+            titleStyleA.CloneStyleFrom(blockStyleA);
+            titleStyleA.SetFont(boldFont);
+            var titleStyleB = wb.CreateCellStyle();
+            titleStyleB.CloneStyleFrom(blockStyleB);
+            titleStyleB.SetFont(boldFont);
 
             var ordered = (items ?? Enumerable.Empty<WorkLogItem>())
                 .Where(i => i != null && i.LogDate.Year == month.Year && i.LogDate.Month == month.Month)
@@ -134,30 +192,32 @@ namespace WorkLogApp.Services.Implementations
                 bool useA = (blockIndex % 2 == 0);
                 var markerStyle = useA ? markerStyleA : markerStyleB;
                 var blockStyle = useA ? blockStyleA : blockStyleB;
+                var numberStyle = useA ? numberStyleA : numberStyleB;
+                var timeStyle = useA ? timeStyleA : timeStyleB;
+                var titleStyle = useA ? titleStyleA : titleStyleB;
 
-                // 日期标识行
+                // 日期标识行（中文日期 + 中文星期）
                 rowIndex++;
                 var markerRow = sheet.CreateRow(rowIndex);
                 for (int c = 0; c < HeaderZh.Length; c++)
                 {
                     var cell = markerRow.CreateCell(c);
                     cell.CellStyle = markerStyle;
-                    cell.SetCellValue(c == 0 ? $"===== {group.Key:yyyy-MM-dd} =====" : string.Empty);
+                    var week = GetChineseWeekday(group.Key);
+                    cell.SetCellValue(c == 0 ? $"===== {group.Key:yyyy年MM月dd日} {week} =====" : string.Empty);
                 }
                 sheet.AddMergedRegion(new CellRangeAddress(rowIndex, rowIndex, 0, HeaderZh.Length - 1));
 
                 bool isFirstDataRow = true;
+                string groupSummary = null;
                 foreach (var item in group)
                 {
                     rowIndex++;
                     var row = sheet.CreateRow(rowIndex);
-                    for (int c = 0; c < HeaderZh.Length; c++)
-                    {
-                        var cell = row.CreateCell(c);
-                        cell.CellStyle = blockStyle;
-                    }
+                    for (int c = 0; c < HeaderZh.Length; c++) row.CreateCell(c);
 
-                    row.GetCell(0).SetCellValue(item.LogDate.ToString("yyyy-MM-dd"));
+                    // 中文日期格式
+                    row.GetCell(0).SetCellValue(item.LogDate.ToString("yyyy年MM月dd日"));
                     row.GetCell(1).SetCellValue(item.ItemTitle ?? string.Empty);
                     row.GetCell(2).SetCellValue(item.ItemContent ?? string.Empty);
                     row.GetCell(3).SetCellValue(item.CategoryId);
@@ -167,16 +227,62 @@ namespace WorkLogApp.Services.Implementations
                     row.GetCell(7).SetCellValue(item.EndTime.HasValue ? item.EndTime.Value.ToString("yyyy-MM-dd HH:mm") : string.Empty);
                     row.GetCell(8).SetCellValue(item.Tags ?? string.Empty);
                     row.GetCell(9).SetCellValue(item.SortOrder ?? 0);
-                    row.GetCell(10).SetCellValue(isFirstDataRow ? (item.DailySummary ?? string.Empty) : string.Empty);
+                    // 应用列样式（数字居中、时间右对齐、标题加粗、全表格边框）
+                    row.GetCell(0).CellStyle = blockStyle;     // 日期
+                    row.GetCell(1).CellStyle = titleStyle;     // 标题（加粗）
+                    row.GetCell(2).CellStyle = blockStyle;     // 内容
+                    row.GetCell(3).CellStyle = numberStyle;    // 分类ID（居中）
+                    row.GetCell(4).CellStyle = numberStyle;    // 状态（居中）
+                    row.GetCell(5).CellStyle = numberStyle;    // 进度（居中）
+                    row.GetCell(6).CellStyle = timeStyle;      // 开始时间（右对齐）
+                    row.GetCell(7).CellStyle = timeStyle;      // 结束时间（右对齐）
+                    row.GetCell(8).CellStyle = blockStyle;     // 标签
+                    row.GetCell(9).CellStyle = numberStyle;    // 排序（居中）
+                    // 收集当日总结（取第一条非空）
+                    if (isFirstDataRow && !string.IsNullOrWhiteSpace(item.DailySummary))
+                        groupSummary = item.DailySummary;
                     isFirstDataRow = false;
                 }
+                // 每个日期块的最后一行写入当日总结（标题=当日总结，内容=总结文本）
+                rowIndex++;
+                var summaryRow = sheet.CreateRow(rowIndex);
+                for (int c = 0; c < HeaderZh.Length; c++) summaryRow.CreateCell(c);
+                summaryRow.GetCell(1).SetCellValue("当日总结");
+                summaryRow.GetCell(2).SetCellValue(groupSummary ?? string.Empty);
+                for (int c = 0; c < HeaderZh.Length; c++)
+                {
+                    summaryRow.GetCell(c).CellStyle = blockStyle;
+                }
+                summaryRow.GetCell(1).CellStyle = titleStyle; // 当日总结标题加粗
+                // 合并内容列以更好显示总结
+                sheet.AddMergedRegion(new CellRangeAddress(rowIndex, rowIndex, 2, HeaderZh.Length - 1));
                 blockIndex++;
             }
 
-            // 列宽适配（可读性优化）
-            for (int i = 0; i < HeaderZh.Length; i++)
+            // 列宽适配（可读性优化，内容列加宽，数字列缩窄）
+            sheet.SetColumnWidth(0, 20 * 256); // 日期
+            sheet.SetColumnWidth(1, 30 * 256); // 标题
+            sheet.SetColumnWidth(2, 80 * 256); // 内容（很长）
+            sheet.SetColumnWidth(3, 10 * 256); // 分类ID
+            sheet.SetColumnWidth(4, 8 * 256);  // 状态
+            sheet.SetColumnWidth(5, 8 * 256);  // 进度
+            sheet.SetColumnWidth(6, 12 * 256); // 开始时间
+            sheet.SetColumnWidth(7, 12 * 256); // 结束时间
+            sheet.SetColumnWidth(8, 10 * 256); // 标签
+            sheet.SetColumnWidth(9, 8 * 256);  // 排序
+        }
+
+        private static string GetChineseWeekday(DateTime dt)
+        {
+            switch (dt.DayOfWeek)
             {
-                sheet.SetColumnWidth(i, 20 * 256);
+                case DayOfWeek.Monday: return "星期一";
+                case DayOfWeek.Tuesday: return "星期二";
+                case DayOfWeek.Wednesday: return "星期三";
+                case DayOfWeek.Thursday: return "星期四";
+                case DayOfWeek.Friday: return "星期五";
+                case DayOfWeek.Saturday: return "星期六";
+                default: return "星期日";
             }
         }
 
@@ -197,6 +303,8 @@ namespace WorkLogApp.Services.Implementations
 
                 var indexes = GetHeaderIndexes(sheet);
                 DateTime currentDate = DateTime.MinValue;
+                var groupItems = new List<WorkLogItem>();
+                string currentSummary = null;
 
                 for (int r = 1; r <= sheet.LastRowNum; r++)
                 {
@@ -205,11 +313,28 @@ namespace WorkLogApp.Services.Implementations
                     var firstCellText = GetString(row, 0);
                     if (!string.IsNullOrWhiteSpace(firstCellText) && firstCellText.StartsWith("====="))
                     {
-                        var m = Regex.Match(firstCellText, "=+\\s*(\\d{4}-\\d{2}-\\d{2})\\s*=+");
-                        if (m.Success && DateTime.TryParseExact(m.Groups[1].Value, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var dt))
+                        var m = Regex.Match(firstCellText, "=+\\s*(\\d{4}年\\d{2}月\\d{2}日)(?:\\s+星期[一二三四五六日天])?\\s*=+");
+                        if (m.Success && DateTime.TryParseExact(m.Groups[1].Value, "yyyy年MM月dd日", CultureInfo.InvariantCulture, DateTimeStyles.None, out var dt))
                         {
+                            // flush previous group
+                            if (groupItems.Count > 0)
+                            {
+                                if (!string.IsNullOrWhiteSpace(currentSummary))
+                                    groupItems[0].DailySummary = currentSummary;
+                                list.AddRange(groupItems);
+                                groupItems.Clear();
+                                currentSummary = null;
+                            }
                             currentDate = dt;
                         }
+                        continue;
+                    }
+
+                    // 识别总结行（标题=当日总结），仅记录总结文本
+                    var title = GetString(row, indexes["ItemTitle"]);
+                    if (string.Equals(title, "当日总结", StringComparison.OrdinalIgnoreCase))
+                    {
+                        currentSummary = GetString(row, indexes["ItemContent"]);
                         continue;
                     }
 
@@ -226,8 +351,14 @@ namespace WorkLogApp.Services.Implementations
                     item.EndTime = ParseNullableDateTime(GetString(row, indexes["EndTime"]));
                     item.Tags = GetString(row, indexes["Tags"]);
                     item.SortOrder = ParseNullableInt(GetString(row, indexes["SortOrder"]));
-                    item.DailySummary = GetString(row, indexes["DailySummary"]);
-                    list.Add(item);
+                    groupItems.Add(item);
+                }
+                // flush last group
+                if (groupItems.Count > 0)
+                {
+                    if (!string.IsNullOrWhiteSpace(currentSummary))
+                        groupItems[0].DailySummary = currentSummary;
+                    list.AddRange(groupItems);
                 }
             }
             return list;
@@ -247,6 +378,8 @@ namespace WorkLogApp.Services.Implementations
 
                 var indexes = GetHeaderIndexes(sheet);
                 DateTime currentDate = DateTime.MinValue;
+                var groupItems = new List<WorkLogItem>();
+                string currentSummary = null;
 
                 for (int r = 1; r <= sheet.LastRowNum; r++)
                 {
@@ -255,11 +388,28 @@ namespace WorkLogApp.Services.Implementations
                     var firstCellText = GetString(row, 0);
                     if (!string.IsNullOrWhiteSpace(firstCellText) && firstCellText.StartsWith("====="))
                     {
-                        var m = Regex.Match(firstCellText, "=+\\s*(\\d{4}-\\d{2}-\\d{2})\\s*=+");
-                        if (m.Success && DateTime.TryParseExact(m.Groups[1].Value, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var dt))
+                        var m = Regex.Match(firstCellText, "=+\\s*(\\d{4}年\\d{2}月\\d{2}日)(?:\\s+星期[一二三四五六日天])?\\s*=+");
+                        if (m.Success && DateTime.TryParseExact(m.Groups[1].Value, "yyyy年MM月dd日", CultureInfo.InvariantCulture, DateTimeStyles.None, out var dt))
                         {
+                            // flush previous group
+                            if (groupItems.Count > 0)
+                            {
+                                if (!string.IsNullOrWhiteSpace(currentSummary))
+                                    groupItems[0].DailySummary = currentSummary;
+                                list.AddRange(groupItems);
+                                groupItems.Clear();
+                                currentSummary = null;
+                            }
                             currentDate = dt;
                         }
+                        continue;
+                    }
+
+                    // 识别总结行（标题=当日总结）
+                    var title = GetString(row, indexes["ItemTitle"]);
+                    if (string.Equals(title, "当日总结", StringComparison.OrdinalIgnoreCase))
+                    {
+                        currentSummary = GetString(row, indexes["ItemContent"]);
                         continue;
                     }
 
@@ -276,8 +426,14 @@ namespace WorkLogApp.Services.Implementations
                     item.EndTime = ParseNullableDateTime(GetString(row, indexes["EndTime"]));
                     item.Tags = GetString(row, indexes["Tags"]);
                     item.SortOrder = ParseNullableInt(GetString(row, indexes["SortOrder"]));
-                    item.DailySummary = GetString(row, indexes["DailySummary"]);
-                    list.Add(item);
+                    groupItems.Add(item);
+                }
+                // flush last group
+                if (groupItems.Count > 0)
+                {
+                    if (!string.IsNullOrWhiteSpace(currentSummary))
+                        groupItems[0].DailySummary = currentSummary;
+                    list.AddRange(groupItems);
                 }
             }
             return list;
@@ -327,10 +483,6 @@ namespace WorkLogApp.Services.Implementations
             if (headerRow == null || headerRow.PhysicalNumberOfCells == 0)
             {
                 for (int i = 0; i < Header.Length; i++) dict[Header[i]] = i;
-                if (!dict.ContainsKey("DailySummary"))
-                {
-                    dict["DailySummary"] = 10;
-                }
                 return dict;
             }
             for (int c = 0; c < headerRow.LastCellNum; c++)
