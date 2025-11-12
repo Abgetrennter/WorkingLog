@@ -242,104 +242,47 @@ namespace WorkLogApp.Services.Implementations
             using (var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
             {
                 var wb = new XSSFWorkbook(fs);
-                for (int i = 0; i < wb.NumberOfSheets; i++)
+                var sheet = wb.GetSheet(SheetName) ?? (wb.NumberOfSheets > 0 ? wb.GetSheetAt(0) : null);
+                if (sheet == null) return list;
+
+                var indexes = GetHeaderIndexes(sheet);
+                DateTime currentDate = DateTime.MinValue;
+
+                for (int r = 1; r <= sheet.LastRowNum; r++)
                 {
-                    var sheet = wb.GetSheetAt(i);
-                    if (sheet == null) continue;
-                    DateTime logDate;
-                    if (!DateTime.TryParseExact(sheet.SheetName, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out logDate))
-                        continue;
-
-                    var firstRow = sheet.GetRow(0);
-                    int startRow = 1;
-                    var hasHeader = !(firstRow == null || firstRow.PhysicalNumberOfCells == 0);
-                    if (!hasHeader)
-                        startRow = 0;
-
-                    var indexes = GetHeaderIndexes(sheet);
-
-                    for (int r = startRow; r <= sheet.LastRowNum; r++)
+                    var row = sheet.GetRow(r);
+                    if (row == null) continue;
+                    var firstCellText = GetString(row, 0);
+                    if (!string.IsNullOrWhiteSpace(firstCellText) && firstCellText.StartsWith("====="))
                     {
-                        var row = sheet.GetRow(r);
-                        if (row == null) continue;
-                        var item = new WorkLogItem { LogDate = logDate };
-                        item.ItemTitle = GetString(row, indexes["ItemTitle"]);
-                        item.ItemContent = GetString(row, indexes["ItemContent"]);
-                        item.CategoryId = ParseInt(GetString(row, indexes["CategoryId"]));
-                        item.Status = ParseStatus(GetString(row, indexes["Status"]));
-                        item.Progress = ParseNullableInt(GetString(row, indexes["Progress"]));
-                        item.StartTime = ParseNullableDateTime(GetString(row, indexes["StartTime"]));
-                        item.EndTime = ParseNullableDateTime(GetString(row, indexes["EndTime"]));
-                        item.Tags = GetString(row, indexes["Tags"]);
-                        item.SortOrder = ParseNullableInt(GetString(row, indexes["SortOrder"]));
-                        var isFirstDataRow = hasHeader ? (r == 1) : (r == 0);
-                        if (indexes.ContainsKey("DailySummary") && isFirstDataRow)
-                            item.DailySummary = GetString(row, indexes["DailySummary"]);
-                        list.Add(item);
+                        var m = Regex.Match(firstCellText, "=+\\s*(\\d{4}-\\d{2}-\\d{2})\\s*=+");
+                        if (m.Success && DateTime.TryParseExact(m.Groups[1].Value, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var dt))
+                        {
+                            currentDate = dt;
+                        }
+                        continue;
                     }
+
+                    var item = new WorkLogItem();
+                    item.LogDate = currentDate != DateTime.MinValue
+                        ? currentDate
+                        : ParseNullableDateTime(GetString(row, indexes["LogDate"]))?.Date ?? DateTime.MinValue;
+                    item.ItemTitle = GetString(row, indexes["ItemTitle"]);
+                    item.ItemContent = GetString(row, indexes["ItemContent"]);
+                    item.CategoryId = ParseInt(GetString(row, indexes["CategoryId"]));
+                    item.Status = ParseStatus(GetString(row, indexes["Status"]));
+                    item.Progress = ParseNullableInt(GetString(row, indexes["Progress"]));
+                    item.StartTime = ParseNullableDateTime(GetString(row, indexes["StartTime"]));
+                    item.EndTime = ParseNullableDateTime(GetString(row, indexes["EndTime"]));
+                    item.Tags = GetString(row, indexes["Tags"]);
+                    item.SortOrder = ParseNullableInt(GetString(row, indexes["SortOrder"]));
+                    item.DailySummary = GetString(row, indexes["DailySummary"]);
+                    list.Add(item);
                 }
             }
             return list;
         }
 
-        private static void WriteItem(IWorkbook wb, WorkLogItem item)
-        {
-            var sheetName = item.LogDate.ToString("yyyy-MM-dd");
-            var sheet = wb.GetSheet(sheetName) ?? wb.CreateSheet(sheetName);
-            if (sheet.PhysicalNumberOfRows == 0)
-            {
-                var header = sheet.CreateRow(0);
-                for (int i = 0; i < HeaderZh.Length; i++)
-                {
-                    header.CreateCell(i).SetCellValue(HeaderZh[i]);
-                }
-            }
-            else
-            {
-                // 如果已存在表头且为英文，则替换为中文显示
-                var headerRow = sheet.GetRow(0);
-                if (headerRow != null && headerRow.PhysicalNumberOfCells > 0)
-                {
-                    var rewriteToChinese = false;
-                    for (int i = 0; i < Header.Length && i < headerRow.LastCellNum; i++)
-                    {
-                        var name = GetString(headerRow, i);
-                        if (string.Equals(name, Header[i], StringComparison.OrdinalIgnoreCase))
-                        {
-                            rewriteToChinese = true;
-                            break;
-                        }
-                    }
-                    if (rewriteToChinese)
-                    {
-                        for (int i = 0; i < HeaderZh.Length; i++)
-                        {
-                            var cell = headerRow.GetCell(i) ?? headerRow.CreateCell(i);
-                            cell.SetCellValue(HeaderZh[i]);
-                        }
-                    }
-                }
-            }
-            var rowIndex = Math.Max(sheet.LastRowNum + 1, 1);
-            var row = sheet.CreateRow(rowIndex);
-            // 使用新列顺序
-            row.CreateCell(0).SetCellValue(item.LogDate.ToString("yyyy-MM-dd"));
-            row.CreateCell(1).SetCellValue(item.ItemTitle ?? string.Empty);
-            row.CreateCell(2).SetCellValue(item.ItemContent ?? string.Empty);
-            row.CreateCell(3).SetCellValue(item.CategoryId);
-            row.CreateCell(4).SetCellValue((int)item.Status);
-            row.CreateCell(5).SetCellValue(item.Progress.HasValue ? item.Progress.Value : 0);
-            row.CreateCell(6).SetCellValue(item.StartTime.HasValue ? item.StartTime.Value.ToString("yyyy-MM-dd HH:mm") : string.Empty);
-            row.CreateCell(7).SetCellValue(item.EndTime.HasValue ? item.EndTime.Value.ToString("yyyy-MM-dd HH:mm") : string.Empty);
-            row.CreateCell(8).SetCellValue(item.Tags ?? string.Empty);
-            row.CreateCell(9).SetCellValue(item.SortOrder.HasValue ? item.SortOrder.Value : 0);
-            // 当日总结仅在第一条记录中写入
-            var dailySummaryCell = row.CreateCell(10);
-            if (rowIndex == 1)
-                dailySummaryCell.SetCellValue(item.DailySummary ?? string.Empty);
-            else
-                dailySummaryCell.SetCellValue(string.Empty);
-        }
 
         private static string GetString(IRow row, int index)
         {
