@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
+using WorkLogApp.Core.Enums;
 using WorkLogApp.Core.Models;
 using WorkLogApp.Services.Implementations;
 using WorkLogApp.Services.Interfaces;
@@ -18,6 +19,7 @@ namespace WorkLogApp.UI.Forms
         {
             _item = new WorkLogItem { LogDate = DateTime.Now.Date };
             InitializeComponent();
+            InitializeFields();
             UIStyleManager.ApplyVisualEnhancements(this);
         }
 
@@ -31,8 +33,76 @@ namespace WorkLogApp.UI.Forms
             _summaryBox.Text = _item.DailySummary ?? string.Empty;
             _contentBox.Text = initialContent ?? _item.ItemContent ?? string.Empty;
 
+            InitializeFields();
+
             // 应用统一样式并设置 1.5 倍行距
             UIStyleManager.ApplyVisualEnhancements(this);
+        }
+
+        private void InitializeFields()
+        {
+            // 状态下拉
+            _statusCombo.Items.Clear();
+            _statusCombo.Items.AddRange(Enum.GetNames(typeof(StatusEnum)));
+            var statusName = _item.Status.ToString();
+            var idx = _statusCombo.Items.IndexOf(statusName);
+            _statusCombo.SelectedIndex = idx >= 0 ? idx : (_statusCombo.Items.Count > 0 ? 0 : -1);
+
+            // 日期
+            _datePicker.Value = _item.LogDate == default(DateTime) ? DateTime.Now.Date : _item.LogDate;
+            // 进度
+            _progressUpDown.Value = _item.Progress.HasValue ? Math.Max(0, Math.Min(100, _item.Progress.Value)) : 0;
+            // 标签
+            _tagsBox.Text = _item.Tags ?? string.Empty;
+            // 开始时间
+            if (_item.StartTime.HasValue)
+            {
+                _startPicker.Checked = true;
+                _startPicker.Value = _item.StartTime.Value;
+            }
+            else
+            {
+                _startPicker.Checked = false;
+            }
+            // 结束时间
+            if (_item.EndTime.HasValue)
+            {
+                _endPicker.Checked = true;
+                _endPicker.Value = _item.EndTime.Value;
+            }
+            else
+            {
+                _endPicker.Checked = false;
+            }
+            // 排序
+            _sortUpDown.Value = _item.SortOrder.HasValue ? _item.SortOrder.Value : 0;
+        }
+
+        private void OnSaveClickNew(object sender, EventArgs e)
+        {
+            try
+            {
+                _item.ItemTitle = _titleBox.Text?.Trim();
+                _item.ItemContent = _contentBox.Text ?? string.Empty;
+                _item.DailySummary = _summaryBox.Text ?? string.Empty;
+                _item.LogDate = _datePicker.Value.Date;
+                if (_statusCombo.SelectedItem != null && Enum.TryParse<StatusEnum>(_statusCombo.SelectedItem.ToString(), out var st))
+                {
+                    _item.Status = st;
+                }
+                _item.Progress = (int)_progressUpDown.Value;
+                _item.Tags = _tagsBox.Text?.Trim();
+                _item.StartTime = _startPicker.Checked ? (DateTime?)_startPicker.Value : null;
+                _item.EndTime = _endPicker.Checked ? (DateTime?)_endPicker.Value : null;
+                _item.SortOrder = (int)_sortUpDown.Value;
+
+                DialogResult = DialogResult.OK;
+                Close();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(this, "保存失败：" + ex.Message, "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
 
         private void OnSaveClick(object sender, EventArgs e)

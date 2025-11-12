@@ -56,6 +56,31 @@ namespace WorkLogApp.Services.Implementations
             return true;
         }
 
+        // 覆盖写入整月数据：重新生成工作簿并写入传入的所有当月记录
+        public bool RewriteMonth(DateTime month, IEnumerable<WorkLogItem> items, string outputDirectory)
+        {
+            if (items == null) return false;
+            if (string.IsNullOrWhiteSpace(outputDirectory)) return false;
+            Directory.CreateDirectory(outputDirectory);
+
+            var monthStart = new DateTime(month.Year, month.Month, 1);
+            var fileName = FilePrefix + monthStart.ToString("yyyyMM") + ".xlsx";
+            var filePath = Path.Combine(outputDirectory, fileName);
+
+            IWorkbook wb = new XSSFWorkbook();
+            foreach (var item in items)
+            {
+                if (item == null) continue;
+                if (item.LogDate.Year != month.Year || item.LogDate.Month != month.Month) continue;
+                WriteItem(wb, item);
+            }
+            using (var outFs = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.None))
+            {
+                wb.Write(outFs);
+            }
+            return true;
+        }
+
         public IEnumerable<WorkLogItem> ImportMonth(DateTime month, string inputDirectory)
         {
             var list = new List<WorkLogItem>();

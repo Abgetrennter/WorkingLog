@@ -118,14 +118,29 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
-  <ItemGroup>
-    <!-- 设计时使用的 resx 不在 dotnet CLI 下编译，以避免 GenerateResource 的 x86 宿主问题 -->
+  <!-- 设计期 resx：仅在 VS (MSBuildRuntimeType=Full) 下参与编译；
+       在 dotnet CLI (MSBuildRuntimeType=Core) 下跳过，以避免 x86 GenerateResource 宿主问题。 -->
+  <ItemGroup Condition="'$(MSBuildRuntimeType)' == 'Full'">
     <EmbeddedResource Include="Forms\CategoryManageForm.resx">
       <DependentUpon>CategoryManageForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Forms\ItemEditForm.resx">
+      <DependentUpon>ItemEditForm.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Forms\MainForm.resx">
       <DependentUpon>MainForm.cs</DependentUpon>
     </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup Condition="'$(MSBuildRuntimeType)' == 'Core'">
+    <None Include="Forms\CategoryManageForm.resx">
+      <DependentUpon>CategoryManageForm.cs</DependentUpon>
+    </None>
+    <None Include="Forms\ItemEditForm.resx">
+      <DependentUpon>ItemEditForm.cs</DependentUpon>
+    </None>
+    <None Include="Forms\MainForm.resx">
+      <DependentUpon>MainForm.cs</DependentUpon>
+    </None>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

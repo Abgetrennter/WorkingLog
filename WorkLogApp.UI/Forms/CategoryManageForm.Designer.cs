@@ -169,8 +169,8 @@ namespace WorkLogApp.UI.Forms
             // 
             this._cmbInsert.Dock = System.Windows.Forms.DockStyle.Fill;
             this._cmbInsert.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            this._cmbInsert.Location = new System.Drawing.Point(208, 286);
-            this._cmbInsert.Margin = new System.Windows.Forms.Padding(0, 0, 6, 4);
+            this._cmbInsert.Location = new System.Drawing.Point(208, 296);
+            this._cmbInsert.Margin = new System.Windows.Forms.Padding(0, 10, 6, 4);
             this._cmbInsert.Name = "_cmbInsert";
             this._cmbInsert.Size = new System.Drawing.Size(413, 26);
             this._cmbInsert.TabIndex = 3;
@@ -227,13 +227,13 @@ namespace WorkLogApp.UI.Forms
             // 
             this.lblQuick.AutoSize = true;
             this.lblQuick.Font = new System.Drawing.Font("宋体", 12F);
-            this.lblQuick.Location = new System.Drawing.Point(0, 286);
-            this.lblQuick.Margin = new System.Windows.Forms.Padding(0, 0, 6, 4);
+            this.lblQuick.Location = new System.Drawing.Point(0, 301);
+            this.lblQuick.Margin = new System.Windows.Forms.Padding(0, 15, 6, 4);
             this.lblQuick.Name = "lblQuick";
             this.lblQuick.Size = new System.Drawing.Size(202, 24);
             this.lblQuick.TabIndex = 2;
             this.lblQuick.Text = "快速插入占位符：";
-            this.lblQuick.TextAlign = System.Drawing.ContentAlignment.TopCenter;
+            this.lblQuick.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
             // _btnSave
             // 
