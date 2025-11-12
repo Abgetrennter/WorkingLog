@@ -30,7 +30,6 @@ namespace WorkLogApp.UI.Forms
             InitializeComponent();
 
             _titleBox.Text = _item.ItemTitle ?? string.Empty;
-            _summaryBox.Text = _item.DailySummary ?? string.Empty;
             _contentBox.Text = initialContent ?? _item.ItemContent ?? string.Empty;
 
             InitializeFields();
@@ -108,7 +107,6 @@ namespace WorkLogApp.UI.Forms
                 // 写入模型
                 _item.ItemTitle = title;
                 _item.ItemContent = _contentBox.Text ?? string.Empty;
-                _item.DailySummary = _summaryBox.Text ?? string.Empty;
                 _item.LogDate = _datePicker.Value.Date;
                 _item.Status = st;
                 _item.Progress = (int)_progressUpDown.Value;
@@ -123,7 +121,8 @@ namespace WorkLogApp.UI.Forms
                 Directory.CreateDirectory(dataDir);
 
                 IImportExportService exportService = new ImportExportService();
-                var ok = exportService.ExportMonth(_item.LogDate, new[] { _item }, dataDir);
+                var day = new WorkLog { LogDate = _item.LogDate.Date, Items = new System.Collections.Generic.List<WorkLogItem> { _item } };
+                var ok = exportService.ExportMonth(_item.LogDate, new[] { day }, dataDir);
                 if (!ok)
                 {
                     MessageBox.Show(this, "保存失败：导出未成功", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
@@ -156,7 +155,6 @@ namespace WorkLogApp.UI.Forms
             {
                 _item.ItemTitle = _titleBox.Text?.Trim();
                 _item.ItemContent = _contentBox.Text ?? string.Empty;
-                _item.DailySummary = _summaryBox.Text ?? string.Empty;
 
                 var baseDir = AppDomain.CurrentDomain.BaseDirectory;
                 var dataDir = Path.Combine(baseDir, "Data");
@@ -164,7 +162,8 @@ namespace WorkLogApp.UI.Forms
 
                 // Excel 导出（按月文件、按日 Sheet）
                 IImportExportService exportService = new ImportExportService();
-                exportService.ExportMonth(_item.LogDate, new[] { _item }, dataDir);
+                var day = new WorkLog { LogDate = _item.LogDate.Date, Items = new System.Collections.Generic.List<WorkLogItem> { _item } };
+                exportService.ExportMonth(_item.LogDate, new[] { day }, dataDir);
 
                 // 可选：文本备份，便于直接查看
                 var safeTitle = string.IsNullOrWhiteSpace(_item.ItemTitle) ? "untitled" : SanitizeFileName(_item.ItemTitle);

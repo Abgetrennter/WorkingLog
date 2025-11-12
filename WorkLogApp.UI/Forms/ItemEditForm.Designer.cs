@@ -21,8 +21,6 @@ namespace WorkLogApp.UI.Forms
         private DateTimePicker _endPicker;
         private Label lblSort;
         private NumericUpDown _sortUpDown;
-        private Label lblSummary;
-        private RichTextBox _summaryBox;
         private Label lblContent;
         private RichTextBox _contentBox;
         private Button _btnSave;
@@ -55,8 +53,6 @@ namespace WorkLogApp.UI.Forms
             this._endPicker = new System.Windows.Forms.DateTimePicker();
             this.lblSort = new System.Windows.Forms.Label();
             this._sortUpDown = new System.Windows.Forms.NumericUpDown();
-            this.lblSummary = new System.Windows.Forms.Label();
-            this._summaryBox = new System.Windows.Forms.RichTextBox();
             this.lblContent = new System.Windows.Forms.Label();
             this._contentBox = new System.Windows.Forms.RichTextBox();
             this._btnSave = new System.Windows.Forms.Button();
@@ -209,43 +205,23 @@ namespace WorkLogApp.UI.Forms
             this._sortUpDown.Size = new System.Drawing.Size(120, 28);
             this._sortUpDown.TabIndex = 0;
             // 
-            // lblSummary
-            // 
-            this.lblSummary.AutoSize = true;
-            this.lblSummary.Location = new System.Drawing.Point(11, 244);
-            this.lblSummary.Name = "lblSummary";
-            this.lblSummary.Size = new System.Drawing.Size(278, 18);
-            this.lblSummary.TabIndex = 14;
-            this.lblSummary.Text = "当日总结（仅第一条记录写入）：";
-            // 
-            // _summaryBox
-            // 
-            this._summaryBox.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this._summaryBox.Dock = System.Windows.Forms.DockStyle.Fill;
-            this._summaryBox.Location = new System.Drawing.Point(295, 247);
-            this._summaryBox.Name = "_summaryBox";
-            this._summaryBox.ScrollBars = System.Windows.Forms.RichTextBoxScrollBars.Vertical;
-            this._summaryBox.Size = new System.Drawing.Size(594, 45);
-            this._summaryBox.TabIndex = 15;
-            this._summaryBox.Text = "";
-            // 
             // lblContent
             // 
             this.lblContent.AutoSize = true;
-            this.lblContent.Location = new System.Drawing.Point(11, 295);
+            this.lblContent.Location = new System.Drawing.Point(11, 244);
             this.lblContent.Name = "lblContent";
             this.lblContent.Size = new System.Drawing.Size(62, 18);
-            this.lblContent.TabIndex = 16;
+            this.lblContent.TabIndex = 14;
             this.lblContent.Text = "内容：";
             // 
             // _contentBox
             // 
             this._contentBox.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
             this._contentBox.Dock = System.Windows.Forms.DockStyle.Fill;
-            this._contentBox.Location = new System.Drawing.Point(295, 298);
+            this._contentBox.Location = new System.Drawing.Point(295, 247);
             this._contentBox.Name = "_contentBox";
-            this._contentBox.Size = new System.Drawing.Size(594, 288);
-            this._contentBox.TabIndex = 17;
+            this._contentBox.Size = new System.Drawing.Size(594, 339);
+            this._contentBox.TabIndex = 15;
             this._contentBox.Text = "";
             // 
             // _btnSave
@@ -286,17 +262,15 @@ namespace WorkLogApp.UI.Forms
             this.rootLayout.Controls.Add(this._startPicker, 1, 5);
             this.rootLayout.Controls.Add(this.lblEnd, 0, 6);
             this.rootLayout.Controls.Add(this._endPicker, 1, 6);
-            this.rootLayout.Controls.Add(this.lblSummary, 0, 7);
-            this.rootLayout.Controls.Add(this._summaryBox, 1, 7);
-            this.rootLayout.Controls.Add(this.lblContent, 0, 8);
-            this.rootLayout.Controls.Add(this._contentBox, 1, 8);
-            this.rootLayout.Controls.Add(this.bottomBar, 1, 9);
+            this.rootLayout.Controls.Add(this.lblContent, 0, 7);
+            this.rootLayout.Controls.Add(this._contentBox, 1, 7);
+            this.rootLayout.Controls.Add(this.bottomBar, 1, 8);
             this.rootLayout.Dock = System.Windows.Forms.DockStyle.Fill;
             this.rootLayout.Location = new System.Drawing.Point(0, 0);
             this.rootLayout.Margin = new System.Windows.Forms.Padding(0);
             this.rootLayout.Name = "rootLayout";
             this.rootLayout.Padding = new System.Windows.Forms.Padding(8);
-            this.rootLayout.RowCount = 10;
+            this.rootLayout.RowCount = 9;
             this.rootLayout.RowStyles.Add(new System.Windows.Forms.RowStyle());
             this.rootLayout.RowStyles.Add(new System.Windows.Forms.RowStyle());
             this.rootLayout.RowStyles.Add(new System.Windows.Forms.RowStyle());
@@ -304,8 +278,7 @@ namespace WorkLogApp.UI.Forms
             this.rootLayout.RowStyles.Add(new System.Windows.Forms.RowStyle());
             this.rootLayout.RowStyles.Add(new System.Windows.Forms.RowStyle());
             this.rootLayout.RowStyles.Add(new System.Windows.Forms.RowStyle());
-            this.rootLayout.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 14.85411F));
-            this.rootLayout.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 85.14589F));
+            this.rootLayout.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
             this.rootLayout.RowStyles.Add(new System.Windows.Forms.RowStyle());
             this.rootLayout.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 52F));
             this.rootLayout.Size = new System.Drawing.Size(900, 650);

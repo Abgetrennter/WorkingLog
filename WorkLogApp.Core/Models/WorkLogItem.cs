@@ -15,6 +15,5 @@ namespace WorkLogApp.Core.Models
         public DateTime? EndTime { get; set; }
         public string Tags { get; set; }
         public int? SortOrder { get; set; }
-        public string DailySummary { get; set; }
     }
 }

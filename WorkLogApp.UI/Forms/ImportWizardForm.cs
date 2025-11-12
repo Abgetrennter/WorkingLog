@@ -14,7 +14,7 @@ namespace WorkLogApp.UI.Forms
     public partial class ImportWizardForm : Form
     {
         private string _sourcePath;
-        private List<WorkLogItem> _imported;
+        private List<WorkLog> _imported;
 
         public ImportWizardForm()
         {
@@ -58,11 +58,11 @@ namespace WorkLogApp.UI.Forms
             try
             {
                 IImportExportService svc = new ImportExportService();
-                var items = svc.ImportFromFile(_sourcePath) ?? Enumerable.Empty<WorkLogItem>();
-                _imported = items.ToList();
+                var days = svc.ImportFromFile(_sourcePath) ?? Enumerable.Empty<WorkLog>();
+                _imported = days.ToList();
                 _previewList.BeginUpdate();
                 _previewList.Items.Clear();
-                foreach (var it in _imported.Take(10))
+                foreach (var it in _imported.SelectMany(d => d.Items ?? new List<WorkLogItem>()).Take(10))
                 {
                     var lv = new ListViewItem(new[]
                     {
@@ -98,14 +98,14 @@ namespace WorkLogApp.UI.Forms
                 Directory.CreateDirectory(dataDir);
                 IImportExportService svc = new ImportExportService();
 
-                // 按月份分组写入
-                var groups = _imported.GroupBy(it => new { it.LogDate.Year, it.LogDate.Month });
+                // 按月份分组写入（按天聚合）
+                var groups = _imported.GroupBy(d => new { d.LogDate.Year, d.LogDate.Month });
                 int total = 0;
                 foreach (var g in groups)
                 {
                     var monthDate = new DateTime(g.Key.Year, g.Key.Month, 1);
                     var list = g.ToList();
-                    total += list.Count;
+                    total += list.SelectMany(d => d.Items ?? new List<WorkLogItem>()).Count();
                     svc.ExportMonth(monthDate, list, dataDir);
                 }
                 MessageBox.Show(this, $"导入完成，共导入 {total} 条记录。", "成功", MessageBoxButtons.OK, MessageBoxIcon.Information);
