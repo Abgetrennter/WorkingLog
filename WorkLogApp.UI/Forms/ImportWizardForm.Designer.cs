@@ -17,6 +17,7 @@ namespace WorkLogApp.UI.Forms
         private ColumnHeader _colTitle;
         private ColumnHeader _colStatus;
         private ColumnHeader _colTags;
+        private System.Windows.Forms.TableLayoutPanel rootLayout;
 
         protected override void Dispose(bool disposing)
         {
@@ -47,7 +48,7 @@ namespace WorkLogApp.UI.Forms
             // 
             this.topPanel.Controls.Add(this._lblFile);
             this.topPanel.Controls.Add(this._btnChoose);
-            this.topPanel.Dock = System.Windows.Forms.DockStyle.Top;
+            this.topPanel.Dock = System.Windows.Forms.DockStyle.Fill;
             this.topPanel.Location = new System.Drawing.Point(0, 0);
             this.topPanel.Name = "topPanel";
             this.topPanel.Padding = new System.Windows.Forms.Padding(8);
@@ -114,7 +115,7 @@ namespace WorkLogApp.UI.Forms
             // bottomPanel
             // 
             this.bottomPanel.Controls.Add(this._btnImport);
-            this.bottomPanel.Dock = System.Windows.Forms.DockStyle.Bottom;
+            this.bottomPanel.Dock = System.Windows.Forms.DockStyle.Fill;
             this.bottomPanel.Location = new System.Drawing.Point(0, 548);
             this.bottomPanel.Name = "bottomPanel";
             this.bottomPanel.Padding = new System.Windows.Forms.Padding(8);
@@ -134,9 +135,22 @@ namespace WorkLogApp.UI.Forms
             // ImportWizardForm
             // 
             this.ClientSize = new System.Drawing.Size(800, 600);
-            this.Controls.Add(this._previewList);
-            this.Controls.Add(this.bottomPanel);
-            this.Controls.Add(this.topPanel);
+            this.rootLayout = new System.Windows.Forms.TableLayoutPanel();
+            this.rootLayout.ColumnCount = 1;
+            this.rootLayout.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
+            this.rootLayout.RowCount = 3;
+            this.rootLayout.RowStyles.Add(new System.Windows.Forms.RowStyle());
+            this.rootLayout.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
+            this.rootLayout.RowStyles.Add(new System.Windows.Forms.RowStyle());
+            this.rootLayout.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.rootLayout.Margin = new System.Windows.Forms.Padding(0);
+            this.rootLayout.Padding = new System.Windows.Forms.Padding(0);
+            this.rootLayout.Name = "rootLayout";
+            this.rootLayout.Controls.Add(this.topPanel, 0, 0);
+            this._previewList.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.rootLayout.Controls.Add(this._previewList, 0, 1);
+            this.rootLayout.Controls.Add(this.bottomPanel, 0, 2);
+            this.Controls.Add(this.rootLayout);
             this.Name = "ImportWizardForm";
             this.Text = "导入向导（基础版）";
             this.topPanel.ResumeLayout(false);

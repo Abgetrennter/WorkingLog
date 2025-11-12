@@ -26,6 +26,7 @@ namespace WorkLogApp.UI.Forms
         private ColumnHeader _colTags;
         private ColumnHeader _colStart;
         private ColumnHeader _colEnd;
+        private System.Windows.Forms.TableLayoutPanel rootLayout;
 
         /// <summary>
         /// Clean up any resources being used.
@@ -71,7 +72,9 @@ namespace WorkLogApp.UI.Forms
             this.topPanel.Controls.Add(this._btnImportWizard);
             this.topPanel.Controls.Add(this._btnMerge);
             this.topPanel.Controls.Add(this._btnImport);
-            this.topPanel.Dock = System.Windows.Forms.DockStyle.Top;
+            this.topPanel.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.topPanel.AutoSize = true;
+            this.topPanel.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
             this.topPanel.Location = new System.Drawing.Point(0, 0);
             this.topPanel.Name = "topPanel";
             this.topPanel.Padding = new System.Windows.Forms.Padding(6);
@@ -207,8 +210,20 @@ namespace WorkLogApp.UI.Forms
             // MainForm
             // 
             this.ClientSize = new System.Drawing.Size(1000, 700);
-            this.Controls.Add(this._listView);
-            this.Controls.Add(this.topPanel);
+            this.rootLayout = new System.Windows.Forms.TableLayoutPanel();
+            this.rootLayout.ColumnCount = 1;
+            this.rootLayout.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
+            this.rootLayout.RowCount = 2;
+            this.rootLayout.RowStyles.Add(new System.Windows.Forms.RowStyle());
+            this.rootLayout.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
+            this.rootLayout.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.rootLayout.Margin = new System.Windows.Forms.Padding(0);
+            this.rootLayout.Padding = new System.Windows.Forms.Padding(0);
+            this.rootLayout.Name = "rootLayout";
+            this.rootLayout.Controls.Add(this.topPanel, 0, 0);
+            this._listView.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.rootLayout.Controls.Add(this._listView, 0, 1);
+            this.Controls.Add(this.rootLayout);
             this.Name = "MainForm";
             this.Text = "工作日志 - 主界面";
             this.topPanel.ResumeLayout(false);
