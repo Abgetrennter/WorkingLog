@@ -8,3 +8,10 @@ WorkLogApp.Services/obj/
 *.txt
 *.exe
 WorkLogApp.UI/bin/Debug/Data/worklog_202511.xlsx
+*.zip
+
+# Release前常规忽略
+**/bin/
+**/obj/
+Logs/
+Data/

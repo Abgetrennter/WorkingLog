@@ -69,7 +69,7 @@ namespace WorkLogApp.UI.Forms
             this._btnChoose.Name = "_btnChoose";
             this._btnChoose.Size = new System.Drawing.Size(100, 30);
             this._btnChoose.TabIndex = 1;
-            this._btnChoose.Text = "选择文件";
+            this._btnChoose.Text = "选择";
             this._btnChoose.Click += new System.EventHandler(this.OnChooseFile);
             // 
             // _previewList

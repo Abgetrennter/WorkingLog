@@ -24,7 +24,7 @@ namespace WorkLogApp.UI.UI
         public static Font Heading3 { get; private set; }
 
         // 是否启用自定义字体（默认关闭，以避免非系统字体的渲染发虚）
-        public static bool EnableCustomFont { get; set; } = true;
+        public static bool EnableCustomFont { get; set; } = false;
 
         // 统一的设计期检测：在设计器中返回 true
         public static bool IsDesignMode
