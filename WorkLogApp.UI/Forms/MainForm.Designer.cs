@@ -45,12 +45,12 @@ namespace WorkLogApp.UI.Forms
         private void InitializeComponent()
         {
             this.topPanel = new System.Windows.Forms.FlowLayoutPanel();
-            this._btnMerge = new System.Windows.Forms.Button();
-            this._btnImportWizard = new System.Windows.Forms.Button();
-            this._btnCreate = new System.Windows.Forms.Button();
-            this._monthPicker = new System.Windows.Forms.DateTimePicker();
-            this._btnImport = new System.Windows.Forms.Button();
             this._btnCategoryManage = new System.Windows.Forms.Button();
+            this._monthPicker = new System.Windows.Forms.DateTimePicker();
+            this._btnCreate = new System.Windows.Forms.Button();
+            this._btnImportWizard = new System.Windows.Forms.Button();
+            this._btnMerge = new System.Windows.Forms.Button();
+            this._btnImport = new System.Windows.Forms.Button();
             this._listView = new System.Windows.Forms.ListView();
             this._colDate = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this._colTitle = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
@@ -65,9 +65,9 @@ namespace WorkLogApp.UI.Forms
             // topPanel
             // 
             this.topPanel.AutoScroll = true;
-            this.topPanel.Controls.Add(this._btnCategoryManage);
-            this.topPanel.Controls.Add(this._monthPicker);
             this.topPanel.Controls.Add(this._btnCreate);
+            this.topPanel.Controls.Add(this._monthPicker);
+            this.topPanel.Controls.Add(this._btnCategoryManage);
             this.topPanel.Controls.Add(this._btnImportWizard);
             this.topPanel.Controls.Add(this._btnMerge);
             this.topPanel.Controls.Add(this._btnImport);
@@ -79,38 +79,16 @@ namespace WorkLogApp.UI.Forms
             this.topPanel.TabIndex = 1;
             this.topPanel.WrapContents = false;
             // 
-            // _btnMerge
+            // _btnCategoryManage
             // 
-            this._btnMerge.Location = new System.Drawing.Point(650, 12);
-            this._btnMerge.Margin = new System.Windows.Forms.Padding(4, 6, 4, 6);
-            this._btnMerge.Name = "_btnMerge";
-            this._btnMerge.Size = new System.Drawing.Size(174, 44);
-            this._btnMerge.TabIndex = 3;
-            this._btnMerge.Tag = "compact";
-            this._btnMerge.Text = "合并其他日志";
-            this._btnMerge.Click += new System.EventHandler(this.OnMergeOtherClick);
-            // 
-            // _btnImportWizard
-            // 
-            this._btnImportWizard.Location = new System.Drawing.Point(492, 12);
-            this._btnImportWizard.Margin = new System.Windows.Forms.Padding(4, 6, 4, 6);
-            this._btnImportWizard.Name = "_btnImportWizard";
-            this._btnImportWizard.Size = new System.Drawing.Size(150, 44);
-            this._btnImportWizard.TabIndex = 5;
-            this._btnImportWizard.Tag = "compact";
-            this._btnImportWizard.Text = "导入向导";
-            this._btnImportWizard.Click += new System.EventHandler(this.OnImportWizardClick);
-            // 
-            // _btnCreate
-            // 
-            this._btnCreate.Location = new System.Drawing.Point(334, 12);
-            this._btnCreate.Margin = new System.Windows.Forms.Padding(4, 6, 4, 6);
-            this._btnCreate.Name = "_btnCreate";
-            this._btnCreate.Size = new System.Drawing.Size(150, 44);
-            this._btnCreate.TabIndex = 0;
-            this._btnCreate.Tag = "compact";
-            this._btnCreate.Text = "创建事项";
-            this._btnCreate.Click += new System.EventHandler(this.OnCreateItemClick);
+            this._btnCategoryManage.Location = new System.Drawing.Point(334, 12);
+            this._btnCategoryManage.Margin = new System.Windows.Forms.Padding(4, 6, 4, 6);
+            this._btnCategoryManage.Name = "_btnCategoryManage";
+            this._btnCategoryManage.Size = new System.Drawing.Size(150, 44);
+            this._btnCategoryManage.TabIndex = 4;
+            this._btnCategoryManage.Tag = "compact";
+            this._btnCategoryManage.Text = "分类管理";
+            this._btnCategoryManage.Click += new System.EventHandler(this.OnCategoryManageClick);
             // 
             // _monthPicker
             // 
@@ -126,6 +104,39 @@ namespace WorkLogApp.UI.Forms
             this._monthPicker.Value = new System.DateTime(2025, 11, 11, 0, 0, 0, 0);
             this._monthPicker.ValueChanged += new System.EventHandler(this._monthPicker_ValueChanged);
             // 
+            // _btnCreate
+            // 
+            this._btnCreate.Location = new System.Drawing.Point(10, 12);
+            this._btnCreate.Margin = new System.Windows.Forms.Padding(4, 6, 4, 6);
+            this._btnCreate.Name = "_btnCreate";
+            this._btnCreate.Size = new System.Drawing.Size(150, 44);
+            this._btnCreate.TabIndex = 0;
+            this._btnCreate.Tag = "compact";
+            this._btnCreate.Text = "创建事项";
+            this._btnCreate.Click += new System.EventHandler(this.OnCreateItemClick);
+            // 
+            // _btnImportWizard
+            // 
+            this._btnImportWizard.Location = new System.Drawing.Point(492, 12);
+            this._btnImportWizard.Margin = new System.Windows.Forms.Padding(4, 6, 4, 6);
+            this._btnImportWizard.Name = "_btnImportWizard";
+            this._btnImportWizard.Size = new System.Drawing.Size(150, 44);
+            this._btnImportWizard.TabIndex = 5;
+            this._btnImportWizard.Tag = "compact";
+            this._btnImportWizard.Text = "导入向导";
+            this._btnImportWizard.Click += new System.EventHandler(this.OnImportWizardClick);
+            // 
+            // _btnMerge
+            // 
+            this._btnMerge.Location = new System.Drawing.Point(650, 12);
+            this._btnMerge.Margin = new System.Windows.Forms.Padding(4, 6, 4, 6);
+            this._btnMerge.Name = "_btnMerge";
+            this._btnMerge.Size = new System.Drawing.Size(174, 44);
+            this._btnMerge.TabIndex = 3;
+            this._btnMerge.Tag = "compact";
+            this._btnMerge.Text = "合并其他日志";
+            this._btnMerge.Click += new System.EventHandler(this.OnMergeOtherClick);
+            // 
             // _btnImport
             // 
             this._btnImport.Location = new System.Drawing.Point(832, 12);
@@ -136,17 +147,6 @@ namespace WorkLogApp.UI.Forms
             this._btnImport.Tag = "compact";
             this._btnImport.Text = "刷新当月";
             this._btnImport.Click += new System.EventHandler(this.OnImportMonthClick);
-            // 
-            // _btnCategoryManage
-            // 
-            this._btnCategoryManage.Location = new System.Drawing.Point(10, 12);
-            this._btnCategoryManage.Margin = new System.Windows.Forms.Padding(4, 6, 4, 6);
-            this._btnCategoryManage.Name = "_btnCategoryManage";
-            this._btnCategoryManage.Size = new System.Drawing.Size(150, 44);
-            this._btnCategoryManage.TabIndex = 4;
-            this._btnCategoryManage.Tag = "compact";
-            this._btnCategoryManage.Text = "分类管理";
-            this._btnCategoryManage.Click += new System.EventHandler(this.OnCategoryManageClick);
             // 
             // _listView
             // 

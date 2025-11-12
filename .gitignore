@@ -4,3 +4,4 @@
 *.cache
 *.xlsx
 .vs/
+WorkLogApp.Services/obj/
