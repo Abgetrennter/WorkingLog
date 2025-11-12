@@ -26,59 +26,82 @@ namespace WorkLogApp.UI.Forms
 
         private void InitializeComponent()
         {
-            this.components = new Container();
-
-            this.lblCategory = new Label();
-            this._categoryCombo = new CategoryTreeComboBox();
-            this.lblTitle = new Label();
-            this._titleBox = new TextBox();
-            this._formPanel = new DynamicFormPanel();
-            this._btnGenerateSave = new Button();
-
+            this.lblCategory = new System.Windows.Forms.Label();
+            this.lblTitle = new System.Windows.Forms.Label();
+            this._titleBox = new System.Windows.Forms.TextBox();
+            this._btnGenerateSave = new System.Windows.Forms.Button();
+            this._categoryCombo = new WorkLogApp.UI.Controls.CategoryTreeComboBox();
+            this._formPanel = new WorkLogApp.UI.Controls.DynamicFormPanel();
             this.SuspendLayout();
-            this.Text = "创建日志事项";
-            this.ClientSize = new System.Drawing.Size(800, 600);
-
+            // 
             // lblCategory
-            this.lblCategory.Text = "分类：";
-            this.lblCategory.Location = new System.Drawing.Point(10, 15);
+            // 
             this.lblCategory.AutoSize = true;
-
-            // _categoryCombo
-            this._categoryCombo.Location = new System.Drawing.Point(60, 10);
-            this._categoryCombo.Width = 200;
-
+            this.lblCategory.Location = new System.Drawing.Point(12, 13);
+            this.lblCategory.Name = "lblCategory";
+            this.lblCategory.Size = new System.Drawing.Size(62, 18);
+            this.lblCategory.TabIndex = 0;
+            this.lblCategory.Text = "分类：";
+            this.lblCategory.Click += new System.EventHandler(this.lblCategory_Click);
+            // 
             // lblTitle
-            this.lblTitle.Text = "标题：";
-            this.lblTitle.Location = new System.Drawing.Point(300, 15);
+            // 
             this.lblTitle.AutoSize = true;
-
+            this.lblTitle.Location = new System.Drawing.Point(367, 13);
+            this.lblTitle.Name = "lblTitle";
+            this.lblTitle.Size = new System.Drawing.Size(62, 18);
+            this.lblTitle.TabIndex = 2;
+            this.lblTitle.Text = "标题：";
+            // 
             // _titleBox
-            this._titleBox.Location = new System.Drawing.Point(350, 10);
-            this._titleBox.Width = 300;
-
-            // _formPanel
-            this._formPanel.Location = new System.Drawing.Point(10, 50);
-            this._formPanel.Width = 740;
-            this._formPanel.Height = 440;
-            this._formPanel.BorderStyle = BorderStyle.FixedSingle;
-
+            // 
+            this._titleBox.Location = new System.Drawing.Point(450, 10);
+            this._titleBox.Name = "_titleBox";
+            this._titleBox.Size = new System.Drawing.Size(300, 28);
+            this._titleBox.TabIndex = 3;
+            // 
             // _btnGenerateSave
+            // 
+            this._btnGenerateSave.Location = new System.Drawing.Point(303, 528);
+            this._btnGenerateSave.Name = "_btnGenerateSave";
+            this._btnGenerateSave.Size = new System.Drawing.Size(197, 60);
+            this._btnGenerateSave.TabIndex = 5;
             this._btnGenerateSave.Text = "生成并保存";
-            this._btnGenerateSave.Location = new System.Drawing.Point(10, 510);
-            this._btnGenerateSave.Width = 120;
-            this._btnGenerateSave.Height = 35;
             this._btnGenerateSave.Click += new System.EventHandler(this.OnGenerateAndSave);
-
-            // add controls
+            // 
+            // _categoryCombo
+            // 
+            this._categoryCombo.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this._categoryCombo.Location = new System.Drawing.Point(112, 10);
+            this._categoryCombo.Name = "_categoryCombo";
+            this._categoryCombo.Size = new System.Drawing.Size(200, 26);
+            this._categoryCombo.TabIndex = 1;
+            this._categoryCombo.TemplateService = null;
+            // 
+            // _formPanel
+            // 
+            this._formPanel.AutoScroll = true;
+            this._formPanel.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this._formPanel.Location = new System.Drawing.Point(15, 50);
+            this._formPanel.Name = "_formPanel";
+            this._formPanel.Size = new System.Drawing.Size(760, 472);
+            this._formPanel.TabIndex = 4;
+            this._formPanel.Paint += new System.Windows.Forms.PaintEventHandler(this._formPanel_Paint);
+            // 
+            // ItemCreateForm
+            // 
+            this.ClientSize = new System.Drawing.Size(800, 600);
             this.Controls.Add(this.lblCategory);
             this.Controls.Add(this._categoryCombo);
             this.Controls.Add(this.lblTitle);
             this.Controls.Add(this._titleBox);
             this.Controls.Add(this._formPanel);
             this.Controls.Add(this._btnGenerateSave);
-
+            this.Name = "ItemCreateForm";
+            this.Text = "创建日志事项";
             this.ResumeLayout(false);
+            this.PerformLayout();
+
         }
     }
 }

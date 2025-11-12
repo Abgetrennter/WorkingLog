@@ -22,6 +22,9 @@ namespace WorkLogApp.UI.UI
         public static Font Heading2 { get; private set; }
         public static Font Heading3 { get; private set; }
 
+        // 是否启用自定义字体（默认关闭，以避免非系统字体的渲染发虚）
+        public static bool EnableCustomFont { get; set; } = true;
+
         // 统一的设计期检测：在设计器中返回 true
         public static bool IsDesignMode
         {
@@ -40,16 +43,20 @@ namespace WorkLogApp.UI.UI
 
         public static void Initialize()
         {
-            TryLoadCustomFont();
+            _customFamily = null;
+            if (EnableCustomFont)
+            {
+                TryLoadCustomFont();
+            }
             var family = _customFamily ?? GetPreferredDefaultFamily();
             // 以更接近系统默认的字号作为基础，避免在高 DPI 环境下出现过度放大
-            BodyFont = new Font(family, 10f, FontStyle.Regular, GraphicsUnit.Point);
+            BodyFont = new Font(family, 12f, FontStyle.Regular, GraphicsUnit.Point);
             // 紧凑字体用于工具栏按钮等需要更小字号的控件
-            CompactFont = new Font(family, 9f, FontStyle.Regular, GraphicsUnit.Point);
+            CompactFont = new Font(family, 15f, FontStyle.Regular, GraphicsUnit.Point);
             // 标题字号适度增大，但不至于导致整体控件高度剧增
             Heading1 = new Font(family, 16f, FontStyle.Bold, GraphicsUnit.Point);
             Heading2 = new Font(family, 14f, FontStyle.Bold, GraphicsUnit.Point);
-            Heading3 = new Font(family, 12f, FontStyle.Bold, GraphicsUnit.Point);
+            Heading3 = new Font(family, 14f, FontStyle.Bold, GraphicsUnit.Point);
         }
 
         // 便捷重载：使用全局缩放比例
@@ -79,7 +86,8 @@ namespace WorkLogApp.UI.UI
                 // 标签采用兼容文本渲染以获得更好的抗锯齿
                 if (c is Label lbl)
                 {
-                    lbl.UseCompatibleTextRendering = true;
+                    // 保持系统默认的 GDI 文本渲染，更清晰（尤其在高 DPI 下）
+                    lbl.UseCompatibleTextRendering = false;
                     ApplyHeadingIfTagged(lbl);
                 }
 
@@ -211,7 +219,11 @@ namespace WorkLogApp.UI.UI
         {
             try
             {
-                var format = new PARAFORMAT2();
+                var format = new PARAFORMAT2
+                {
+                    cbSize = (uint)Marshal.SizeOf(typeof(PARAFORMAT2)),
+                    dwMask = PFM_LINESPACING
+                };
                 format.cbSize = (uint)Marshal.SizeOf(typeof(PARAFORMAT2));
                 format.dwMask = PFM_LINESPACING;
 
