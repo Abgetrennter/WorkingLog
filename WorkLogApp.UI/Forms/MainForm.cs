@@ -27,6 +27,9 @@ namespace WorkLogApp.UI.Forms
             _templateService = templateService;
             InitializeComponent();
 
+            UIStyleManager.ApplyVisualEnhancements(this);
+            UIStyleManager.ApplyLightTheme(this);
+
             // 运行时：为列表添加双击编辑事件
             if (!UIStyleManager.IsDesignMode)
             {

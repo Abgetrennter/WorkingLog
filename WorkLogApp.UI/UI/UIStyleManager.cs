@@ -1,5 +1,6 @@
 using System;
 using System.Drawing;
+using System.Drawing.Drawing2D;
 using System.Drawing.Text;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -77,6 +78,130 @@ namespace WorkLogApp.UI.UI
 
             // 标签使用 GDI+ 文本渲染（可应用 ClearType）
             ApplyToControlTree(form);
+        }
+
+        public static void ApplyLightTheme(Control root)
+        {
+            ApplyLightThemeRecursive(root);
+        }
+
+        private static void ApplyLightThemeRecursive(Control c)
+        {
+            try
+            {
+                c.ForeColor = Color.FromArgb(32, 32, 32);
+                if (c is Form || c is Panel || c is TableLayoutPanel || c is FlowLayoutPanel)
+                {
+                    c.BackColor = Color.FromArgb(245, 247, 250);
+                }
+
+                if (c is TableLayoutPanel tlp)
+                {
+                    tlp.Padding = new Padding(12);
+                }
+
+                if (c is FlowLayoutPanel flp)
+                {
+                    flp.WrapContents = false;
+                    flp.Padding = new Padding(8);
+                }
+
+                if (c is Panel pnl && (pnl.Dock == DockStyle.Top || pnl.Dock == DockStyle.Bottom))
+                {
+                    pnl.BackColor = Color.FromArgb(242, 246, 251);
+                }
+
+                if (c is Button btn)
+                {
+                    btn.FlatStyle = FlatStyle.Flat;
+                    btn.UseVisualStyleBackColor = false;
+                    btn.BackColor = Color.FromArgb(45, 156, 219);
+                    btn.ForeColor = Color.White;
+                    btn.FlatAppearance.BorderSize = 1;
+                    btn.FlatAppearance.BorderColor = Color.FromArgb(22, 125, 191);
+                    btn.FlatAppearance.MouseOverBackColor = Color.FromArgb(56, 170, 230);
+                    btn.FlatAppearance.MouseDownBackColor = Color.FromArgb(23, 116, 178);
+                    var tagStr = btn.Tag as string;
+                    var h = (!string.IsNullOrWhiteSpace(tagStr) && string.Equals(tagStr.Trim(), "compact", StringComparison.OrdinalIgnoreCase)) ? 32 : 36;
+                    if (btn.Height < h) btn.Height = h;
+                }
+
+                if (c is CheckBox cb)
+                {
+                    cb.BackColor = Color.Transparent;
+                    cb.ForeColor = Color.FromArgb(32, 32, 32);
+                }
+
+                if (c is DateTimePicker dtp)
+                {
+                    dtp.CalendarForeColor = Color.FromArgb(32, 32, 32);
+                    dtp.CalendarMonthBackground = Color.White;
+                    dtp.CalendarTitleBackColor = Color.FromArgb(45, 156, 219);
+                    dtp.CalendarTitleForeColor = Color.White;
+                    dtp.CalendarTrailingForeColor = Color.FromArgb(140, 149, 160);
+                }
+
+                if (c is ListView lv)
+                {
+                    lv.BorderStyle = BorderStyle.None;
+                    lv.GridLines = false;
+                    lv.FullRowSelect = true;
+                    lv.BackColor = Color.FromArgb(238, 242, 247);
+                    lv.ForeColor = Color.FromArgb(32, 32, 32);
+                    lv.HeaderStyle = ColumnHeaderStyle.Nonclickable;
+                }
+
+                TryEnableDoubleBuffer(c);
+                foreach (Control child in c.Controls)
+                {
+                    ApplyLightThemeRecursive(child);
+                }
+            }
+            catch { }
+        }
+
+        private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<Control, RoundTag> _roundMap = new System.Runtime.CompilerServices.ConditionalWeakTable<Control, RoundTag>();
+
+        public static void ApplyRoundedCorners(Control c, int radius)
+        {
+            try
+            {
+                c.SizeChanged -= OnControlSizeChangedForRound;
+                _roundMap.Remove(c);
+                _roundMap.Add(c, new RoundTag { Radius = radius });
+                c.SizeChanged += OnControlSizeChangedForRound;
+                UpdateRoundRegion(c, radius);
+            }
+            catch { }
+        }
+
+        private class RoundTag
+        {
+            public int Radius { get; set; }
+        }
+
+        private static void OnControlSizeChangedForRound(object sender, EventArgs e)
+        {
+            var c = sender as Control;
+            if (c == null) return;
+            if (!_roundMap.TryGetValue(c, out var rt)) return;
+            UpdateRoundRegion(c, rt.Radius);
+        }
+
+        private static void UpdateRoundRegion(Control c, int radius)
+        {
+            var r = c.ClientRectangle;
+            if (r.Width <= 0 || r.Height <= 0) return;
+            using (var path = new GraphicsPath())
+            {
+                int d = radius * 2;
+                path.AddArc(0, 0, d, d, 180, 90);
+                path.AddArc(r.Width - d - 1, 0, d, d, 270, 90);
+                path.AddArc(r.Width - d - 1, r.Height - d - 1, d, d, 0, 90);
+                path.AddArc(0, r.Height - d - 1, d, d, 90, 90);
+                path.CloseFigure();
+                c.Region = new Region(path);
+            }
         }
 
         private static void ApplyToControlTree(Control root)

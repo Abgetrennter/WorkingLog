@@ -3,6 +3,7 @@ using System.Drawing;
 using System.Linq;
 using System.Windows.Forms;
 using WorkLogApp.Core.Models;
+using WorkLogApp.UI.UI;
 
 namespace WorkLogApp.UI.Forms
 {
@@ -45,6 +46,9 @@ namespace WorkLogApp.UI.Forms
             Controls.Add(_bottomBar);
 
             _textBox.Text = initialText ?? string.Empty;
+
+            UIStyleManager.ApplyVisualEnhancements(this);
+            UIStyleManager.ApplyLightTheme(this);
         }
 
         public DailySummaryForm(System.Collections.Generic.IEnumerable<WorkLogItem> items, string existingText)
@@ -85,6 +89,9 @@ namespace WorkLogApp.UI.Forms
 
             _items = items ?? Enumerable.Empty<WorkLogItem>();
             _textBox.Text = string.IsNullOrWhiteSpace(existingText) ? BuildChain(_items) : existingText;
+
+            UIStyleManager.ApplyVisualEnhancements(this);
+            UIStyleManager.ApplyLightTheme(this);
         }
 
         public string SummaryText => _textBox.Text;

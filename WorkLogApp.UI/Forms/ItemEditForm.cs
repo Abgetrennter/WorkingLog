@@ -21,6 +21,7 @@ namespace WorkLogApp.UI.Forms
             InitializeComponent();
             InitializeFields();
             UIStyleManager.ApplyVisualEnhancements(this);
+            UIStyleManager.ApplyLightTheme(this);
         }
 
         
@@ -36,6 +37,7 @@ namespace WorkLogApp.UI.Forms
 
             // 应用统一样式并设置 1.5 倍行距
             UIStyleManager.ApplyVisualEnhancements(this);
+            UIStyleManager.ApplyLightTheme(this);
         }
 
         private void InitializeFields()

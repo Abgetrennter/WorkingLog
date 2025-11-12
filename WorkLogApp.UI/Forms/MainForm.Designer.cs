@@ -30,6 +30,7 @@ namespace WorkLogApp.UI.Forms
         private Button _btnDailySummary;
         private Button _btnSave;
         private Button _btnOpenFileLocation;
+        private Panel _topSeparator;
 
         /// <summary>
         /// Clean up any resources being used.
@@ -60,6 +61,7 @@ namespace WorkLogApp.UI.Forms
             this._btnSave = new System.Windows.Forms.Button();
             this._btnOpenFileLocation = new System.Windows.Forms.Button();
             this._listView = new System.Windows.Forms.ListView();
+            this._topSeparator = new System.Windows.Forms.Panel();
             this._colDate = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this._colTitle = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this._colContent = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
@@ -227,6 +229,13 @@ namespace WorkLogApp.UI.Forms
             this._listView.UseCompatibleStateImageBehavior = false;
             this._listView.View = System.Windows.Forms.View.Details;
             // 
+            // _topSeparator
+            // 
+            this._topSeparator.Dock = System.Windows.Forms.DockStyle.Fill;
+            this._topSeparator.Margin = new System.Windows.Forms.Padding(0);
+            this._topSeparator.Name = "_topSeparator";
+            this._topSeparator.BackColor = System.Drawing.Color.FromArgb(235, 240, 246);
+            // 
             // _colDate
             // 
             this._colDate.Text = "日期";
@@ -262,13 +271,15 @@ namespace WorkLogApp.UI.Forms
             this.rootLayout.ColumnCount = 1;
             this.rootLayout.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
             this.rootLayout.Controls.Add(this.topPanel, 0, 0);
-            this.rootLayout.Controls.Add(this._listView, 0, 1);
+            this.rootLayout.Controls.Add(this._topSeparator, 0, 1);
+            this.rootLayout.Controls.Add(this._listView, 0, 2);
             this.rootLayout.Dock = System.Windows.Forms.DockStyle.Fill;
             this.rootLayout.Location = new System.Drawing.Point(0, 0);
             this.rootLayout.Margin = new System.Windows.Forms.Padding(0);
             this.rootLayout.Name = "rootLayout";
-            this.rootLayout.RowCount = 2;
+            this.rootLayout.RowCount = 3;
             this.rootLayout.RowStyles.Add(new System.Windows.Forms.RowStyle());
+            this.rootLayout.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 1F));
             this.rootLayout.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
             this.rootLayout.Size = new System.Drawing.Size(1000, 700);
             this.rootLayout.TabIndex = 0;
