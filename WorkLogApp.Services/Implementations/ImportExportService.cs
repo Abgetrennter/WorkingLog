@@ -2,7 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Linq;
+using System.Text.RegularExpressions;
 using NPOI.SS.UserModel;
+using NPOI.SS.Util;
 using NPOI.XSSF.UserModel;
 using WorkLogApp.Core.Enums;
 using WorkLogApp.Core.Models;
@@ -13,6 +16,7 @@ namespace WorkLogApp.Services.Implementations
     public class ImportExportService : IImportExportService
     {
         private const string FilePrefix = "worklog_";
+        private const string SheetName = "工作日志";
         private static readonly string[] Header = new[]
         {
             // 按设计文档的列顺序（并追加 DailySummary）
@@ -22,6 +26,20 @@ namespace WorkLogApp.Services.Implementations
         {
             // 与 Header 对应的中文显示名称
             "日期","标题","内容","分类ID","状态","进度","开始时间","结束时间","标签","排序","当日总结"
+        };
+        private static readonly Dictionary<string, string> HeaderNameMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            {"日期","LogDate"},
+            {"标题","ItemTitle"},
+            {"内容","ItemContent"},
+            {"分类ID","CategoryId"},
+            {"状态","Status"},
+            {"进度","Progress"},
+            {"开始时间","StartTime"},
+            {"结束时间","EndTime"},
+            {"标签","Tags"},
+            {"排序","SortOrder"},
+            {"当日总结","DailySummary"}
         };
 
         public bool ExportMonth(DateTime month, IEnumerable<WorkLogItem> items, string outputDirectory)
@@ -34,34 +52,15 @@ namespace WorkLogApp.Services.Implementations
             var fileName = FilePrefix + monthStart.ToString("yyyyMM") + ".xlsx";
             var filePath = Path.Combine(outputDirectory, fileName);
 
-            IWorkbook wb = null;
-            if (File.Exists(filePath))
-            {
-                using (var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-                {
-                    wb = new XSSFWorkbook(fs);
-                }
-            }
-            else
-            {
-                wb = new XSSFWorkbook();
-            }
+            // 读取已存在的当月数据并与新数据合并，然后统一重写为单表结构
+            var existing = ImportMonth(month, outputDirectory) ?? Enumerable.Empty<WorkLogItem>();
+            var newItems = items.Where(i => i != null && i.LogDate.Year == month.Year && i.LogDate.Month == month.Month);
+            var combined = existing.Concat(newItems).ToList();
 
-            foreach (var item in items)
-            {
-                if (item == null) continue;
-                if (item.LogDate.Year != month.Year || item.LogDate.Month != month.Month) continue;
-                WriteItem(wb, item);
-            }
-
-            using (var outFs = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.None))
-            {
-                wb.Write(outFs);
-            }
-            return true;
+            return RewriteMonth(month, combined, outputDirectory);
         }
 
-        // 覆盖写入整月数据：重新生成工作簿并写入传入的所有当月记录
+        // 覆盖写入整月数据：生成单个工作表并写入传入的所有当月记录（按日期分块）
         public bool RewriteMonth(DateTime month, IEnumerable<WorkLogItem> items, string outputDirectory)
         {
             if (items == null) return false;
@@ -73,17 +72,112 @@ namespace WorkLogApp.Services.Implementations
             var filePath = Path.Combine(outputDirectory, fileName);
 
             IWorkbook wb = new XSSFWorkbook();
-            foreach (var item in items)
-            {
-                if (item == null) continue;
-                if (item.LogDate.Year != month.Year || item.LogDate.Month != month.Month) continue;
-                WriteItem(wb, item);
-            }
+            WriteMonthSheet(wb, month, items);
             using (var outFs = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.None))
             {
                 wb.Write(outFs);
             }
             return true;
+        }
+
+        private static void WriteMonthSheet(IWorkbook wb, DateTime month, IEnumerable<WorkLogItem> items)
+        {
+            var sheet = wb.CreateSheet(SheetName);
+
+            // 写入中文表头
+            var header = sheet.CreateRow(0);
+            for (int i = 0; i < HeaderZh.Length; i++)
+            {
+                header.CreateCell(i).SetCellValue(HeaderZh[i]);
+            }
+
+            // 样式：两种块背景色 + 加粗的日期标识行
+            var boldFont = wb.CreateFont();
+            boldFont.IsBold = true;
+
+            var markerStyleA = wb.CreateCellStyle();
+            markerStyleA.SetFont(boldFont);
+            markerStyleA.FillPattern = FillPattern.SolidForeground;
+            markerStyleA.FillForegroundColor = IndexedColors.LightCornflowerBlue.Index;
+            markerStyleA.Alignment = HorizontalAlignment.Center;
+            markerStyleA.VerticalAlignment = VerticalAlignment.Center;
+
+            var markerStyleB = wb.CreateCellStyle();
+            markerStyleB.SetFont(boldFont);
+            markerStyleB.FillPattern = FillPattern.SolidForeground;
+            markerStyleB.FillForegroundColor = IndexedColors.LightYellow.Index;
+            markerStyleB.Alignment = HorizontalAlignment.Center;
+            markerStyleB.VerticalAlignment = VerticalAlignment.Center;
+
+            var blockStyleA = wb.CreateCellStyle();
+            blockStyleA.FillPattern = FillPattern.SolidForeground;
+            blockStyleA.FillForegroundColor = IndexedColors.LightCornflowerBlue.Index;
+            blockStyleA.WrapText = true;
+
+            var blockStyleB = wb.CreateCellStyle();
+            blockStyleB.FillPattern = FillPattern.SolidForeground;
+            blockStyleB.FillForegroundColor = IndexedColors.LightYellow.Index;
+            blockStyleB.WrapText = true;
+
+            var ordered = (items ?? Enumerable.Empty<WorkLogItem>())
+                .Where(i => i != null && i.LogDate.Year == month.Year && i.LogDate.Month == month.Month)
+                .OrderBy(i => i.LogDate.Date)
+                .ThenBy(i => i.SortOrder ?? 0)
+                .ThenBy(i => i.StartTime ?? DateTime.MinValue)
+                .ThenBy(i => i.ItemTitle ?? string.Empty)
+                .ToList();
+
+            int rowIndex = 0;
+            int blockIndex = 0;
+            foreach (var group in ordered.GroupBy(i => i.LogDate.Date).OrderBy(g => g.Key))
+            {
+                bool useA = (blockIndex % 2 == 0);
+                var markerStyle = useA ? markerStyleA : markerStyleB;
+                var blockStyle = useA ? blockStyleA : blockStyleB;
+
+                // 日期标识行
+                rowIndex++;
+                var markerRow = sheet.CreateRow(rowIndex);
+                for (int c = 0; c < HeaderZh.Length; c++)
+                {
+                    var cell = markerRow.CreateCell(c);
+                    cell.CellStyle = markerStyle;
+                    cell.SetCellValue(c == 0 ? $"===== {group.Key:yyyy-MM-dd} =====" : string.Empty);
+                }
+                sheet.AddMergedRegion(new CellRangeAddress(rowIndex, rowIndex, 0, HeaderZh.Length - 1));
+
+                bool isFirstDataRow = true;
+                foreach (var item in group)
+                {
+                    rowIndex++;
+                    var row = sheet.CreateRow(rowIndex);
+                    for (int c = 0; c < HeaderZh.Length; c++)
+                    {
+                        var cell = row.CreateCell(c);
+                        cell.CellStyle = blockStyle;
+                    }
+
+                    row.GetCell(0).SetCellValue(item.LogDate.ToString("yyyy-MM-dd"));
+                    row.GetCell(1).SetCellValue(item.ItemTitle ?? string.Empty);
+                    row.GetCell(2).SetCellValue(item.ItemContent ?? string.Empty);
+                    row.GetCell(3).SetCellValue(item.CategoryId);
+                    row.GetCell(4).SetCellValue((int)item.Status);
+                    row.GetCell(5).SetCellValue(item.Progress ?? 0);
+                    row.GetCell(6).SetCellValue(item.StartTime.HasValue ? item.StartTime.Value.ToString("yyyy-MM-dd HH:mm") : string.Empty);
+                    row.GetCell(7).SetCellValue(item.EndTime.HasValue ? item.EndTime.Value.ToString("yyyy-MM-dd HH:mm") : string.Empty);
+                    row.GetCell(8).SetCellValue(item.Tags ?? string.Empty);
+                    row.GetCell(9).SetCellValue(item.SortOrder ?? 0);
+                    row.GetCell(10).SetCellValue(isFirstDataRow ? (item.DailySummary ?? string.Empty) : string.Empty);
+                    isFirstDataRow = false;
+                }
+                blockIndex++;
+            }
+
+            // 列宽适配（可读性优化）
+            for (int i = 0; i < HeaderZh.Length; i++)
+            {
+                sheet.SetColumnWidth(i, 20 * 256);
+            }
         }
 
         public IEnumerable<WorkLogItem> ImportMonth(DateTime month, string inputDirectory)
@@ -98,40 +192,42 @@ namespace WorkLogApp.Services.Implementations
             using (var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
             {
                 var wb = new XSSFWorkbook(fs);
-                for (int i = 0; i < wb.NumberOfSheets; i++)
+                var sheet = wb.GetSheet(SheetName) ?? (wb.NumberOfSheets > 0 ? wb.GetSheetAt(0) : null);
+                if (sheet == null) return list;
+
+                var indexes = GetHeaderIndexes(sheet);
+                DateTime currentDate = DateTime.MinValue;
+
+                for (int r = 1; r <= sheet.LastRowNum; r++)
                 {
-                    var sheet = wb.GetSheetAt(i);
-                    if (sheet == null) continue;
-                    DateTime logDate;
-                    if (!DateTime.TryParseExact(sheet.SheetName, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out logDate))
-                        continue;
-                    var firstRow = sheet.GetRow(0);
-                    int startRow = 1;
-                    var hasHeader = !(firstRow == null || firstRow.PhysicalNumberOfCells == 0);
-                    if (!hasHeader)
-                        startRow = 0; // 无表头则从0开始
-
-                    var indexes = GetHeaderIndexes(sheet);
-
-                    for (int r = startRow; r <= sheet.LastRowNum; r++)
+                    var row = sheet.GetRow(r);
+                    if (row == null) continue;
+                    var firstCellText = GetString(row, 0);
+                    if (!string.IsNullOrWhiteSpace(firstCellText) && firstCellText.StartsWith("====="))
                     {
-                        var row = sheet.GetRow(r);
-                        if (row == null) continue;
-                        var item = new WorkLogItem { LogDate = logDate };
-                        item.ItemTitle = GetString(row, indexes["ItemTitle"]);
-                        item.ItemContent = GetString(row, indexes["ItemContent"]);
-                        item.CategoryId = ParseInt(GetString(row, indexes["CategoryId"]));
-                        item.Status = ParseStatus(GetString(row, indexes["Status"]));
-                        item.Progress = ParseNullableInt(GetString(row, indexes["Progress"]));
-                        item.StartTime = ParseNullableDateTime(GetString(row, indexes["StartTime"]));
-                        item.EndTime = ParseNullableDateTime(GetString(row, indexes["EndTime"]));
-                        item.Tags = GetString(row, indexes["Tags"]);
-                        item.SortOrder = ParseNullableInt(GetString(row, indexes["SortOrder"]));
-                        var isFirstDataRow = hasHeader ? (r == 1) : (r == 0);
-                        if (indexes.ContainsKey("DailySummary") && isFirstDataRow)
-                            item.DailySummary = GetString(row, indexes["DailySummary"]);
-                        list.Add(item);
+                        var m = Regex.Match(firstCellText, "=+\\s*(\\d{4}-\\d{2}-\\d{2})\\s*=+");
+                        if (m.Success && DateTime.TryParseExact(m.Groups[1].Value, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var dt))
+                        {
+                            currentDate = dt;
+                        }
+                        continue;
                     }
+
+                    var item = new WorkLogItem();
+                    item.LogDate = currentDate != DateTime.MinValue
+                        ? currentDate
+                        : ParseNullableDateTime(GetString(row, indexes["LogDate"]))?.Date ?? monthStart;
+                    item.ItemTitle = GetString(row, indexes["ItemTitle"]);
+                    item.ItemContent = GetString(row, indexes["ItemContent"]);
+                    item.CategoryId = ParseInt(GetString(row, indexes["CategoryId"]));
+                    item.Status = ParseStatus(GetString(row, indexes["Status"]));
+                    item.Progress = ParseNullableInt(GetString(row, indexes["Progress"]));
+                    item.StartTime = ParseNullableDateTime(GetString(row, indexes["StartTime"]));
+                    item.EndTime = ParseNullableDateTime(GetString(row, indexes["EndTime"]));
+                    item.Tags = GetString(row, indexes["Tags"]);
+                    item.SortOrder = ParseNullableInt(GetString(row, indexes["SortOrder"]));
+                    item.DailySummary = GetString(row, indexes["DailySummary"]);
+                    list.Add(item);
                 }
             }
             return list;
@@ -287,12 +383,10 @@ namespace WorkLogApp.Services.Implementations
             var headerRow = sheet.GetRow(0);
             if (headerRow == null || headerRow.PhysicalNumberOfCells == 0)
             {
-                // 无表头，使用默认顺序（兼容旧格式）
                 for (int i = 0; i < Header.Length; i++) dict[Header[i]] = i;
-                // 兼容旧列顺序（没有 DailySummary，Status 在 CategoryId 之前）
                 if (!dict.ContainsKey("DailySummary"))
                 {
-                    dict["DailySummary"] = 10; // 不存在时占位
+                    dict["DailySummary"] = 10;
                 }
                 return dict;
             }
@@ -301,15 +395,20 @@ namespace WorkLogApp.Services.Implementations
                 var name = GetString(headerRow, c);
                 if (!string.IsNullOrWhiteSpace(name))
                 {
-                    if (!dict.ContainsKey(name)) dict[name] = c;
+                    if (HeaderNameMap.TryGetValue(name, out var key))
+                    {
+                        dict[key] = c;
+                    }
+                    else
+                    {
+                        dict[name] = c;
+                    }
                 }
             }
-            // 确保所有关键列都有索引（若缺失则用当前设计默认）
             foreach (var col in Header)
             {
                 if (!dict.ContainsKey(col))
                 {
-                    // 回退到当前设计的固定索引
                     var idx = Array.IndexOf(Header, col);
                     dict[col] = idx >= 0 ? idx : dict.Count;
                 }
