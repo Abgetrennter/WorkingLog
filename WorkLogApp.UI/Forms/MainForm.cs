@@ -14,6 +14,7 @@ namespace WorkLogApp.UI.Forms
     {
         private readonly ITemplateService _templateService;
         private System.Collections.Generic.List<WorkLogItem> _currentItems = new System.Collections.Generic.List<WorkLogItem>();
+        private System.Collections.Generic.List<WorkLogItem> _allMonthItems = new System.Collections.Generic.List<WorkLogItem>();
 
         // 设计期支持：提供无参构造，方便设计器实例化
         public MainForm() : this(new TemplateService())
@@ -29,6 +30,19 @@ namespace WorkLogApp.UI.Forms
             if (!UIStyleManager.IsDesignMode)
             {
                 _listView.DoubleClick += OnListViewDoubleClick;
+                _listView.AllowDrop = true;
+                _listView.ItemDrag += OnListViewItemDrag;
+                _listView.DragEnter += OnListViewDragEnter;
+                _listView.DragOver += OnListViewDragOver;
+                _listView.DragDrop += OnListViewDragDrop;
+
+                _monthPicker.Format = DateTimePickerFormat.Custom;
+                _monthPicker.CustomFormat = "yyyy-MM";
+                _monthPicker.ShowUpDown = true;
+
+                _dayPicker.Value = DateTime.Today;
+                _chkShowByMonth.CheckedChanged += OnScopeToggled;
+                _dayPicker.ValueChanged += OnDayPickerValueChanged;
             }
 
             // 设计期：填充 ListView 示例数据，便于在设计器中预览布局
@@ -78,14 +92,50 @@ namespace WorkLogApp.UI.Forms
 
         private void OnImportMonthClick(object sender, EventArgs e)
         {
-            RefreshMonthItems();
+            RefreshItems();
+        }
+
+        private void OnSaveClick(object sender, EventArgs e)
+        {
+            try
+            {
+                // 根据当前视图更新 SortOrder
+                UpdateSortOrderByCurrentView();
+
+                // 保存到当月 Excel
+                var baseDir = AppDomain.CurrentDomain.BaseDirectory;
+                var dataDir = Path.Combine(baseDir, "Data");
+                Directory.CreateDirectory(dataDir);
+
+                var selectedDate = _dayPicker.Value;
+                var monthRef = new DateTime(selectedDate.Year, selectedDate.Month, 1);
+                if (_chkShowByMonth.Checked)
+                {
+                    monthRef = new DateTime(_monthPicker.Value.Year, _monthPicker.Value.Month, 1);
+                }
+
+                IImportExportService svc = new ImportExportService();
+                svc.RewriteMonth(monthRef, _allMonthItems, dataDir);
+
+                // 保存后重新绑定，以反映可能的排序变化
+                RefreshItems();
+                MessageBox.Show(this, "已保存排序并更新当月 Excel。", "成功", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(this, "保存失败：" + ex.Message, "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
 
         protected override void OnShown(EventArgs e)
         {
             base.OnShown(e);
-            // 打开应用时自动读取当前月份数据
-            RefreshMonthItems();
+            if (UIStyleManager.IsDesignMode) return;
+            _chkShowByMonth.Checked = false;
+            _dayPicker.Value = DateTime.Today;
+            _monthPicker.Value = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
+            SetScopeUI();
+            RefreshItems();
         }
 
 
@@ -110,16 +160,37 @@ namespace WorkLogApp.UI.Forms
 
         private void RefreshMonthItems()
         {
+            RefreshItems();
+        }
+
+        private void RefreshItems()
+        {
             try
             {
                 var baseDir = AppDomain.CurrentDomain.BaseDirectory;
                 var dataDir = Path.Combine(baseDir, "Data");
                 Directory.CreateDirectory(dataDir);
 
-                var month = _monthPicker.Value;
+                var selectedDate = _dayPicker.Value;
+                var monthRef = new DateTime(selectedDate.Year, selectedDate.Month, 1);
+                if (_chkShowByMonth.Checked)
+                {
+                    monthRef = new DateTime(_monthPicker.Value.Year, _monthPicker.Value.Month, 1);
+                }
+
                 IImportExportService svc = new ImportExportService();
-                var items = svc.ImportMonth(month, dataDir) ?? Enumerable.Empty<WorkLogItem>();
-                _currentItems = items.ToList();
+                var monthItems = svc.ImportMonth(monthRef, dataDir) ?? Enumerable.Empty<WorkLogItem>();
+                _allMonthItems = monthItems.ToList();
+
+                if (_chkShowByMonth.Checked)
+                {
+                    _currentItems = _allMonthItems.ToList();
+                }
+                else
+                {
+                    _currentItems = _allMonthItems.Where(it => it.LogDate.Date == selectedDate.Date).ToList();
+                }
+
                 BindItems(_currentItems);
             }
             catch (Exception ex)
@@ -154,7 +225,32 @@ namespace WorkLogApp.UI.Forms
 
         private void _monthPicker_ValueChanged(object sender, EventArgs e)
         {
+            if (_chkShowByMonth.Checked)
+            {
+                RefreshItems();
+            }
+        }
 
+        private void OnDayPickerValueChanged(object sender, EventArgs e)
+        {
+            if (!_chkShowByMonth.Checked)
+            {
+                RefreshItems();
+            }
+        }
+
+        private void OnScopeToggled(object sender, EventArgs e)
+        {
+            SetScopeUI();
+            RefreshItems();
+        }
+
+        private void SetScopeUI()
+        {
+            var byMonth = _chkShowByMonth.Checked;
+            _monthPicker.Visible = byMonth;
+            _dayPicker.Visible = !byMonth;
+            _btnDailySummary.Visible = !byMonth;
         }
 
         private void OnListViewDoubleClick(object sender, EventArgs e)
@@ -182,8 +278,8 @@ namespace WorkLogApp.UI.Forms
                         Directory.CreateDirectory(dataDir);
                         var month = _monthPicker.Value;
                         IImportExportService svc = new ImportExportService();
-                        svc.RewriteMonth(month, _currentItems, dataDir);
-                        RefreshMonthItems();
+                        svc.RewriteMonth(month, _allMonthItems, dataDir);
+                        RefreshItems();
                         MessageBox.Show(this, "已保存修改并重新生成当月 Excel。", "成功", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     }
                 }
@@ -191,6 +287,101 @@ namespace WorkLogApp.UI.Forms
             catch (Exception ex)
             {
                 MessageBox.Show(this, "打开编辑窗口失败：" + ex.Message, "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void OnDailySummaryClick(object sender, EventArgs e)
+        {
+            var titles = _currentItems.Select(it => it.ItemTitle).Where(s => !string.IsNullOrWhiteSpace(s));
+            var initial = string.Join("；", titles);
+            using (var form = new DailySummaryForm(initial))
+            {
+                form.StartPosition = FormStartPosition.CenterParent;
+                form.ShowDialog(this);
+            }
+        }
+
+        private void OnListViewItemDrag(object sender, ItemDragEventArgs e)
+        {
+            if (e.Item is ListViewItem it)
+            {
+                _listView.DoDragDrop(it, DragDropEffects.Move);
+            }
+        }
+
+        private void OnListViewDragEnter(object sender, DragEventArgs e)
+        {
+            if (e.Data.GetDataPresent(typeof(ListViewItem)))
+            {
+                e.Effect = DragDropEffects.Move;
+            }
+            else
+            {
+                e.Effect = DragDropEffects.None;
+            }
+        }
+
+        private void OnListViewDragOver(object sender, DragEventArgs e)
+        {
+            if (e.Data.GetDataPresent(typeof(ListViewItem)))
+            {
+                e.Effect = DragDropEffects.Move;
+            }
+        }
+
+        private void OnListViewDragDrop(object sender, DragEventArgs e)
+        {
+            if (!e.Data.GetDataPresent(typeof(ListViewItem))) return;
+            var dragged = (ListViewItem)e.Data.GetData(typeof(ListViewItem));
+            var p = _listView.PointToClient(new Point(e.X, e.Y));
+            var target = _listView.GetItemAt(p.X, p.Y);
+            int fromIndex = dragged.Index;
+            int toIndex = target != null ? target.Index : _listView.Items.Count - 1;
+            if (toIndex == fromIndex) return;
+
+            _listView.BeginUpdate();
+            _listView.Items.RemoveAt(fromIndex);
+            if (toIndex > fromIndex) toIndex--;
+            _listView.Items.Insert(toIndex, dragged);
+            _listView.EndUpdate();
+
+            var ordered = _listView.Items
+                .Cast<ListViewItem>()
+                .Select(x => x.Tag as WorkLogItem)
+                .Where(x => x != null)
+                .ToList();
+            _currentItems = ordered;
+        }
+
+        /// <summary>
+        /// 根据当前视图更新 SortOrder：
+        /// - 日视图：仅更新该日的 SortOrder 为当前显示顺序（1..N）
+        /// - 月视图：按当前列表顺序为每个日期分别编号（每个日期从 1..N）
+        /// </summary>
+        private void UpdateSortOrderByCurrentView()
+        {
+            if (_currentItems == null || _currentItems.Count == 0) return;
+
+            if (!_chkShowByMonth.Checked)
+            {
+                // 日视图：当前列表只包含当天
+                int order = 1;
+                foreach (var it in _currentItems)
+                {
+                    it.SortOrder = order++;
+                }
+                return;
+            }
+
+            // 月视图：按照当前列表顺序为每个日期单独递增编号
+            var counters = new System.Collections.Generic.Dictionary<DateTime, int>();
+            foreach (var it in _currentItems)
+            {
+                var key = it.LogDate.Date;
+                if (!counters.TryGetValue(key, out var cnt)) cnt = 0;
+                cnt += 1;
+                counters[key] = cnt;
+                it.SortOrder = cnt;
             }
         }
     }

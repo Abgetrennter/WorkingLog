@@ -26,6 +26,10 @@ namespace WorkLogApp.UI.Forms
         private ColumnHeader _colStart;
         private ColumnHeader _colEnd;
         private System.Windows.Forms.TableLayoutPanel rootLayout;
+        private CheckBox _chkShowByMonth;
+        private DateTimePicker _dayPicker;
+        private Button _btnDailySummary;
+        private Button _btnSave;
 
         /// <summary>
         /// Clean up any resources being used.
@@ -58,6 +62,10 @@ namespace WorkLogApp.UI.Forms
             this._colTags = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this._colStart = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this._colEnd = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this._chkShowByMonth = new System.Windows.Forms.CheckBox();
+            this._dayPicker = new System.Windows.Forms.DateTimePicker();
+            this._btnDailySummary = new System.Windows.Forms.Button();
+            this._btnSave = new System.Windows.Forms.Button();
             this.topPanel.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -65,10 +73,14 @@ namespace WorkLogApp.UI.Forms
             // 
             this.topPanel.AutoScroll = true;
             this.topPanel.Controls.Add(this._btnCreate);
+            this.topPanel.Controls.Add(this._dayPicker);
+            this.topPanel.Controls.Add(this._chkShowByMonth);
             this.topPanel.Controls.Add(this._monthPicker);
             this.topPanel.Controls.Add(this._btnCategoryManage);
             this.topPanel.Controls.Add(this._btnImportWizard);
             this.topPanel.Controls.Add(this._btnImport);
+            this.topPanel.Controls.Add(this._btnDailySummary);
+            this.topPanel.Controls.Add(this._btnSave);
             this.topPanel.Dock = System.Windows.Forms.DockStyle.Fill;
             this.topPanel.AutoSize = true;
             this.topPanel.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
@@ -78,6 +90,27 @@ namespace WorkLogApp.UI.Forms
             this.topPanel.Size = new System.Drawing.Size(1000, 84);
             this.topPanel.TabIndex = 1;
             this.topPanel.WrapContents = false;
+            // 
+            // _chkShowByMonth
+            // 
+            this._chkShowByMonth.AutoSize = true;
+            this._chkShowByMonth.Margin = new System.Windows.Forms.Padding(4, 10, 4, 6);
+            this._chkShowByMonth.Name = "_chkShowByMonth";
+            this._chkShowByMonth.Size = new System.Drawing.Size(89, 22);
+            this._chkShowByMonth.TabIndex = 7;
+            this._chkShowByMonth.Tag = "compact";
+            this._chkShowByMonth.Text = "按月显示";
+            // 
+            // _dayPicker
+            // 
+            this._dayPicker.CustomFormat = "yyyy-MM-dd";
+            this._dayPicker.Format = System.Windows.Forms.DateTimePickerFormat.Custom;
+            this._dayPicker.Margin = new System.Windows.Forms.Padding(8, 6, 4, 6);
+            this._dayPicker.Name = "_dayPicker";
+            this._dayPicker.ShowUpDown = false;
+            this._dayPicker.Size = new System.Drawing.Size(154, 28);
+            this._dayPicker.TabIndex = 6;
+            this._dayPicker.Tag = "compact";
             // 
             // _btnCategoryManage
             // 
@@ -136,8 +169,28 @@ namespace WorkLogApp.UI.Forms
             this._btnImport.Size = new System.Drawing.Size(150, 44);
             this._btnImport.TabIndex = 2;
             this._btnImport.Tag = "compact";
-            this._btnImport.Text = "刷新当月";
+            this._btnImport.Text = "刷新";
             this._btnImport.Click += new System.EventHandler(this.OnImportMonthClick);
+            // 
+            // _btnDailySummary
+            // 
+            this._btnDailySummary.Margin = new System.Windows.Forms.Padding(4, 6, 4, 6);
+            this._btnDailySummary.Name = "_btnDailySummary";
+            this._btnDailySummary.Size = new System.Drawing.Size(150, 44);
+            this._btnDailySummary.TabIndex = 8;
+            this._btnDailySummary.Tag = "compact";
+            this._btnDailySummary.Text = "每日总结";
+            this._btnDailySummary.Click += new System.EventHandler(this.OnDailySummaryClick);
+            // 
+            // _btnSave
+            // 
+            this._btnSave.Margin = new System.Windows.Forms.Padding(4, 6, 4, 6);
+            this._btnSave.Name = "_btnSave";
+            this._btnSave.Size = new System.Drawing.Size(150, 44);
+            this._btnSave.TabIndex = 9;
+            this._btnSave.Tag = "compact";
+            this._btnSave.Text = "保存";
+            this._btnSave.Click += new System.EventHandler(this.OnSaveClick);
             // 
             // _listView
             // 
@@ -163,7 +216,7 @@ namespace WorkLogApp.UI.Forms
             // _colDate
             // 
             this._colDate.Text = "日期";
-            this._colDate.Width = 100;
+            this._colDate.Width = 120;
             // 
             // _colTitle
             // 
