@@ -121,6 +121,30 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
+  <PropertyGroup>
+    <DistDir>$(MSBuildProjectDirectory)\..\dist</DistDir>
+  </PropertyGroup>
+  <Target Name="PublishDist" AfterTargets="Build" Condition="'$(Configuration)' == 'Release'">
+    <MakeDir Directories="$(DistDir)" />
+    <MakeDir Directories="$(DistDir)\Configs" />
+    <MakeDir Directories="$(DistDir)\Templates" />
+    <ItemGroup>
+      <DistBin Include="$(OutDir)WorkLogApp.UI.exe" />
+      <DistBin Include="$(OutDir)*.dll" />
+      <DistBin Include="$(OutDir)WorkLogApp.UI.exe.config" />
+    </ItemGroup>
+    <Copy SourceFiles="@(DistBin)" DestinationFolder="$(DistDir)" SkipUnchangedFiles="true" />
+    <ItemGroup>
+      <DistCfg Include="$(OutDir)Configs\*.json" />
+      <DistTpl Include="$(OutDir)Templates\templates.json" />
+    </ItemGroup>
+    <Copy SourceFiles="@(DistCfg)" DestinationFolder="$(DistDir)\Configs" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="@(DistTpl)" DestinationFolder="$(DistDir)\Templates" SkipUnchangedFiles="true" />
+    <ItemGroup>
+      <FontCandidate Include="$(OutDir)font.ttf" Condition="Exists('$(OutDir)font.ttf')" />
+    </ItemGroup>
+    <Copy SourceFiles="@(FontCandidate)" DestinationFolder="$(DistDir)" SkipUnchangedFiles="true" />
+  </Target>
   <!-- 设计期 resx：仅在 VS (MSBuildRuntimeType=Full) 下参与编译；
        在 dotnet CLI (MSBuildRuntimeType=Core) 下跳过，以避免 x86 GenerateResource 宿主问题。 -->
   <ItemGroup Condition="'$(MSBuildRuntimeType)' == 'Full'">

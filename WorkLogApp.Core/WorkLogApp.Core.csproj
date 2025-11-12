@@ -36,13 +36,10 @@
   <ItemGroup>
     <Compile Include="Models\WorkLog.cs" />
     <Compile Include="Models\WorkLogItem.cs" />
-    <Compile Include="Models\Category.cs" />
     <Compile Include="Models\Templates\TemplateRoot.cs" />
     <Compile Include="Models\Templates\TemplateCategory.cs" />
     <Compile Include="Models\Templates\CategoryTemplate.cs" />
     <Compile Include="Enums\StatusEnum.cs" />
-    <Compile Include="Enums\CategoryTypeEnum.cs" />
-    <Compile Include="Utils\StringSimilarityHelper.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
