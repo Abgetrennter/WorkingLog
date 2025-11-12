@@ -14,7 +14,7 @@ namespace WorkLogApp.UI.Forms
     {
         private readonly ITemplateService _templateService;
         private System.Collections.Generic.List<WorkLogItem> _currentItems = new System.Collections.Generic.List<WorkLogItem>();
-        private System.Collections.Generic.List<WorkLogItem> _allMonthItems = new System.Collections.Generic.List<WorkLogItem>();
+        private System.Collections.Generic.List<WorkLog> _allMonthItems = new System.Collections.Generic.List<WorkLog>();
 
         // 设计期支持：提供无参构造，方便设计器实例化
         public MainForm() : this(new TemplateService())
@@ -179,16 +179,18 @@ namespace WorkLogApp.UI.Forms
                 }
 
                 IImportExportService svc = new ImportExportService();
-                var monthItems = svc.ImportMonth(monthRef, dataDir) ?? Enumerable.Empty<WorkLogItem>();
-                _allMonthItems = monthItems.ToList();
+                var monthDays = svc.ImportMonth(monthRef, dataDir) ?? Enumerable.Empty<WorkLog>();
+                _allMonthItems = monthDays.ToList();
 
                 if (_chkShowByMonth.Checked)
                 {
-                    _currentItems = _allMonthItems.ToList();
+                    _currentItems = _allMonthItems.SelectMany(d => d.Items ?? new System.Collections.Generic.List<WorkLogItem>()).ToList();
                 }
                 else
                 {
-                    _currentItems = _allMonthItems.Where(it => it.LogDate.Date == selectedDate.Date).ToList();
+                    _currentItems = _allMonthItems.Where(d => d.LogDate.Date == selectedDate.Date)
+                        .SelectMany(d => d.Items ?? new System.Collections.Generic.List<WorkLogItem>())
+                        .ToList();
                 }
 
                 BindItems(_currentItems);
@@ -292,13 +294,35 @@ namespace WorkLogApp.UI.Forms
 
         private void OnDailySummaryClick(object sender, EventArgs e)
         {
-            var titles = _currentItems.Select(it => it.ItemTitle).Where(s => !string.IsNullOrWhiteSpace(s));
-            var initial = string.Join("；", titles);
-            using (var form = new DailySummaryForm(initial))
+            var selectedDate = _dayPicker.Value.Date;
+            var day = _allMonthItems.FirstOrDefault(d => d.LogDate.Date == selectedDate);
+            var existing = day?.DailySummary;
+
+            var fallback = string.Join("；", _currentItems.Select(it => it.ItemTitle).Where(s => !string.IsNullOrWhiteSpace(s)));
+            var initial = string.IsNullOrWhiteSpace(existing) ? fallback : existing;
+
+            using (var form = new DailySummaryForm(day?.Items ?? new System.Collections.Generic.List<WorkLogItem>(), existing))
             {
                 form.StartPosition = FormStartPosition.CenterParent;
-                form.ShowDialog(this);
+                var result = form.ShowDialog(this);
+                if (result == DialogResult.OK)
+                {
+                    var text = form.SummaryText ?? string.Empty;
+                    ApplyDailySummary(selectedDate, text);
+                    OnSaveClick(null, EventArgs.Empty);
+                }
             }
+        }
+
+        private void ApplyDailySummary(DateTime date, string summary)
+        {
+            var day = _allMonthItems.FirstOrDefault(d => d.LogDate.Date == date.Date);
+            if (day == null)
+            {
+                day = new WorkLog { LogDate = date.Date };
+                _allMonthItems.Add(day);
+            }
+            day.DailySummary = summary ?? string.Empty;
         }
 
         private void OnListViewItemDrag(object sender, ItemDragEventArgs e)

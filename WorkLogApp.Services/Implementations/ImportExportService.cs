@@ -41,9 +41,9 @@ namespace WorkLogApp.Services.Implementations
             {"排序","SortOrder"}
         };
 
-        public bool ExportMonth(DateTime month, IEnumerable<WorkLogItem> items, string outputDirectory)
+        public bool ExportMonth(DateTime month, IEnumerable<WorkLog> days, string outputDirectory)
         {
-            if (items == null) return false;
+            if (days == null) return false;
             if (string.IsNullOrWhiteSpace(outputDirectory)) return false;
             Directory.CreateDirectory(outputDirectory);
 
@@ -51,18 +51,26 @@ namespace WorkLogApp.Services.Implementations
             var fileName = FilePrefix + monthStart.ToString("yyyyMM") + ".xlsx";
             var filePath = Path.Combine(outputDirectory, fileName);
 
-            // 读取已存在的当月数据并与新数据合并，然后统一重写为单表结构
-            var existing = ImportMonth(month, outputDirectory) ?? Enumerable.Empty<WorkLogItem>();
-            var newItems = items.Where(i => i != null && i.LogDate.Year == month.Year && i.LogDate.Month == month.Month);
-            var combined = existing.Concat(newItems).ToList();
+            var existingDays = ImportMonth(month, outputDirectory) ?? Enumerable.Empty<WorkLog>();
+            var newDays = days.Where(d => d != null && d.LogDate.Year == month.Year && d.LogDate.Month == month.Month);
+            var combined = existingDays
+                .Concat(newDays)
+                .GroupBy(d => d.LogDate.Date)
+                .Select(g => new WorkLog
+                {
+                    LogDate = g.Key,
+                    DailySummary = g.Select(x => x.DailySummary).FirstOrDefault(s => !string.IsNullOrWhiteSpace(s)) ?? string.Empty,
+                    Items = g.SelectMany(x => x.Items ?? new List<WorkLogItem>()).ToList()
+                })
+                .ToList();
 
             return RewriteMonth(month, combined, outputDirectory);
         }
 
         // 覆盖写入整月数据：生成单个工作表并写入传入的所有当月记录（按日期分块）
-        public bool RewriteMonth(DateTime month, IEnumerable<WorkLogItem> items, string outputDirectory)
+        public bool RewriteMonth(DateTime month, IEnumerable<WorkLog> days, string outputDirectory)
         {
-            if (items == null) return false;
+            if (days == null) return false;
             if (string.IsNullOrWhiteSpace(outputDirectory)) return false;
             Directory.CreateDirectory(outputDirectory);
 
@@ -71,7 +79,7 @@ namespace WorkLogApp.Services.Implementations
             var filePath = Path.Combine(outputDirectory, fileName);
 
             IWorkbook wb = new XSSFWorkbook();
-            WriteMonthSheet(wb, month, items);
+            WriteMonthSheet(wb, month, days);
             using (var outFs = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.None))
             {
                 wb.Write(outFs);
@@ -79,7 +87,7 @@ namespace WorkLogApp.Services.Implementations
             return true;
         }
 
-        private static void WriteMonthSheet(IWorkbook wb, DateTime month, IEnumerable<WorkLogItem> items)
+        private static void WriteMonthSheet(IWorkbook wb, DateTime month, IEnumerable<WorkLog> days)
         {
             var sheet = wb.CreateSheet(SheetName);
 
@@ -177,17 +185,14 @@ namespace WorkLogApp.Services.Implementations
             titleStyleB.CloneStyleFrom(blockStyleB);
             titleStyleB.SetFont(boldFont);
 
-            var ordered = (items ?? Enumerable.Empty<WorkLogItem>())
-                .Where(i => i != null && i.LogDate.Year == month.Year && i.LogDate.Month == month.Month)
-                .OrderBy(i => i.LogDate.Date)
-                .ThenBy(i => i.SortOrder ?? 0)
-                .ThenBy(i => i.StartTime ?? DateTime.MinValue)
-                .ThenBy(i => i.ItemTitle ?? string.Empty)
+            var orderedDays = (days ?? Enumerable.Empty<WorkLog>())
+                .Where(d => d != null && d.LogDate.Year == month.Year && d.LogDate.Month == month.Month)
+                .OrderBy(d => d.LogDate.Date)
                 .ToList();
 
             int rowIndex = 0;
             int blockIndex = 0;
-            foreach (var group in ordered.GroupBy(i => i.LogDate.Date).OrderBy(g => g.Key))
+            foreach (var day in orderedDays)
             {
                 bool useA = (blockIndex % 2 == 0);
                 var markerStyle = useA ? markerStyleA : markerStyleB;
@@ -203,21 +208,24 @@ namespace WorkLogApp.Services.Implementations
                 {
                     var cell = markerRow.CreateCell(c);
                     cell.CellStyle = markerStyle;
-                    var week = GetChineseWeekday(group.Key);
-                    cell.SetCellValue(c == 0 ? $"===== {group.Key:yyyy年MM月dd日} {week} =====" : string.Empty);
+                    var week = GetChineseWeekday(day.LogDate.Date);
+                    cell.SetCellValue(c == 0 ? $"===== {day.LogDate:yyyy年MM月dd日} {week} =====" : string.Empty);
                 }
                 sheet.AddMergedRegion(new CellRangeAddress(rowIndex, rowIndex, 0, HeaderZh.Length - 1));
 
-                bool isFirstDataRow = true;
-                string groupSummary = null;
-                foreach (var item in group)
+                var itemsOrdered = (day.Items ?? new List<WorkLogItem>())
+                    .OrderBy(i => i.SortOrder ?? 0)
+                    .ThenBy(i => i.StartTime ?? DateTime.MinValue)
+                    .ThenBy(i => i.ItemTitle ?? string.Empty)
+                    .ToList();
+                foreach (var item in itemsOrdered)
                 {
                     rowIndex++;
                     var row = sheet.CreateRow(rowIndex);
                     for (int c = 0; c < HeaderZh.Length; c++) row.CreateCell(c);
 
                     // 中文日期格式
-                    row.GetCell(0).SetCellValue(item.LogDate.ToString("yyyy年MM月dd日"));
+                    row.GetCell(0).SetCellValue(day.LogDate.ToString("yyyy年MM月dd日"));
                     row.GetCell(1).SetCellValue(item.ItemTitle ?? string.Empty);
                     row.GetCell(2).SetCellValue(item.ItemContent ?? string.Empty);
                     row.GetCell(3).SetCellValue(item.CategoryId);
@@ -238,23 +246,18 @@ namespace WorkLogApp.Services.Implementations
                     row.GetCell(7).CellStyle = timeStyle;      // 结束时间（右对齐）
                     row.GetCell(8).CellStyle = blockStyle;     // 标签
                     row.GetCell(9).CellStyle = numberStyle;    // 排序（居中）
-                    // 收集当日总结（取第一条非空）
-                    if (isFirstDataRow && !string.IsNullOrWhiteSpace(item.DailySummary))
-                        groupSummary = item.DailySummary;
-                    isFirstDataRow = false;
                 }
                 // 每个日期块的最后一行写入当日总结（标题=当日总结，内容=总结文本）
                 rowIndex++;
                 var summaryRow = sheet.CreateRow(rowIndex);
                 for (int c = 0; c < HeaderZh.Length; c++) summaryRow.CreateCell(c);
                 summaryRow.GetCell(1).SetCellValue("当日总结");
-                summaryRow.GetCell(2).SetCellValue(groupSummary ?? string.Empty);
+                summaryRow.GetCell(2).SetCellValue(day.DailySummary ?? string.Empty);
                 for (int c = 0; c < HeaderZh.Length; c++)
                 {
                     summaryRow.GetCell(c).CellStyle = blockStyle;
                 }
-                summaryRow.GetCell(1).CellStyle = titleStyle; // 当日总结标题加粗
-                // 合并内容列以更好显示总结
+                summaryRow.GetCell(1).CellStyle = titleStyle;
                 sheet.AddMergedRegion(new CellRangeAddress(rowIndex, rowIndex, 2, HeaderZh.Length - 1));
                 blockIndex++;
             }
@@ -286,9 +289,9 @@ namespace WorkLogApp.Services.Implementations
             }
         }
 
-        public IEnumerable<WorkLogItem> ImportMonth(DateTime month, string inputDirectory)
+        public IEnumerable<WorkLog> ImportMonth(DateTime month, string inputDirectory)
         {
-            var list = new List<WorkLogItem>();
+            var list = new List<WorkLog>();
             if (string.IsNullOrWhiteSpace(inputDirectory)) return list;
             var monthStart = new DateTime(month.Year, month.Month, 1);
             var fileName = FilePrefix + monthStart.ToString("yyyyMM") + ".xlsx";
@@ -303,8 +306,7 @@ namespace WorkLogApp.Services.Implementations
 
                 var indexes = GetHeaderIndexes(sheet);
                 DateTime currentDate = DateTime.MinValue;
-                var groupItems = new List<WorkLogItem>();
-                string currentSummary = null;
+                var dayMap = new Dictionary<DateTime, WorkLog>();
 
                 for (int r = 1; r <= sheet.LastRowNum; r++)
                 {
@@ -316,32 +318,39 @@ namespace WorkLogApp.Services.Implementations
                         var m = Regex.Match(firstCellText, "=+\\s*(\\d{4}年\\d{2}月\\d{2}日)(?:\\s+星期[一二三四五六日天])?\\s*=+");
                         if (m.Success && DateTime.TryParseExact(m.Groups[1].Value, "yyyy年MM月dd日", CultureInfo.InvariantCulture, DateTimeStyles.None, out var dt))
                         {
-                            // flush previous group
-                            if (groupItems.Count > 0)
+                            currentDate = dt.Date;
+                            if (!dayMap.ContainsKey(currentDate))
                             {
-                                if (!string.IsNullOrWhiteSpace(currentSummary))
-                                    groupItems[0].DailySummary = currentSummary;
-                                list.AddRange(groupItems);
-                                groupItems.Clear();
-                                currentSummary = null;
+                                dayMap[currentDate] = new WorkLog { LogDate = currentDate, Items = new List<WorkLogItem>() };
                             }
-                            currentDate = dt;
                         }
                         continue;
                     }
 
-                    // 识别总结行（标题=当日总结），仅记录总结文本
+                    // 识别总结行（标题=当日总结）
                     var title = GetString(row, indexes["ItemTitle"]);
                     if (string.Equals(title, "当日总结", StringComparison.OrdinalIgnoreCase))
                     {
-                        currentSummary = GetString(row, indexes["ItemContent"]);
+                        var dt = currentDate != DateTime.MinValue
+                            ? currentDate
+                            : ParseNullableDateTime(GetString(row, indexes["LogDate"]))?.Date ?? monthStart;
+                        if (!dayMap.ContainsKey(dt))
+                        {
+                            dayMap[dt] = new WorkLog { LogDate = dt, Items = new List<WorkLogItem>() };
+                        }
+                        dayMap[dt].DailySummary = GetString(row, indexes["ItemContent"]);
                         continue;
                     }
 
-                    var item = new WorkLogItem();
-                    item.LogDate = currentDate != DateTime.MinValue
+                    var dtItem = currentDate != DateTime.MinValue
                         ? currentDate
                         : ParseNullableDateTime(GetString(row, indexes["LogDate"]))?.Date ?? monthStart;
+                    if (!dayMap.ContainsKey(dtItem))
+                    {
+                        dayMap[dtItem] = new WorkLog { LogDate = dtItem, Items = new List<WorkLogItem>() };
+                    }
+                    var item = new WorkLogItem();
+                    item.LogDate = dtItem;
                     item.ItemTitle = GetString(row, indexes["ItemTitle"]);
                     item.ItemContent = GetString(row, indexes["ItemContent"]);
                     item.CategoryId = ParseInt(GetString(row, indexes["CategoryId"]));
@@ -351,22 +360,16 @@ namespace WorkLogApp.Services.Implementations
                     item.EndTime = ParseNullableDateTime(GetString(row, indexes["EndTime"]));
                     item.Tags = GetString(row, indexes["Tags"]);
                     item.SortOrder = ParseNullableInt(GetString(row, indexes["SortOrder"]));
-                    groupItems.Add(item);
+                    dayMap[dtItem].Items.Add(item);
                 }
-                // flush last group
-                if (groupItems.Count > 0)
-                {
-                    if (!string.IsNullOrWhiteSpace(currentSummary))
-                        groupItems[0].DailySummary = currentSummary;
-                    list.AddRange(groupItems);
-                }
+                list = dayMap.Values.OrderBy(d => d.LogDate.Date).ToList();
             }
             return list;
         }
 
-        public IEnumerable<WorkLogItem> ImportFromFile(string filePath)
+        public IEnumerable<WorkLog> ImportFromFile(string filePath)
         {
-            var list = new List<WorkLogItem>();
+            var list = new List<WorkLog>();
             if (string.IsNullOrWhiteSpace(filePath)) return list;
             if (!File.Exists(filePath)) return list;
 
@@ -378,8 +381,7 @@ namespace WorkLogApp.Services.Implementations
 
                 var indexes = GetHeaderIndexes(sheet);
                 DateTime currentDate = DateTime.MinValue;
-                var groupItems = new List<WorkLogItem>();
-                string currentSummary = null;
+                var dayMap = new Dictionary<DateTime, WorkLog>();
 
                 for (int r = 1; r <= sheet.LastRowNum; r++)
                 {
@@ -391,16 +393,11 @@ namespace WorkLogApp.Services.Implementations
                         var m = Regex.Match(firstCellText, "=+\\s*(\\d{4}年\\d{2}月\\d{2}日)(?:\\s+星期[一二三四五六日天])?\\s*=+");
                         if (m.Success && DateTime.TryParseExact(m.Groups[1].Value, "yyyy年MM月dd日", CultureInfo.InvariantCulture, DateTimeStyles.None, out var dt))
                         {
-                            // flush previous group
-                            if (groupItems.Count > 0)
+                            currentDate = dt.Date;
+                            if (!dayMap.ContainsKey(currentDate))
                             {
-                                if (!string.IsNullOrWhiteSpace(currentSummary))
-                                    groupItems[0].DailySummary = currentSummary;
-                                list.AddRange(groupItems);
-                                groupItems.Clear();
-                                currentSummary = null;
+                                dayMap[currentDate] = new WorkLog { LogDate = currentDate, Items = new List<WorkLogItem>() };
                             }
-                            currentDate = dt;
                         }
                         continue;
                     }
@@ -409,14 +406,26 @@ namespace WorkLogApp.Services.Implementations
                     var title = GetString(row, indexes["ItemTitle"]);
                     if (string.Equals(title, "当日总结", StringComparison.OrdinalIgnoreCase))
                     {
-                        currentSummary = GetString(row, indexes["ItemContent"]);
+                        var dt = currentDate != DateTime.MinValue
+                            ? currentDate
+                            : ParseNullableDateTime(GetString(row, indexes["LogDate"]))?.Date ?? DateTime.MinValue;
+                        if (!dayMap.ContainsKey(dt))
+                        {
+                            dayMap[dt] = new WorkLog { LogDate = dt, Items = new List<WorkLogItem>() };
+                        }
+                        dayMap[dt].DailySummary = GetString(row, indexes["ItemContent"]);
                         continue;
                     }
 
-                    var item = new WorkLogItem();
-                    item.LogDate = currentDate != DateTime.MinValue
+                    var dtItem = currentDate != DateTime.MinValue
                         ? currentDate
                         : ParseNullableDateTime(GetString(row, indexes["LogDate"]))?.Date ?? DateTime.MinValue;
+                    if (!dayMap.ContainsKey(dtItem))
+                    {
+                        dayMap[dtItem] = new WorkLog { LogDate = dtItem, Items = new List<WorkLogItem>() };
+                    }
+                    var item = new WorkLogItem();
+                    item.LogDate = dtItem;
                     item.ItemTitle = GetString(row, indexes["ItemTitle"]);
                     item.ItemContent = GetString(row, indexes["ItemContent"]);
                     item.CategoryId = ParseInt(GetString(row, indexes["CategoryId"]));
@@ -426,15 +435,9 @@ namespace WorkLogApp.Services.Implementations
                     item.EndTime = ParseNullableDateTime(GetString(row, indexes["EndTime"]));
                     item.Tags = GetString(row, indexes["Tags"]);
                     item.SortOrder = ParseNullableInt(GetString(row, indexes["SortOrder"]));
-                    groupItems.Add(item);
+                    dayMap[dtItem].Items.Add(item);
                 }
-                // flush last group
-                if (groupItems.Count > 0)
-                {
-                    if (!string.IsNullOrWhiteSpace(currentSummary))
-                        groupItems[0].DailySummary = currentSummary;
-                    list.AddRange(groupItems);
-                }
+                list = dayMap.Values.OrderBy(d => d.LogDate.Date).ToList();
             }
             return list;
         }

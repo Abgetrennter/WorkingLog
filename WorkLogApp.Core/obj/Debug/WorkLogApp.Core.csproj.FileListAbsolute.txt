@@ -4,3 +4,7 @@ C:\Users\Administrator\source\repos\WorkingLog\WorkLogApp.Core\obj\Debug\WorkLog
 C:\Users\Administrator\source\repos\WorkingLog\WorkLogApp.Core\obj\Debug\WorkLogApp.Core.csproj.CoreCompileInputs.cache
 C:\Users\Administrator\source\repos\WorkingLog\WorkLogApp.Core\obj\Debug\WorkLogApp.Core.dll
 C:\Users\Administrator\source\repos\WorkingLog\WorkLogApp.Core\obj\Debug\WorkLogApp.Core.pdb
+c:\Users\Administrator\source\repos\WorkingLog\WorkLogApp.UI\bin2\WorkLogApp.Core.dll
+c:\Users\Administrator\source\repos\WorkingLog\WorkLogApp.UI\bin2\WorkLogApp.Core.pdb
+C:\Users\Administrator\source\repos\WorkingLog\WorkLogApp.UI\bin-ci\WorkLogApp.Core.dll
+C:\Users\Administrator\source\repos\WorkingLog\WorkLogApp.UI\bin-ci\WorkLogApp.Core.pdb

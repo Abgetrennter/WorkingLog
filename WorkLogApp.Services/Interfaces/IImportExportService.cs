@@ -6,9 +6,9 @@ namespace WorkLogApp.Services.Interfaces
 {
     public interface IImportExportService
     {
-        bool ExportMonth(DateTime month, IEnumerable<WorkLogItem> items, string outputDirectory);
-        bool RewriteMonth(DateTime month, IEnumerable<WorkLogItem> items, string outputDirectory);
-        IEnumerable<WorkLogItem> ImportMonth(DateTime month, string inputDirectory);
-        IEnumerable<WorkLogItem> ImportFromFile(string filePath);
+        bool ExportMonth(DateTime month, IEnumerable<WorkLog> days, string outputDirectory);
+        bool RewriteMonth(DateTime month, IEnumerable<WorkLog> days, string outputDirectory);
+        IEnumerable<WorkLog> ImportMonth(DateTime month, string inputDirectory);
+        IEnumerable<WorkLog> ImportFromFile(string filePath);
     }
 }

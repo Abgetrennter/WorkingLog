@@ -32,3 +32,7 @@ C:\Users\Administrator\source\repos\WorkingLog\WorkLogApp.Services\bin\Debug\net
 C:\Users\Administrator\source\repos\WorkingLog\WorkLogApp.Services\obj\Debug\net472\WorkLogA.E7823704.Up2Date
 C:\Users\Administrator\source\repos\WorkingLog\WorkLogApp.Services\obj\Debug\net472\WorkLogApp.Services.dll
 C:\Users\Administrator\source\repos\WorkingLog\WorkLogApp.Services\obj\Debug\net472\WorkLogApp.Services.pdb
+c:\Users\Administrator\source\repos\WorkingLog\WorkLogApp.UI\bin2\WorkLogApp.Services.dll
+c:\Users\Administrator\source\repos\WorkingLog\WorkLogApp.UI\bin2\WorkLogApp.Services.pdb
+C:\Users\Administrator\source\repos\WorkingLog\WorkLogApp.UI\bin-ci\WorkLogApp.Services.dll
+C:\Users\Administrator\source\repos\WorkingLog\WorkLogApp.UI\bin-ci\WorkLogApp.Services.pdb

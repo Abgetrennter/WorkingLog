@@ -7,3 +7,4 @@
 WorkLogApp.Services/obj/
 *.txt
 *.exe
+WorkLogApp.UI/bin/Debug/Data/worklog_202511.xlsx
