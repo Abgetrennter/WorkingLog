@@ -120,6 +120,12 @@
   </ItemGroup>
   <ItemGroup>
     <!-- 设计时使用的 resx 不在 dotnet CLI 下编译，以避免 GenerateResource 的 x86 宿主问题 -->
+    <EmbeddedResource Include="Forms\CategoryManageForm.resx">
+      <DependentUpon>CategoryManageForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Forms\MainForm.resx">
+      <DependentUpon>MainForm.cs</DependentUpon>
+    </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
