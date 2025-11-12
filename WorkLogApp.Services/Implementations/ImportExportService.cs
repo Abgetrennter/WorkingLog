@@ -18,6 +18,11 @@ namespace WorkLogApp.Services.Implementations
             // 按设计文档的列顺序（并追加 DailySummary）
             "LogDate","ItemTitle","ItemContent","CategoryId","Status","Progress","StartTime","EndTime","Tags","SortOrder","DailySummary"
         };
+        private static readonly string[] HeaderZh = new[]
+        {
+            // 与 Header 对应的中文显示名称
+            "日期","标题","内容","分类ID","状态","进度","开始时间","结束时间","标签","排序","当日总结"
+        };
 
         public bool ExportMonth(DateTime month, IEnumerable<WorkLogItem> items, string outputDirectory)
         {
@@ -188,9 +193,35 @@ namespace WorkLogApp.Services.Implementations
             if (sheet.PhysicalNumberOfRows == 0)
             {
                 var header = sheet.CreateRow(0);
-                for (int i = 0; i < Header.Length; i++)
+                for (int i = 0; i < HeaderZh.Length; i++)
                 {
-                    header.CreateCell(i).SetCellValue(Header[i]);
+                    header.CreateCell(i).SetCellValue(HeaderZh[i]);
+                }
+            }
+            else
+            {
+                // 如果已存在表头且为英文，则替换为中文显示
+                var headerRow = sheet.GetRow(0);
+                if (headerRow != null && headerRow.PhysicalNumberOfCells > 0)
+                {
+                    var rewriteToChinese = false;
+                    for (int i = 0; i < Header.Length && i < headerRow.LastCellNum; i++)
+                    {
+                        var name = GetString(headerRow, i);
+                        if (string.Equals(name, Header[i], StringComparison.OrdinalIgnoreCase))
+                        {
+                            rewriteToChinese = true;
+                            break;
+                        }
+                    }
+                    if (rewriteToChinese)
+                    {
+                        for (int i = 0; i < HeaderZh.Length; i++)
+                        {
+                            var cell = headerRow.GetCell(i) ?? headerRow.CreateCell(i);
+                            cell.SetCellValue(HeaderZh[i]);
+                        }
+                    }
                 }
             }
             var rowIndex = Math.Max(sheet.LastRowNum + 1, 1);
