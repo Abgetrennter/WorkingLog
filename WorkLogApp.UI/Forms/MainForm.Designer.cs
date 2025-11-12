@@ -21,7 +21,6 @@ namespace WorkLogApp.UI.Forms
         private ColumnHeader _colDate;
         private ColumnHeader _colTitle;
         private ColumnHeader _colContent;
-        private ColumnHeader _colStatus;
         private ColumnHeader _colTags;
         private ColumnHeader _colStart;
         private ColumnHeader _colEnd;
@@ -62,7 +61,6 @@ namespace WorkLogApp.UI.Forms
             this._colDate = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this._colTitle = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this._colContent = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
-            this._colStatus = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this._colTags = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this._colStart = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this._colEnd = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
@@ -201,7 +199,6 @@ namespace WorkLogApp.UI.Forms
             this._colDate,
             this._colTitle,
             this._colContent,
-            this._colStatus,
             this._colTags,
             this._colStart,
             this._colEnd});
@@ -230,11 +227,6 @@ namespace WorkLogApp.UI.Forms
             // 
             this._colContent.Text = "内容";
             this._colContent.Width = 400;
-            // 
-            // _colStatus
-            // 
-            this._colStatus.Text = "状态";
-            this._colStatus.Width = 80;
             // 
             // _colTags
             // 

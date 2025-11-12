@@ -15,7 +15,6 @@ namespace WorkLogApp.UI.Forms
         private Button _btnImport;
         private ColumnHeader _colDate;
         private ColumnHeader _colTitle;
-        private ColumnHeader _colStatus;
         private ColumnHeader _colTags;
         private System.Windows.Forms.TableLayoutPanel rootLayout;
 
@@ -36,7 +35,6 @@ namespace WorkLogApp.UI.Forms
             this._previewList = new System.Windows.Forms.ListView();
             this._colDate = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this._colTitle = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
-            this._colStatus = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this._colTags = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.bottomPanel = new System.Windows.Forms.Panel();
             this._btnImport = new System.Windows.Forms.Button();
@@ -79,7 +77,6 @@ namespace WorkLogApp.UI.Forms
             this._previewList.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
             this._colDate,
             this._colTitle,
-            this._colStatus,
             this._colTags});
             this._previewList.Dock = System.Windows.Forms.DockStyle.Fill;
             this._previewList.FullRowSelect = true;
@@ -101,11 +98,6 @@ namespace WorkLogApp.UI.Forms
             // 
             this._colTitle.Text = "标题";
             this._colTitle.Width = 260;
-            // 
-            // _colStatus
-            // 
-            this._colStatus.Text = "状态";
-            this._colStatus.Width = 120;
             // 
             // _colTags
             // 

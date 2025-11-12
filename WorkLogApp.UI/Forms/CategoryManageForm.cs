@@ -48,10 +48,9 @@ namespace WorkLogApp.UI.Forms
                     _lstCategories.Items.AddRange(new object[] { "通用", "任务", "会议" });
                     if (_lstCategories.Items.Count > 0) _lstCategories.SelectedIndex = 0;
 
-                    _txtFormatTemplate.Text = "【示例模板】{标题} - {日期:yyyy-MM-dd}\\r\\n状态：{状态}\\r\\n标签：{标签}\\r\\n内容：{内容}";
+                    _txtFormatTemplate.Text = "【示例模板】{标题} - {日期:yyyy-MM-dd}\\r\\n标签：{标签}\\r\\n内容：{内容}";
                     _gridPlaceholders.Rows.Clear();
                     _gridPlaceholders.Rows.Add("标题", "text", "");
-                    _gridPlaceholders.Rows.Add("状态", "select", "未开始|进行中|已完成");
                     _gridPlaceholders.Rows.Add("标签", "checkbox", "研发|测试|部署");
                     _gridPlaceholders.Rows.Add("日期", "datetime", "");
                     _gridPlaceholders.Rows.Add("内容", "textarea", "");
@@ -147,6 +146,56 @@ namespace WorkLogApp.UI.Forms
             _templateService.SaveTemplates();
             LoadCategories();
             _lstCategories.SelectedItem = name;
+        }
+
+        private void OnAddChildCategory(object sender, EventArgs e)
+        {
+            var parent = _lstCategories.SelectedItem?.ToString();
+            if (string.IsNullOrWhiteSpace(parent))
+            {
+                MessageBox.Show(this, "请先选择父分类。", "提示", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+            var suffix = Prompt("请输入子分类名称：", "新增子分类");
+            if (string.IsNullOrWhiteSpace(suffix)) return;
+            suffix = suffix.Trim();
+            var newName = parent + "-" + suffix;
+            var exists = _templateService.GetCategoryNames()?.Contains(newName) == true;
+            if (exists)
+            {
+                MessageBox.Show(this, "该子分类已存在。", "提示", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+            var parentTpl = _templateService.GetCategoryTemplate(parent);
+            CategoryTemplate tpl;
+            if (parentTpl != null)
+            {
+                var ph = parentTpl.Placeholders != null
+                    ? new Dictionary<string, string>(parentTpl.Placeholders, StringComparer.OrdinalIgnoreCase)
+                    : new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+                var opt = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+                if (parentTpl.Options != null)
+                {
+                    foreach (var kv in parentTpl.Options)
+                    {
+                        opt[kv.Key] = kv.Value != null ? new List<string>(kv.Value) : new List<string>();
+                    }
+                }
+                tpl = new CategoryTemplate
+                {
+                    FormatTemplate = parentTpl.FormatTemplate ?? string.Empty,
+                    Placeholders = ph,
+                    Options = opt
+                };
+            }
+            else
+            {
+                tpl = new CategoryTemplate { FormatTemplate = string.Empty, Placeholders = new Dictionary<string, string>(), Options = new Dictionary<string, List<string>>() };
+            }
+            _templateService.AddOrUpdateCategoryTemplate(newName, tpl);
+            _templateService.SaveTemplates();
+            LoadCategories();
+            _lstCategories.SelectedItem = newName;
         }
 
         private void RefreshPlaceholderInsertList()

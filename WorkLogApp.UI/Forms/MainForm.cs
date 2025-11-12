@@ -57,7 +57,6 @@ namespace WorkLogApp.UI.Forms
                         DateTime.Today.ToString("yyyy-MM-dd"),
                         "示例：需求评审会议",
                         "讨论近期版本目标与测试范围……",
-                        "InProgress",
                         "会议;需求",
                         DateTime.Today.AddHours(9).ToString("yyyy-MM-dd HH:mm"),
                         DateTime.Today.AddHours(10).ToString("yyyy-MM-dd HH:mm")
@@ -67,7 +66,6 @@ namespace WorkLogApp.UI.Forms
                         DateTime.Today.AddDays(-1).ToString("yyyy-MM-dd"),
                         "示例：接口联调",
                         "修复返回格式，补充缺失字段",
-                        "Done",
                         "研发;联调",
                         DateTime.Today.AddDays(-1).AddHours(14).ToString("yyyy-MM-dd HH:mm"),
                         DateTime.Today.AddDays(-1).AddHours(16).ToString("yyyy-MM-dd HH:mm")
@@ -214,7 +212,6 @@ namespace WorkLogApp.UI.Forms
                     it.LogDate.ToString("yyyy-MM-dd"),
                     it.ItemTitle ?? string.Empty,
                     content,
-                    it.Status.ToString(),
                     it.Tags ?? string.Empty,
                     it.StartTime.HasValue ? it.StartTime.Value.ToString("yyyy-MM-dd HH:mm") : string.Empty,
                     it.EndTime.HasValue ? it.EndTime.Value.ToString("yyyy-MM-dd HH:mm") : string.Empty

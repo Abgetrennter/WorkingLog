@@ -118,14 +118,12 @@ namespace WorkLogApp.UI.Controls
                     var placeholders = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
                     {
                         ["标题"] = "text",
-                        ["状态"] = "select",
                         ["标签"] = "checkbox",
                         ["日期"] = "datetime",
                         ["内容"] = "textarea"
                     };
                     var options = new Dictionary<string, System.Collections.Generic.List<string>>(StringComparer.OrdinalIgnoreCase)
                     {
-                        ["状态"] = new System.Collections.Generic.List<string> { "未开始", "进行中", "已完成" },
                         ["标签"] = new System.Collections.Generic.List<string> { "研发", "测试", "部署" }
                     };
                     BuildForm(placeholders, options);

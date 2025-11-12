@@ -8,3 +8,5 @@ c:\Users\Administrator\source\repos\WorkingLog\WorkLogApp.UI\bin2\WorkLogApp.Cor
 c:\Users\Administrator\source\repos\WorkingLog\WorkLogApp.UI\bin2\WorkLogApp.Core.pdb
 C:\Users\Administrator\source\repos\WorkingLog\WorkLogApp.UI\bin-ci\WorkLogApp.Core.dll
 C:\Users\Administrator\source\repos\WorkingLog\WorkLogApp.UI\bin-ci\WorkLogApp.Core.pdb
+C:\Users\Administrator\source\repos\WorkingLog\WorkLogApp.UI\bin\WorkLogApp.Core.dll
+C:\Users\Administrator\source\repos\WorkingLog\WorkLogApp.UI\bin\WorkLogApp.Core.pdb
