@@ -88,44 +88,6 @@ namespace WorkLogApp.UI.Forms
             RefreshMonthItems();
         }
 
-        private void OnMergeOtherClick(object sender, EventArgs e)
-        {
-            try
-            {
-                using (var dlg = new OpenFileDialog())
-                {
-                    dlg.Filter = "Excel 文件 (*.xlsx)|*.xlsx|所有文件 (*.*)|*.*";
-                    dlg.Title = "选择要合并的工作日志 Excel";
-                    if (dlg.ShowDialog(this) != DialogResult.OK) return;
-
-                    var sourcePath = dlg.FileName;
-                    IImportExportService svc = new ImportExportService();
-                    var imported = svc.ImportFromFile(sourcePath) ?? Enumerable.Empty<WorkLogItem>();
-
-                    // 仅合并当前月份的数据
-                    var month = _monthPicker.Value;
-                    var monthItems = imported.Where(it => it.LogDate.Year == month.Year && it.LogDate.Month == month.Month).ToList();
-                    if (monthItems.Count == 0)
-                    {
-                        MessageBox.Show(this, "所选文件中无当前月份的数据。", "提示", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                        return;
-                    }
-
-                    var baseDir = AppDomain.CurrentDomain.BaseDirectory;
-                    var dataDir = Path.Combine(baseDir, "Data");
-                    Directory.CreateDirectory(dataDir);
-
-                    // 追加写入到本地月份文件
-                    svc.ExportMonth(month, monthItems, dataDir);
-                    RefreshMonthItems();
-                    MessageBox.Show(this, "已合并并刷新当前月份列表。", "成功", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(this, "合并失败：" + ex.Message, "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-        }
 
         private void OnCategoryManageClick(object sender, EventArgs e)
         {
