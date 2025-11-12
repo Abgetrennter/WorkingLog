@@ -95,7 +95,7 @@ namespace WorkLogApp.UI.Forms
             var values = _formPanel.GetFieldValues();
             var item = new WorkLogItem
             {
-                LogDate = DateTime.Now.Date,
+                LogDate = _datePicker.Value.Date,
                 ItemTitle = _titleBox.Text?.Trim(),
                 CategoryId = 0
             };
