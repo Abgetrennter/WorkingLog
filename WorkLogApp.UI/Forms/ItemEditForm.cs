@@ -82,19 +82,63 @@ namespace WorkLogApp.UI.Forms
         {
             try
             {
-                _item.ItemTitle = _titleBox.Text?.Trim();
+                // 基本校验
+                var title = _titleBox.Text?.Trim();
+                if (string.IsNullOrWhiteSpace(title))
+                {
+                    MessageBox.Show(this, "标题不能为空", "提示", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    _titleBox.Focus();
+                    return;
+                }
+
+                if (_statusCombo.SelectedItem == null || !Enum.TryParse<StatusEnum>(_statusCombo.SelectedItem.ToString(), out var st))
+                {
+                    MessageBox.Show(this, "请选择有效的状态", "提示", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    _statusCombo.Focus();
+                    return;
+                }
+
+                if (_startPicker.Checked && _endPicker.Checked && _endPicker.Value < _startPicker.Value)
+                {
+                    MessageBox.Show(this, "结束时间不能早于开始时间", "提示", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    _endPicker.Focus();
+                    return;
+                }
+
+                // 写入模型
+                _item.ItemTitle = title;
                 _item.ItemContent = _contentBox.Text ?? string.Empty;
                 _item.DailySummary = _summaryBox.Text ?? string.Empty;
                 _item.LogDate = _datePicker.Value.Date;
-                if (_statusCombo.SelectedItem != null && Enum.TryParse<StatusEnum>(_statusCombo.SelectedItem.ToString(), out var st))
-                {
-                    _item.Status = st;
-                }
+                _item.Status = st;
                 _item.Progress = (int)_progressUpDown.Value;
                 _item.Tags = _tagsBox.Text?.Trim();
                 _item.StartTime = _startPicker.Checked ? (DateTime?)_startPicker.Value : null;
                 _item.EndTime = _endPicker.Checked ? (DateTime?)_endPicker.Value : null;
                 _item.SortOrder = (int)_sortUpDown.Value;
+
+                // 持久化到 Data\worklog_yyyyMM.xlsx
+                var baseDir = AppDomain.CurrentDomain.BaseDirectory;
+                var dataDir = Path.Combine(baseDir, "Data");
+                Directory.CreateDirectory(dataDir);
+
+                IImportExportService exportService = new ImportExportService();
+                var ok = exportService.ExportMonth(_item.LogDate, new[] { _item }, dataDir);
+                if (!ok)
+                {
+                    MessageBox.Show(this, "保存失败：导出未成功", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return; // 保持窗口打开
+                }
+
+                // 文本备份（可选）
+                var safeTitle = string.IsNullOrWhiteSpace(_item.ItemTitle) ? "untitled" : SanitizeFileName(_item.ItemTitle);
+                var fileName = $"{_item.LogDate:yyyy-MM-dd}_{safeTitle}.txt";
+                var filePath = Path.Combine(dataDir, fileName);
+                File.WriteAllText(filePath, _item.ItemContent);
+
+                MessageBox.Show(this,
+                    $"已保存到 Excel 与文本备份:\n{Path.Combine(dataDir, "worklog_" + _item.LogDate.ToString("yyyyMM") + ".xlsx")}\n{filePath}",
+                    "保存成功", MessageBoxButtons.OK, MessageBoxIcon.Information);
 
                 DialogResult = DialogResult.OK;
                 Close();
@@ -102,6 +146,7 @@ namespace WorkLogApp.UI.Forms
             catch (Exception ex)
             {
                 MessageBox.Show(this, "保存失败：" + ex.Message, "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                // 不关闭窗口，以便用户修正问题
             }
         }
 
