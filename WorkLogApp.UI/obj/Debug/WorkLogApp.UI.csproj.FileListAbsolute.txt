@@ -30,6 +30,3 @@ C:\Users\Administrator\source\repos\WorkingLog\WorkLogApp.UI\bin\Debug\System.Me
 C:\Users\Administrator\source\repos\WorkingLog\WorkLogApp.UI\bin\Debug\System.Numerics.Vectors.dll
 C:\Users\Administrator\source\repos\WorkingLog\WorkLogApp.UI\bin\Debug\System.Buffers.dll
 C:\Users\Administrator\source\repos\WorkingLog\WorkLogApp.UI\obj\Debug\WorkLogApp.UI.csproj.SuggestedBindingRedirects.cache
-C:\Users\Administrator\source\repos\WorkingLog\WorkLogApp.UI\obj\Debug\WorkLogApp.UI.Forms.CategoryManageForm.resources
-C:\Users\Administrator\source\repos\WorkingLog\WorkLogApp.UI\obj\Debug\WorkLogApp.UI.Forms.MainForm.resources
-C:\Users\Administrator\source\repos\WorkingLog\WorkLogApp.UI\obj\Debug\WorkLogApp.UI.csproj.GenerateResource.cache

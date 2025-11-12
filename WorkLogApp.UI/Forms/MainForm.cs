@@ -13,6 +13,7 @@ namespace WorkLogApp.UI.Forms
     public partial class MainForm : Form
     {
         private readonly ITemplateService _templateService;
+        private System.Collections.Generic.List<WorkLogItem> _currentItems = new System.Collections.Generic.List<WorkLogItem>();
 
         // 设计期支持：提供无参构造，方便设计器实例化
         public MainForm() : this(new TemplateService())
@@ -23,6 +24,12 @@ namespace WorkLogApp.UI.Forms
         {
             _templateService = templateService;
             InitializeComponent();
+
+            // 运行时：为列表添加双击编辑事件
+            if (!UIStyleManager.IsDesignMode)
+            {
+                _listView.DoubleClick += OnListViewDoubleClick;
+            }
 
             // 设计期：填充 ListView 示例数据，便于在设计器中预览布局
             if (UIStyleManager.IsDesignMode)
@@ -150,7 +157,8 @@ namespace WorkLogApp.UI.Forms
                 var month = _monthPicker.Value;
                 IImportExportService svc = new ImportExportService();
                 var items = svc.ImportMonth(month, dataDir) ?? Enumerable.Empty<WorkLogItem>();
-                BindItems(items);
+                _currentItems = items.ToList();
+                BindItems(_currentItems);
             }
             catch (Exception ex)
             {
@@ -176,6 +184,7 @@ namespace WorkLogApp.UI.Forms
                     it.StartTime.HasValue ? it.StartTime.Value.ToString("yyyy-MM-dd HH:mm") : string.Empty,
                     it.EndTime.HasValue ? it.EndTime.Value.ToString("yyyy-MM-dd HH:mm") : string.Empty
                 });
+                lv.Tag = it;
                 _listView.Items.Add(lv);
             }
             _listView.EndUpdate();
@@ -184,6 +193,43 @@ namespace WorkLogApp.UI.Forms
         private void _monthPicker_ValueChanged(object sender, EventArgs e)
         {
 
+        }
+
+        private void OnListViewDoubleClick(object sender, EventArgs e)
+        {
+            try
+            {
+                if (_listView.SelectedItems.Count == 0) return;
+                var lv = _listView.SelectedItems[0];
+                var item = lv.Tag as WorkLogItem;
+                if (item == null)
+                {
+                    MessageBox.Show(this, "无法定位原始数据项。", "提示", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return;
+                }
+
+                using (var form = new ItemEditForm(item, null))
+                {
+                    form.StartPosition = FormStartPosition.CenterParent;
+                    var result = form.ShowDialog(this);
+                    if (result == DialogResult.OK)
+                    {
+                        // 覆盖导出当前月份数据并刷新列表
+                        var baseDir = AppDomain.CurrentDomain.BaseDirectory;
+                        var dataDir = Path.Combine(baseDir, "Data");
+                        Directory.CreateDirectory(dataDir);
+                        var month = _monthPicker.Value;
+                        IImportExportService svc = new ImportExportService();
+                        svc.RewriteMonth(month, _currentItems, dataDir);
+                        RefreshMonthItems();
+                        MessageBox.Show(this, "已保存修改并重新生成当月 Excel。", "成功", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(this, "打开编辑窗口失败：" + ex.Message, "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
     }
 }
