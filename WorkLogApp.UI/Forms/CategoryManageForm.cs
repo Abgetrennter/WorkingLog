@@ -288,5 +288,10 @@ namespace WorkLogApp.UI.Forms
             form.CancelButton = cancel;
             return form.ShowDialog() == DialogResult.OK ? txt.Text : null;
         }
+
+        private void _gridPlaceholders_CellContentClick(object sender, DataGridViewCellEventArgs e)
+        {
+
+        }
     }
 }

@@ -113,5 +113,15 @@ namespace WorkLogApp.UI.Forms
                 }
             }
         }
+
+        private void _formPanel_Paint(object sender, PaintEventArgs e)
+        {
+
+        }
+
+        private void lblCategory_Click(object sender, EventArgs e)
+        {
+
+        }
     }
 }

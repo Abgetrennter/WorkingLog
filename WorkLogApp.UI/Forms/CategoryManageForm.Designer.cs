@@ -21,6 +21,9 @@ namespace WorkLogApp.UI.Forms
         private Button _btnInsert;
         private DataGridView _gridPlaceholders;
         private Button _btnSave;
+        private System.Windows.Forms.DataGridViewTextBoxColumn _colName;
+        private System.Windows.Forms.DataGridViewComboBoxColumn _colType;
+        private System.Windows.Forms.DataGridViewTextBoxColumn _colOptions;
 
         protected override void Dispose(bool disposing)
         {
@@ -59,13 +62,17 @@ namespace WorkLogApp.UI.Forms
             this._btnInsert = new Button { Text = "插入所选", Location = new Point(450, 226), Width = 90, Height = 26 };
             this._btnInsert.Click += new System.EventHandler(this.OnInsertPlaceholderClick);
 
-            this._gridPlaceholders = new DataGridView { Location = new Point(8, 260), Width = 620, Height = 230, AllowUserToAddRows = true, AllowUserToDeleteRows = true, AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill };
-            var colName = new DataGridViewTextBoxColumn { HeaderText = "占位符名称", Name = "colName" };
-            var colType = new DataGridViewComboBoxColumn { HeaderText = "类型", Name = "colType" };
-            var colOptions = new DataGridViewTextBoxColumn { HeaderText = "选项（|分隔）", Name = "colOptions" };
-            this._gridPlaceholders.Columns.Add(colName);
-            this._gridPlaceholders.Columns.Add(colType);
-            this._gridPlaceholders.Columns.Add(colOptions);
+            this._gridPlaceholders = new System.Windows.Forms.DataGridView { Location = new System.Drawing.Point(8, 260), Width = 620, Height = 230, AllowUserToAddRows = true, AllowUserToDeleteRows = true, AutoSizeColumnsMode = System.Windows.Forms.DataGridViewAutoSizeColumnsMode.Fill };
+            this._colName = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this._colName.HeaderText = "占位符名称";
+            this._colName.Name = "colName";
+            this._colType = new System.Windows.Forms.DataGridViewComboBoxColumn();
+            this._colType.HeaderText = "类型";
+            this._colType.Name = "colType";
+            this._colOptions = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this._colOptions.HeaderText = "选项（|分隔）";
+            this._colOptions.Name = "colOptions";
+            this._gridPlaceholders.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] { this._colName, this._colType, this._colOptions });
 
             this._btnSave = new Button { Text = "保存", Location = new Point(8, 500), Width = 120, Height = 34 };
             this._btnSave.Click += new System.EventHandler(this.OnSaveCategory);
