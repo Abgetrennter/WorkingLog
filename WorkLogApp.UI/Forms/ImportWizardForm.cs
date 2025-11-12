@@ -21,6 +21,7 @@ namespace WorkLogApp.UI.Forms
             InitializeComponent();
             // 应用统一样式（字体、缩放、抗锯齿）
             UIStyleManager.ApplyVisualEnhancements(this);
+            UIStyleManager.ApplyLightTheme(this);
 
             // 设计期：填充示例文件名与预览项，便于在设计器中查看列表布局
             if (UIStyleManager.IsDesignMode)

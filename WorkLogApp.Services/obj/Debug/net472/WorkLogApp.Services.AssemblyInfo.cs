@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("WorkLogApp.Services")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+9564d3424ed070374c2d3c071456758466da1649")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+a99061bd941ae4cff82c04ff0f2004f2252523c0")]
 [assembly: System.Reflection.AssemblyProductAttribute("WorkLogApp.Services")]
 [assembly: System.Reflection.AssemblyTitleAttribute("WorkLogApp.Services")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

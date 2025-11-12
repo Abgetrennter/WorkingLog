@@ -28,6 +28,7 @@ namespace WorkLogApp.UI.Forms
 
             // 运行时增强：字体、缩放、抗锯齿
             UIStyleManager.ApplyVisualEnhancements(this);
+            UIStyleManager.ApplyLightTheme(this);
 
             // 设计时避免调用（仅运行时执行）
             UIStyleManager.SetLineSpacing(_txtFormatTemplate, 1.5f);
