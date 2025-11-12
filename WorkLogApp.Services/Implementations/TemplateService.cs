@@ -73,6 +73,10 @@ namespace WorkLogApp.Services.Implementations
             }
             // 系统字段占位符示例
             result = result.Replace("{ItemTitle}", item?.ItemTitle ?? string.Empty);
+            var catPath = fieldValues != null && fieldValues.TryGetValue("CategoryPath", out var cp)
+                ? Convert.ToString(cp) ?? string.Empty
+                : string.Empty;
+            result = result.Replace("{CategoryPath}", catPath);
             return result;
         }
 
@@ -84,6 +88,85 @@ namespace WorkLogApp.Services.Implementations
                 return cat?.CategoryTemplate;
             }
             return null;
+        }
+
+        public CategoryTemplate GetMergedCategoryTemplate(string categoryName)
+        {
+            if (_templateRoot == null || _templateRoot.Templates == null) return null;
+            if (string.IsNullOrWhiteSpace(categoryName)) return null;
+
+            var parts = categoryName.Split(new[] { '-' }, StringSplitOptions.RemoveEmptyEntries);
+            var keys = new List<string>();
+            for (int i = 0; i < parts.Length; i++)
+            {
+                keys.Add(string.Join("-", parts, 0, i + 1));
+            }
+
+            CategoryTemplate merged = null;
+            foreach (var key in keys)
+            {
+                if (_templateRoot.Templates.TryGetValue(key, out var cat) && cat?.CategoryTemplate != null)
+                {
+                    var tpl = cat.CategoryTemplate;
+                    if (merged == null)
+                    {
+                        merged = new CategoryTemplate
+                        {
+                            FormatTemplate = tpl.FormatTemplate ?? string.Empty,
+                            Placeholders = tpl.Placeholders != null ? new Dictionary<string, string>(tpl.Placeholders, StringComparer.OrdinalIgnoreCase) : new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase),
+                            Options = tpl.Options != null ? CloneOptions(tpl.Options) : new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase)
+                        };
+                    }
+                    else
+                    {
+                        var fmt = tpl.FormatTemplate;
+                        if (!string.IsNullOrWhiteSpace(fmt))
+                        {
+                            if (string.IsNullOrEmpty(merged.FormatTemplate)) merged.FormatTemplate = fmt;
+                            else merged.FormatTemplate = merged.FormatTemplate + Environment.NewLine + Environment.NewLine + fmt;
+                        }
+
+                        if (tpl.Placeholders != null)
+                        {
+                            foreach (var kv in tpl.Placeholders)
+                            {
+                                merged.Placeholders[kv.Key] = kv.Value;
+                            }
+                        }
+
+                        if (tpl.Options != null)
+                        {
+                            foreach (var kv in tpl.Options)
+                            {
+                                if (!merged.Options.TryGetValue(kv.Key, out var list))
+                                {
+                                    merged.Options[kv.Key] = new List<string>(kv.Value ?? new List<string>());
+                                }
+                                else
+                                {
+                                    var set = new HashSet<string>(list);
+                                    foreach (var opt in kv.Value ?? new List<string>())
+                                    {
+                                        if (set.Add(opt)) list.Add(opt);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            return merged;
+        }
+
+        private static Dictionary<string, List<string>> CloneOptions(Dictionary<string, List<string>> src)
+        {
+            var dict = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+            foreach (var kv in src)
+            {
+                dict[kv.Key] = kv.Value != null ? new List<string>(kv.Value) : new List<string>();
+            }
+            return dict;
         }
 
         public IEnumerable<string> GetCategoryNames()

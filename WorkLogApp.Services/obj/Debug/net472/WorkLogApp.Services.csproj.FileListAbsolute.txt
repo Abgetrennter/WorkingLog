@@ -36,3 +36,5 @@ c:\Users\Administrator\source\repos\WorkingLog\WorkLogApp.UI\bin2\WorkLogApp.Ser
 c:\Users\Administrator\source\repos\WorkingLog\WorkLogApp.UI\bin2\WorkLogApp.Services.pdb
 C:\Users\Administrator\source\repos\WorkingLog\WorkLogApp.UI\bin-ci\WorkLogApp.Services.dll
 C:\Users\Administrator\source\repos\WorkingLog\WorkLogApp.UI\bin-ci\WorkLogApp.Services.pdb
+C:\Users\Administrator\source\repos\WorkingLog\WorkLogApp.UI\bin\WorkLogApp.Services.dll
+C:\Users\Administrator\source\repos\WorkingLog\WorkLogApp.UI\bin\WorkLogApp.Services.pdb

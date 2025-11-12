@@ -40,17 +40,10 @@ namespace WorkLogApp.UI.Forms
 
         private void InitializeFields()
         {
-            // 状态下拉
-            _statusCombo.Items.Clear();
-            _statusCombo.Items.AddRange(Enum.GetNames(typeof(StatusEnum)));
-            var statusName = _item.Status.ToString();
-            var idx = _statusCombo.Items.IndexOf(statusName);
-            _statusCombo.SelectedIndex = idx >= 0 ? idx : (_statusCombo.Items.Count > 0 ? 0 : -1);
+            // （已移除状态下拉）
 
             // 日期
             _datePicker.Value = _item.LogDate == default(DateTime) ? DateTime.Now.Date : _item.LogDate;
-            // 进度
-            _progressUpDown.Value = _item.Progress.HasValue ? Math.Max(0, Math.Min(100, _item.Progress.Value)) : 0;
             // 标签
             _tagsBox.Text = _item.Tags ?? string.Empty;
             // 开始时间
@@ -90,12 +83,7 @@ namespace WorkLogApp.UI.Forms
                     return;
                 }
 
-                if (_statusCombo.SelectedItem == null || !Enum.TryParse<StatusEnum>(_statusCombo.SelectedItem.ToString(), out var st))
-                {
-                    MessageBox.Show(this, "请选择有效的状态", "提示", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                    _statusCombo.Focus();
-                    return;
-                }
+                // （已移除状态选择校验）
 
                 if (_startPicker.Checked && _endPicker.Checked && _endPicker.Value < _startPicker.Value)
                 {
@@ -108,8 +96,7 @@ namespace WorkLogApp.UI.Forms
                 _item.ItemTitle = title;
                 _item.ItemContent = _contentBox.Text ?? string.Empty;
                 _item.LogDate = _datePicker.Value.Date;
-                _item.Status = st;
-                _item.Progress = (int)_progressUpDown.Value;
+                // 状态字段不再由表单编辑，保持现值或默认值
                 _item.Tags = _tagsBox.Text?.Trim();
                 _item.StartTime = _startPicker.Checked ? (DateTime?)_startPicker.Value : null;
                 _item.EndTime = _endPicker.Checked ? (DateTime?)_endPicker.Value : null;

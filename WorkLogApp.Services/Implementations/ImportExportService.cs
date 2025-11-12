@@ -19,13 +19,11 @@ namespace WorkLogApp.Services.Implementations
         private const string SheetName = "工作日志";
         private static readonly string[] Header = new[]
         {
-            // 新结构：移除 DailySummary 列
-            "LogDate","ItemTitle","ItemContent","CategoryId","Status","Progress","StartTime","EndTime","Tags","SortOrder"
+            "LogDate","ItemTitle","ItemContent","CategoryId","StartTime","EndTime","Tags","SortOrder"
         };
         private static readonly string[] HeaderZh = new[]
         {
-            // 与 Header 对应的中文显示名称（移除 当日总结）
-            "日期","标题","内容","分类ID","状态","进度","开始时间","结束时间","标签","排序"
+            "日期","标题","内容","分类ID","开始时间","结束时间","标签","排序"
         };
         private static readonly Dictionary<string, string> HeaderNameMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         {
@@ -33,8 +31,6 @@ namespace WorkLogApp.Services.Implementations
             {"标题","ItemTitle"},
             {"内容","ItemContent"},
             {"分类ID","CategoryId"},
-            {"状态","Status"},
-            {"进度","Progress"},
             {"开始时间","StartTime"},
             {"结束时间","EndTime"},
             {"标签","Tags"},
@@ -90,6 +86,25 @@ namespace WorkLogApp.Services.Implementations
         private static void WriteMonthSheet(IWorkbook wb, DateTime month, IEnumerable<WorkLog> days)
         {
             var sheet = wb.CreateSheet(SheetName);
+
+            // 准备模板名称映射：CategoryId(稳定哈希) → 模板名称
+            var idToName = new Dictionary<int, string>();
+            try
+            {
+                var baseDir = AppDomain.CurrentDomain.BaseDirectory;
+                var templatesPath = Path.Combine(baseDir, "Templates", "templates.json");
+                var tplSvc = new TemplateService();
+                if (tplSvc.LoadTemplates(templatesPath))
+                {
+                    foreach (var name in tplSvc.GetCategoryNames())
+                    {
+                        var id = StableIdFromName(name);
+                        // 后写覆盖前写：允许后续同哈希的更精确名称覆盖（理论上不应发生冲突）
+                        idToName[id] = name;
+                    }
+                }
+            }
+            catch { /* 忽略模板加载失败，回退为写数值ID */ }
 
             // 写入中文表头
             var header = sheet.CreateRow(0);
@@ -228,24 +243,24 @@ namespace WorkLogApp.Services.Implementations
                     row.GetCell(0).SetCellValue(day.LogDate.ToString("yyyy年MM月dd日"));
                     row.GetCell(1).SetCellValue(item.ItemTitle ?? string.Empty);
                     row.GetCell(2).SetCellValue(item.ItemContent ?? string.Empty);
-                    row.GetCell(3).SetCellValue(item.CategoryId);
-                    row.GetCell(4).SetCellValue((int)item.Status);
-                    row.GetCell(5).SetCellValue(item.Progress ?? 0);
-                    row.GetCell(6).SetCellValue(item.StartTime.HasValue ? item.StartTime.Value.ToString("yyyy-MM-dd HH:mm") : string.Empty);
-                    row.GetCell(7).SetCellValue(item.EndTime.HasValue ? item.EndTime.Value.ToString("yyyy-MM-dd HH:mm") : string.Empty);
-                    row.GetCell(8).SetCellValue(item.Tags ?? string.Empty);
-                    row.GetCell(9).SetCellValue(item.SortOrder ?? 0);
+                    // 分类ID列写模板名称；若无法解析则回退数值ID
+                    var catName = idToName.TryGetValue(item.CategoryId, out var nm)
+                        ? nm
+                        : (!string.IsNullOrWhiteSpace(item.Tags) && idToName.ContainsValue(item.Tags) ? item.Tags : item.CategoryId.ToString());
+                    row.GetCell(3).SetCellValue(catName);
+                    row.GetCell(4).SetCellValue(item.StartTime.HasValue ? item.StartTime.Value.ToString("yyyy-MM-dd HH:mm") : string.Empty);
+                    row.GetCell(5).SetCellValue(item.EndTime.HasValue ? item.EndTime.Value.ToString("yyyy-MM-dd HH:mm") : string.Empty);
+                    row.GetCell(6).SetCellValue(item.Tags ?? string.Empty);
+                    row.GetCell(7).SetCellValue(item.SortOrder ?? 0);
                     // 应用列样式（数字居中、时间右对齐、标题加粗、全表格边框）
                     row.GetCell(0).CellStyle = blockStyle;     // 日期
                     row.GetCell(1).CellStyle = titleStyle;     // 标题（加粗）
                     row.GetCell(2).CellStyle = blockStyle;     // 内容
-                    row.GetCell(3).CellStyle = numberStyle;    // 分类ID（居中）
-                    row.GetCell(4).CellStyle = numberStyle;    // 状态（居中）
-                    row.GetCell(5).CellStyle = numberStyle;    // 进度（居中）
-                    row.GetCell(6).CellStyle = timeStyle;      // 开始时间（右对齐）
-                    row.GetCell(7).CellStyle = timeStyle;      // 结束时间（右对齐）
-                    row.GetCell(8).CellStyle = blockStyle;     // 标签
-                    row.GetCell(9).CellStyle = numberStyle;    // 排序（居中）
+                    row.GetCell(3).CellStyle = numberStyle;    // 分类ID
+                    row.GetCell(4).CellStyle = timeStyle;      // 开始时间
+                    row.GetCell(5).CellStyle = timeStyle;      // 结束时间
+                    row.GetCell(6).CellStyle = blockStyle;     // 标签
+                    row.GetCell(7).CellStyle = numberStyle;    // 排序
                 }
                 // 每个日期块的最后一行写入当日总结（标题=当日总结，内容=总结文本）
                 rowIndex++;
@@ -267,12 +282,10 @@ namespace WorkLogApp.Services.Implementations
             sheet.SetColumnWidth(1, 30 * 256); // 标题
             sheet.SetColumnWidth(2, 80 * 256); // 内容（很长）
             sheet.SetColumnWidth(3, 10 * 256); // 分类ID
-            sheet.SetColumnWidth(4, 8 * 256);  // 状态
-            sheet.SetColumnWidth(5, 8 * 256);  // 进度
-            sheet.SetColumnWidth(6, 12 * 256); // 开始时间
-            sheet.SetColumnWidth(7, 12 * 256); // 结束时间
-            sheet.SetColumnWidth(8, 10 * 256); // 标签
-            sheet.SetColumnWidth(9, 8 * 256);  // 排序
+            sheet.SetColumnWidth(4, 12 * 256); // 开始时间
+            sheet.SetColumnWidth(5, 12 * 256); // 结束时间
+            sheet.SetColumnWidth(6, 10 * 256); // 标签
+            sheet.SetColumnWidth(7, 8 * 256);  // 排序
         }
 
         private static string GetChineseWeekday(DateTime dt)
@@ -353,9 +366,27 @@ namespace WorkLogApp.Services.Implementations
                     item.LogDate = dtItem;
                     item.ItemTitle = GetString(row, indexes["ItemTitle"]);
                     item.ItemContent = GetString(row, indexes["ItemContent"]);
-                    item.CategoryId = ParseInt(GetString(row, indexes["CategoryId"]));
-                    item.Status = ParseStatus(GetString(row, indexes["Status"]));
-                    item.Progress = ParseNullableInt(GetString(row, indexes["Progress"]));
+                    // 分类ID：支持文字名称（模板名）或数字ID，若为名称则生成稳定数值ID
+                    {
+                        var catText = GetString(row, indexes["CategoryId"]);
+                        int cid;
+                        if (int.TryParse(catText, out cid))
+                        {
+                            item.CategoryId = cid;
+                        }
+                        else
+                        {
+                            item.CategoryId = StableIdFromName(catText);
+                        }
+                    }
+                    if (indexes.TryGetValue("Status", out var idxStatus))
+                    {
+                        item.Status = ParseStatus(GetString(row, idxStatus));
+                    }
+                    else
+                    {
+                        item.Status = StatusEnum.Todo;
+                    }
                     item.StartTime = ParseNullableDateTime(GetString(row, indexes["StartTime"]));
                     item.EndTime = ParseNullableDateTime(GetString(row, indexes["EndTime"]));
                     item.Tags = GetString(row, indexes["Tags"]);
@@ -428,9 +459,27 @@ namespace WorkLogApp.Services.Implementations
                     item.LogDate = dtItem;
                     item.ItemTitle = GetString(row, indexes["ItemTitle"]);
                     item.ItemContent = GetString(row, indexes["ItemContent"]);
-                    item.CategoryId = ParseInt(GetString(row, indexes["CategoryId"]));
-                    item.Status = ParseStatus(GetString(row, indexes["Status"]));
-                    item.Progress = ParseNullableInt(GetString(row, indexes["Progress"]));
+                    // 分类ID：支持文字名称（模板名）或数字ID，若为名称则生成稳定数值ID
+                    {
+                        var catText = GetString(row, indexes["CategoryId"]);
+                        int cid;
+                        if (int.TryParse(catText, out cid))
+                        {
+                            item.CategoryId = cid;
+                        }
+                        else
+                        {
+                            item.CategoryId = StableIdFromName(catText);
+                        }
+                    }
+                    if (indexes.TryGetValue("Status", out var idxStatus2))
+                    {
+                        item.Status = ParseStatus(GetString(row, idxStatus2));
+                    }
+                    else
+                    {
+                        item.Status = StatusEnum.Todo;
+                    }
                     item.StartTime = ParseNullableDateTime(GetString(row, indexes["StartTime"]));
                     item.EndTime = ParseNullableDateTime(GetString(row, indexes["EndTime"]));
                     item.Tags = GetString(row, indexes["Tags"]);
@@ -512,6 +561,24 @@ namespace WorkLogApp.Services.Implementations
                 }
             }
             return dict;
+        }
+
+        // 以模板名称生成稳定的正整数 ID（FNV-1a 32-bit）
+        private static int StableIdFromName(string name)
+        {
+            if (string.IsNullOrWhiteSpace(name)) return 0;
+            unchecked
+            {
+                const uint fnvOffset = 2166136261;
+                const uint fnvPrime = 16777619;
+                uint hash = fnvOffset;
+                foreach (var ch in name)
+                {
+                    hash ^= ch;
+                    hash *= fnvPrime;
+                }
+                return (int)(hash & 0x7FFFFFFF);
+            }
         }
     }
 }

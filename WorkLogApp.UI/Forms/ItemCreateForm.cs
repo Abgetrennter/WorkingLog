@@ -40,14 +40,12 @@ namespace WorkLogApp.UI.Forms
                     var placeholders = new System.Collections.Generic.Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
                     {
                         ["标题"] = "text",
-                        ["状态"] = "select",
                         ["标签"] = "checkbox",
                         ["日期"] = "datetime",
                         ["内容"] = "textarea"
                     };
                     var options = new System.Collections.Generic.Dictionary<string, System.Collections.Generic.List<string>>(StringComparer.OrdinalIgnoreCase)
                     {
-                        ["状态"] = new System.Collections.Generic.List<string> { "未开始", "进行中", "已完成" },
                         ["标签"] = new System.Collections.Generic.List<string> { "研发", "测试", "部署" }
                     };
                     _formPanel.BuildForm(placeholders, options);
@@ -67,7 +65,7 @@ namespace WorkLogApp.UI.Forms
         private void BuildFormForCategory()
         {
             var categoryName = _categoryCombo.SelectedCategoryName;
-            var catTpl = _templateService.GetCategoryTemplate(categoryName);
+            var catTpl = _templateService.GetMergedCategoryTemplate(categoryName);
             if (catTpl == null)
             {
                 _formPanel.BuildForm(new System.Collections.Generic.Dictionary<string, string>());
@@ -79,7 +77,7 @@ namespace WorkLogApp.UI.Forms
         private void OnGenerateAndSave(object sender, EventArgs e)
         {
             var categoryName = _categoryCombo.SelectedCategoryName;
-            var catTpl = _templateService.GetCategoryTemplate(categoryName);
+            var catTpl = _templateService.GetMergedCategoryTemplate(categoryName);
             if (catTpl == null)
             {
                 MessageBox.Show(this, "未找到分类模板。", "提示", MessageBoxButtons.OK, MessageBoxIcon.Information);
@@ -93,11 +91,13 @@ namespace WorkLogApp.UI.Forms
             }
 
             var values = _formPanel.GetFieldValues();
+            values["CategoryPath"] = categoryName ?? string.Empty;
             var item = new WorkLogItem
             {
                 LogDate = _datePicker.Value.Date,
                 ItemTitle = _titleBox.Text?.Trim(),
-                CategoryId = 0
+                CategoryId = StableIdFromName(categoryName),
+                Tags = string.IsNullOrWhiteSpace(categoryName) ? null : categoryName
             };
             var content = _templateService.Render(catTpl.FormatTemplate, values, item);
             // 将初始内容同步到模型，确保编辑窗体与模型一致
@@ -124,6 +124,24 @@ namespace WorkLogApp.UI.Forms
         private void lblCategory_Click(object sender, EventArgs e)
         {
 
+        }
+
+        // 以模板名称生成稳定的正整数 ID（FNV-1a 32-bit）
+        private static int StableIdFromName(string name)
+        {
+            if (string.IsNullOrWhiteSpace(name)) return 0;
+            unchecked
+            {
+                const uint fnvOffset = 2166136261;
+                const uint fnvPrime = 16777619;
+                uint hash = fnvOffset;
+                foreach (var ch in name)
+                {
+                    hash ^= ch;
+                    hash *= fnvPrime;
+                }
+                return (int)(hash & 0x7FFFFFFF);
+            }
         }
     }
 }

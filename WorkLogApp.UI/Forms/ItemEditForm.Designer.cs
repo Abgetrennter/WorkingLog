@@ -11,8 +11,6 @@ namespace WorkLogApp.UI.Forms
         private TextBox _titleBox;
         private Label lblDate;
         private DateTimePicker _datePicker;
-        private Label lblStatus;
-        private ComboBox _statusCombo;
         private Label lblTags;
         private TextBox _tagsBox;
         private Label lblStart;
@@ -43,8 +41,6 @@ namespace WorkLogApp.UI.Forms
             this._titleBox = new System.Windows.Forms.TextBox();
             this.lblDate = new System.Windows.Forms.Label();
             this._datePicker = new System.Windows.Forms.DateTimePicker();
-            this.lblStatus = new System.Windows.Forms.Label();
-            this._statusCombo = new System.Windows.Forms.ComboBox();
             this.lblTags = new System.Windows.Forms.Label();
             this._tagsBox = new System.Windows.Forms.TextBox();
             this.lblStart = new System.Windows.Forms.Label();
@@ -58,12 +54,9 @@ namespace WorkLogApp.UI.Forms
             this._btnSave = new System.Windows.Forms.Button();
             this._btnCancel = new System.Windows.Forms.Button();
             this.rootLayout = new System.Windows.Forms.TableLayoutPanel();
-            this.lblProgress = new System.Windows.Forms.Label();
-            this._progressUpDown = new System.Windows.Forms.NumericUpDown();
             this.bottomBar = new System.Windows.Forms.FlowLayoutPanel();
             ((System.ComponentModel.ISupportInitialize)(this._sortUpDown)).BeginInit();
             this.rootLayout.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this._progressUpDown)).BeginInit();
             this.bottomBar.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -103,23 +96,6 @@ namespace WorkLogApp.UI.Forms
             this._datePicker.Size = new System.Drawing.Size(594, 28);
             this._datePicker.TabIndex = 3;
             // 
-            // lblStatus
-            // 
-            this.lblStatus.AutoSize = true;
-            this.lblStatus.Location = new System.Drawing.Point(11, 76);
-            this.lblStatus.Name = "lblStatus";
-            this.lblStatus.Size = new System.Drawing.Size(62, 18);
-            this.lblStatus.TabIndex = 4;
-            this.lblStatus.Text = "状态：";
-            // 
-            // _statusCombo
-            // 
-            this._statusCombo.Dock = System.Windows.Forms.DockStyle.Fill;
-            this._statusCombo.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            this._statusCombo.Location = new System.Drawing.Point(295, 79);
-            this._statusCombo.Name = "_statusCombo";
-            this._statusCombo.Size = new System.Drawing.Size(594, 26);
-            this._statusCombo.TabIndex = 5;
             // 
             // lblTags
             // 
@@ -252,25 +228,22 @@ namespace WorkLogApp.UI.Forms
             this.rootLayout.Controls.Add(this._titleBox, 1, 0);
             this.rootLayout.Controls.Add(this.lblDate, 0, 1);
             this.rootLayout.Controls.Add(this._datePicker, 1, 1);
-            this.rootLayout.Controls.Add(this.lblStatus, 0, 2);
-            this.rootLayout.Controls.Add(this._statusCombo, 1, 2);
-            this.rootLayout.Controls.Add(this.lblProgress, 0, 3);
-            this.rootLayout.Controls.Add(this._progressUpDown, 1, 3);
-            this.rootLayout.Controls.Add(this.lblTags, 0, 4);
-            this.rootLayout.Controls.Add(this._tagsBox, 1, 4);
-            this.rootLayout.Controls.Add(this.lblStart, 0, 5);
-            this.rootLayout.Controls.Add(this._startPicker, 1, 5);
-            this.rootLayout.Controls.Add(this.lblEnd, 0, 6);
-            this.rootLayout.Controls.Add(this._endPicker, 1, 6);
-            this.rootLayout.Controls.Add(this.lblContent, 0, 7);
-            this.rootLayout.Controls.Add(this._contentBox, 1, 7);
-            this.rootLayout.Controls.Add(this.bottomBar, 1, 8);
+            // （已移除状态控件行）
+            this.rootLayout.Controls.Add(this.lblTags, 0, 3);
+            this.rootLayout.Controls.Add(this._tagsBox, 1, 3);
+            this.rootLayout.Controls.Add(this.lblStart, 0, 4);
+            this.rootLayout.Controls.Add(this._startPicker, 1, 4);
+            this.rootLayout.Controls.Add(this.lblEnd, 0, 5);
+            this.rootLayout.Controls.Add(this._endPicker, 1, 5);
+            this.rootLayout.Controls.Add(this.lblContent, 0, 6);
+            this.rootLayout.Controls.Add(this._contentBox, 1, 6);
+            this.rootLayout.Controls.Add(this.bottomBar, 1, 7);
             this.rootLayout.Dock = System.Windows.Forms.DockStyle.Fill;
             this.rootLayout.Location = new System.Drawing.Point(0, 0);
             this.rootLayout.Margin = new System.Windows.Forms.Padding(0);
             this.rootLayout.Name = "rootLayout";
             this.rootLayout.Padding = new System.Windows.Forms.Padding(8);
-            this.rootLayout.RowCount = 9;
+            this.rootLayout.RowCount = 8;
             this.rootLayout.RowStyles.Add(new System.Windows.Forms.RowStyle());
             this.rootLayout.RowStyles.Add(new System.Windows.Forms.RowStyle());
             this.rootLayout.RowStyles.Add(new System.Windows.Forms.RowStyle());
@@ -284,22 +257,7 @@ namespace WorkLogApp.UI.Forms
             this.rootLayout.Size = new System.Drawing.Size(900, 650);
             this.rootLayout.TabIndex = 0;
             // 
-            // lblProgress
-            // 
-            this.lblProgress.AutoSize = true;
-            this.lblProgress.Location = new System.Drawing.Point(11, 108);
-            this.lblProgress.Name = "lblProgress";
-            this.lblProgress.Size = new System.Drawing.Size(125, 18);
-            this.lblProgress.TabIndex = 6;
-            this.lblProgress.Text = "进度(0-100)：";
-            // 
-            // _progressUpDown
-            // 
-            this._progressUpDown.Dock = System.Windows.Forms.DockStyle.Left;
-            this._progressUpDown.Location = new System.Drawing.Point(295, 111);
-            this._progressUpDown.Name = "_progressUpDown";
-            this._progressUpDown.Size = new System.Drawing.Size(120, 28);
-            this._progressUpDown.TabIndex = 7;
+            
             // 
             // bottomBar
             // 
@@ -326,13 +284,10 @@ namespace WorkLogApp.UI.Forms
             ((System.ComponentModel.ISupportInitialize)(this._sortUpDown)).EndInit();
             this.rootLayout.ResumeLayout(false);
             this.rootLayout.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)(this._progressUpDown)).EndInit();
             this.bottomBar.ResumeLayout(false);
             this.ResumeLayout(false);
 
         }
 
-        private Label lblProgress;
-        private NumericUpDown _progressUpDown;
     }
 }

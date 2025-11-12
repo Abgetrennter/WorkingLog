@@ -11,6 +11,7 @@ namespace WorkLogApp.UI.Forms
         private Panel leftPanel;
         private ListBox _lstCategories;
         private Button _btnAdd;
+        private Button _btnAddChild;
         private Button _btnRemove;
 
         private Panel rightPanel;
@@ -61,8 +62,10 @@ namespace WorkLogApp.UI.Forms
             // 
             // leftPanel
             // 
+            this._btnAddChild = new System.Windows.Forms.Button();
             this.leftPanel.Controls.Add(this._lstCategories);
             this.leftPanel.Controls.Add(this._btnRemove);
+            this.leftPanel.Controls.Add(this._btnAddChild);
             this.leftPanel.Controls.Add(this._btnAdd);
             this.leftPanel.Dock = System.Windows.Forms.DockStyle.Fill;
             this.leftPanel.Location = new System.Drawing.Point(3, 3);
@@ -92,6 +95,17 @@ namespace WorkLogApp.UI.Forms
             this._btnRemove.Text = "删除分类";
             this._btnRemove.Click += new System.EventHandler(this.OnRemoveCategory);
             // 
+            // _btnAddChild
+            // 
+            this._btnAddChild.Dock = System.Windows.Forms.DockStyle.Top;
+            this._btnAddChild.Font = new System.Drawing.Font("宋体", 15F);
+            this._btnAddChild.Location = new System.Drawing.Point(8, 68);
+            this._btnAddChild.Name = "_btnAddChild";
+            this._btnAddChild.Size = new System.Drawing.Size(178, 66);
+            this._btnAddChild.TabIndex = 3;
+            this._btnAddChild.Text = "新增子分类";
+            this._btnAddChild.Click += new System.EventHandler(this.OnAddChildCategory);
+            // 
             // _btnAdd
             // 
             this._btnAdd.Dock = System.Windows.Forms.DockStyle.Top;
@@ -99,7 +113,7 @@ namespace WorkLogApp.UI.Forms
             this._btnAdd.Location = new System.Drawing.Point(8, 8);
             this._btnAdd.Name = "_btnAdd";
             this._btnAdd.Size = new System.Drawing.Size(178, 60);
-            this._btnAdd.TabIndex = 2;
+            this._btnAdd.TabIndex = 4;
             this._btnAdd.Text = "新增分类";
             this._btnAdd.Click += new System.EventHandler(this.OnAddCategory);
             // 

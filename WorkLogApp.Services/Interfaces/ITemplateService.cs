@@ -9,6 +9,7 @@ namespace WorkLogApp.Services.Interfaces
         bool SaveTemplates();
         string Render(string formatTemplate, Dictionary<string, object> fieldValues, WorkLogItem item);
         CategoryTemplate GetCategoryTemplate(string categoryName);
+        CategoryTemplate GetMergedCategoryTemplate(string categoryName);
         IEnumerable<string> GetCategoryNames();
         bool AddOrUpdateCategoryTemplate(string categoryName, CategoryTemplate template);
         bool RemoveCategory(string categoryName);
