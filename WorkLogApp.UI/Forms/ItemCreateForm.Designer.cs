@@ -12,6 +12,8 @@ namespace WorkLogApp.UI.Forms
         private CategoryTreeComboBox _categoryCombo;
         private Label lblTitle;
         private TextBox _titleBox;
+        private Label lblDate;
+        private DateTimePicker _datePicker;
         private DynamicFormPanel _formPanel;
         private Button _btnGenerateSave;
         private System.Windows.Forms.TableLayoutPanel rootLayout;
@@ -35,6 +37,8 @@ namespace WorkLogApp.UI.Forms
             this._btnGenerateSave = new System.Windows.Forms.Button();
             this._categoryCombo = new WorkLogApp.UI.Controls.CategoryTreeComboBox();
             this._formPanel = new WorkLogApp.UI.Controls.DynamicFormPanel();
+            this.lblDate = new System.Windows.Forms.Label();
+            this._datePicker = new System.Windows.Forms.DateTimePicker();
             this.SuspendLayout();
             // 
             // lblCategory
@@ -90,6 +94,19 @@ namespace WorkLogApp.UI.Forms
             this._formPanel.Size = new System.Drawing.Size(760, 472);
             this._formPanel.TabIndex = 4;
             this._formPanel.Paint += new System.Windows.Forms.PaintEventHandler(this._formPanel_Paint);
+
+            // lblDate
+            //
+            this.lblDate.AutoSize = true;
+            this.lblDate.Name = "lblDate";
+            this.lblDate.Text = "发生日期：";
+
+            // _datePicker
+            //
+            this._datePicker.CustomFormat = "yyyy-MM-dd";
+            this._datePicker.Format = System.Windows.Forms.DateTimePickerFormat.Custom;
+            this._datePicker.Name = "_datePicker";
+            this._datePicker.Dock = System.Windows.Forms.DockStyle.Fill;
             // 
             // rootLayout
             // 
@@ -113,7 +130,8 @@ namespace WorkLogApp.UI.Forms
             this.headerLayout.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50F));
             this.headerLayout.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle());
             this.headerLayout.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50F));
-            this.headerLayout.RowCount = 1;
+            this.headerLayout.RowCount = 2;
+            this.headerLayout.RowStyles.Add(new System.Windows.Forms.RowStyle());
             this.headerLayout.RowStyles.Add(new System.Windows.Forms.RowStyle());
             this.headerLayout.Dock = System.Windows.Forms.DockStyle.Fill;
             this.headerLayout.Name = "headerLayout";
@@ -122,6 +140,8 @@ namespace WorkLogApp.UI.Forms
             this.headerLayout.Controls.Add(this._categoryCombo, 1, 0);
             this.headerLayout.Controls.Add(this.lblTitle, 2, 0);
             this.headerLayout.Controls.Add(this._titleBox, 3, 0);
+            this.headerLayout.Controls.Add(this.lblDate, 0, 1);
+            this.headerLayout.Controls.Add(this._datePicker, 1, 1);
 
             // form panel row
             this._formPanel.Dock = System.Windows.Forms.DockStyle.Fill;
