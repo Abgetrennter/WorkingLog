@@ -29,6 +29,7 @@ namespace WorkLogApp.UI.Forms
         private DateTimePicker _dayPicker;
         private Button _btnDailySummary;
         private Button _btnSave;
+        private Button _btnOpenFileLocation;
 
         /// <summary>
         /// Clean up any resources being used.
@@ -57,6 +58,7 @@ namespace WorkLogApp.UI.Forms
             this._btnImport = new System.Windows.Forms.Button();
             this._btnDailySummary = new System.Windows.Forms.Button();
             this._btnSave = new System.Windows.Forms.Button();
+            this._btnOpenFileLocation = new System.Windows.Forms.Button();
             this._listView = new System.Windows.Forms.ListView();
             this._colDate = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this._colTitle = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
@@ -72,7 +74,7 @@ namespace WorkLogApp.UI.Forms
             // topPanel
             // 
             this.topPanel.AutoScroll = true;
-            this.topPanel.AutoSize = true;
+            this.topPanel.AutoSize = false;
             this.topPanel.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
             this.topPanel.Controls.Add(this._btnCreate);
             this.topPanel.Controls.Add(this._chkShowByMonth);
@@ -83,6 +85,7 @@ namespace WorkLogApp.UI.Forms
             this.topPanel.Controls.Add(this._btnDailySummary);
             this.topPanel.Controls.Add(this._btnImport);
             this.topPanel.Controls.Add(this._btnSave);
+            this.topPanel.Controls.Add(this._btnOpenFileLocation);
             this.topPanel.Dock = System.Windows.Forms.DockStyle.Fill;
             this.topPanel.Location = new System.Drawing.Point(3, 3);
             this.topPanel.Name = "topPanel";
@@ -96,7 +99,7 @@ namespace WorkLogApp.UI.Forms
             this._btnCreate.Location = new System.Drawing.Point(10, 12);
             this._btnCreate.Margin = new System.Windows.Forms.Padding(4, 6, 4, 6);
             this._btnCreate.Name = "_btnCreate";
-            this._btnCreate.Size = new System.Drawing.Size(150, 44);
+            this._btnCreate.Size = new System.Drawing.Size(110, 36);
             this._btnCreate.TabIndex = 0;
             this._btnCreate.Tag = "compact";
             this._btnCreate.Text = "创建事项";
@@ -143,7 +146,7 @@ namespace WorkLogApp.UI.Forms
             this._btnCategoryManage.Location = new System.Drawing.Point(614, 12);
             this._btnCategoryManage.Margin = new System.Windows.Forms.Padding(4, 6, 4, 6);
             this._btnCategoryManage.Name = "_btnCategoryManage";
-            this._btnCategoryManage.Size = new System.Drawing.Size(150, 44);
+            this._btnCategoryManage.Size = new System.Drawing.Size(110, 36);
             this._btnCategoryManage.TabIndex = 4;
             this._btnCategoryManage.Tag = "compact";
             this._btnCategoryManage.Text = "分类管理";
@@ -154,7 +157,7 @@ namespace WorkLogApp.UI.Forms
             this._btnImportWizard.Location = new System.Drawing.Point(772, 12);
             this._btnImportWizard.Margin = new System.Windows.Forms.Padding(4, 6, 4, 6);
             this._btnImportWizard.Name = "_btnImportWizard";
-            this._btnImportWizard.Size = new System.Drawing.Size(150, 44);
+            this._btnImportWizard.Size = new System.Drawing.Size(110, 36);
             this._btnImportWizard.TabIndex = 5;
             this._btnImportWizard.Tag = "compact";
             this._btnImportWizard.Text = "导入向导";
@@ -165,7 +168,7 @@ namespace WorkLogApp.UI.Forms
             this._btnImport.Location = new System.Drawing.Point(1088, 12);
             this._btnImport.Margin = new System.Windows.Forms.Padding(4, 6, 4, 6);
             this._btnImport.Name = "_btnImport";
-            this._btnImport.Size = new System.Drawing.Size(150, 44);
+            this._btnImport.Size = new System.Drawing.Size(110, 36);
             this._btnImport.TabIndex = 2;
             this._btnImport.Tag = "compact";
             this._btnImport.Text = "刷新";
@@ -176,7 +179,7 @@ namespace WorkLogApp.UI.Forms
             this._btnDailySummary.Location = new System.Drawing.Point(930, 12);
             this._btnDailySummary.Margin = new System.Windows.Forms.Padding(4, 6, 4, 6);
             this._btnDailySummary.Name = "_btnDailySummary";
-            this._btnDailySummary.Size = new System.Drawing.Size(150, 44);
+            this._btnDailySummary.Size = new System.Drawing.Size(110, 36);
             this._btnDailySummary.TabIndex = 8;
             this._btnDailySummary.Tag = "compact";
             this._btnDailySummary.Text = "每日总结";
@@ -187,11 +190,22 @@ namespace WorkLogApp.UI.Forms
             this._btnSave.Location = new System.Drawing.Point(1246, 12);
             this._btnSave.Margin = new System.Windows.Forms.Padding(4, 6, 4, 6);
             this._btnSave.Name = "_btnSave";
-            this._btnSave.Size = new System.Drawing.Size(150, 44);
+            this._btnSave.Size = new System.Drawing.Size(110, 36);
             this._btnSave.TabIndex = 9;
             this._btnSave.Tag = "compact";
             this._btnSave.Text = "保存";
             this._btnSave.Click += new System.EventHandler(this.OnSaveClick);
+            // 
+            // _btnOpenFileLocation
+            // 
+            this._btnOpenFileLocation.Location = new System.Drawing.Point(1404, 12);
+            this._btnOpenFileLocation.Margin = new System.Windows.Forms.Padding(4, 6, 4, 6);
+            this._btnOpenFileLocation.Name = "_btnOpenFileLocation";
+            this._btnOpenFileLocation.Size = new System.Drawing.Size(130, 36);
+            this._btnOpenFileLocation.TabIndex = 10;
+            this._btnOpenFileLocation.Tag = "compact";
+            this._btnOpenFileLocation.Text = "打开EXCEL";
+            this._btnOpenFileLocation.Click += new System.EventHandler(this.OnOpenFileLocationClick);
             // 
             // _listView
             // 
