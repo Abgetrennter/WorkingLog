@@ -15,7 +15,6 @@ namespace WorkLogApp.UI.Forms
         private DateTimePicker _monthPicker;
         private Button _btnCreate;
         private Button _btnImport;
-        private Button _btnMerge;
         private Button _btnCategoryManage;
         private Button _btnImportWizard;
         private FlowLayoutPanel topPanel;
@@ -50,7 +49,6 @@ namespace WorkLogApp.UI.Forms
             this._monthPicker = new System.Windows.Forms.DateTimePicker();
             this._btnCreate = new System.Windows.Forms.Button();
             this._btnImportWizard = new System.Windows.Forms.Button();
-            this._btnMerge = new System.Windows.Forms.Button();
             this._btnImport = new System.Windows.Forms.Button();
             this._listView = new System.Windows.Forms.ListView();
             this._colDate = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
@@ -70,7 +68,6 @@ namespace WorkLogApp.UI.Forms
             this.topPanel.Controls.Add(this._monthPicker);
             this.topPanel.Controls.Add(this._btnCategoryManage);
             this.topPanel.Controls.Add(this._btnImportWizard);
-            this.topPanel.Controls.Add(this._btnMerge);
             this.topPanel.Controls.Add(this._btnImport);
             this.topPanel.Dock = System.Windows.Forms.DockStyle.Fill;
             this.topPanel.AutoSize = true;
@@ -129,20 +126,11 @@ namespace WorkLogApp.UI.Forms
             this._btnImportWizard.Text = "导入向导";
             this._btnImportWizard.Click += new System.EventHandler(this.OnImportWizardClick);
             // 
-            // _btnMerge
-            // 
-            this._btnMerge.Location = new System.Drawing.Point(650, 12);
-            this._btnMerge.Margin = new System.Windows.Forms.Padding(4, 6, 4, 6);
-            this._btnMerge.Name = "_btnMerge";
-            this._btnMerge.Size = new System.Drawing.Size(174, 44);
-            this._btnMerge.TabIndex = 3;
-            this._btnMerge.Tag = "compact";
-            this._btnMerge.Text = "合并其他日志";
-            this._btnMerge.Click += new System.EventHandler(this.OnMergeOtherClick);
+            
             // 
             // _btnImport
             // 
-            this._btnImport.Location = new System.Drawing.Point(832, 12);
+            this._btnImport.Location = new System.Drawing.Point(650, 12);
             this._btnImport.Margin = new System.Windows.Forms.Padding(4, 6, 4, 6);
             this._btnImport.Name = "_btnImport";
             this._btnImport.Size = new System.Drawing.Size(150, 44);
