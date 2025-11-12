@@ -100,6 +100,8 @@ namespace WorkLogApp.UI.Forms
                 CategoryId = 0
             };
             var content = _templateService.Render(catTpl.FormatTemplate, values, item);
+            // 将初始内容同步到模型，确保编辑窗体与模型一致
+            item.ItemContent = content;
 
             // 打开编辑窗口，允许再次修改并保存纯文本
             using (var editor = new ItemEditForm(item, content))

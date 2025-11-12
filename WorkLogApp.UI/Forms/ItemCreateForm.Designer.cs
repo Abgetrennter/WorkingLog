@@ -39,12 +39,18 @@ namespace WorkLogApp.UI.Forms
             this._formPanel = new WorkLogApp.UI.Controls.DynamicFormPanel();
             this.lblDate = new System.Windows.Forms.Label();
             this._datePicker = new System.Windows.Forms.DateTimePicker();
+            this.rootLayout = new System.Windows.Forms.TableLayoutPanel();
+            this.headerLayout = new System.Windows.Forms.TableLayoutPanel();
+            this.bottomBar = new System.Windows.Forms.FlowLayoutPanel();
+            this.rootLayout.SuspendLayout();
+            this.headerLayout.SuspendLayout();
+            this.bottomBar.SuspendLayout();
             this.SuspendLayout();
             // 
             // lblCategory
             // 
             this.lblCategory.AutoSize = true;
-            this.lblCategory.Location = new System.Drawing.Point(12, 13);
+            this.lblCategory.Location = new System.Drawing.Point(3, 0);
             this.lblCategory.Name = "lblCategory";
             this.lblCategory.Size = new System.Drawing.Size(62, 18);
             this.lblCategory.TabIndex = 0;
@@ -54,7 +60,7 @@ namespace WorkLogApp.UI.Forms
             // lblTitle
             // 
             this.lblTitle.AutoSize = true;
-            this.lblTitle.Location = new System.Drawing.Point(367, 13);
+            this.lblTitle.Location = new System.Drawing.Point(410, 0);
             this.lblTitle.Name = "lblTitle";
             this.lblTitle.Size = new System.Drawing.Size(62, 18);
             this.lblTitle.TabIndex = 2;
@@ -62,14 +68,14 @@ namespace WorkLogApp.UI.Forms
             // 
             // _titleBox
             // 
-            this._titleBox.Location = new System.Drawing.Point(450, 10);
+            this._titleBox.Location = new System.Drawing.Point(478, 3);
             this._titleBox.Name = "_titleBox";
-            this._titleBox.Size = new System.Drawing.Size(300, 28);
+            this._titleBox.Size = new System.Drawing.Size(297, 28);
             this._titleBox.TabIndex = 3;
             // 
             // _btnGenerateSave
             // 
-            this._btnGenerateSave.Location = new System.Drawing.Point(303, 528);
+            this._btnGenerateSave.Location = new System.Drawing.Point(578, 3);
             this._btnGenerateSave.Name = "_btnGenerateSave";
             this._btnGenerateSave.Size = new System.Drawing.Size(197, 60);
             this._btnGenerateSave.TabIndex = 5;
@@ -79,7 +85,7 @@ namespace WorkLogApp.UI.Forms
             // _categoryCombo
             // 
             this._categoryCombo.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            this._categoryCombo.Location = new System.Drawing.Point(112, 10);
+            this._categoryCombo.Location = new System.Drawing.Point(107, 3);
             this._categoryCombo.Name = "_categoryCombo";
             this._categoryCombo.Size = new System.Drawing.Size(200, 26);
             this._categoryCombo.TabIndex = 1;
@@ -89,86 +95,97 @@ namespace WorkLogApp.UI.Forms
             // 
             this._formPanel.AutoScroll = true;
             this._formPanel.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this._formPanel.Location = new System.Drawing.Point(15, 50);
+            this._formPanel.Dock = System.Windows.Forms.DockStyle.Fill;
+            this._formPanel.Location = new System.Drawing.Point(11, 117);
             this._formPanel.Name = "_formPanel";
-            this._formPanel.Size = new System.Drawing.Size(760, 472);
+            this._formPanel.Size = new System.Drawing.Size(778, 400);
             this._formPanel.TabIndex = 4;
             this._formPanel.Paint += new System.Windows.Forms.PaintEventHandler(this._formPanel_Paint);
-
+            // 
             // lblDate
-            //
+            // 
             this.lblDate.AutoSize = true;
+            this.lblDate.Location = new System.Drawing.Point(3, 34);
             this.lblDate.Name = "lblDate";
+            this.lblDate.Size = new System.Drawing.Size(98, 18);
+            this.lblDate.TabIndex = 4;
             this.lblDate.Text = "发生日期：";
-
+            // 
             // _datePicker
-            //
+            // 
             this._datePicker.CustomFormat = "yyyy-MM-dd";
-            this._datePicker.Format = System.Windows.Forms.DateTimePickerFormat.Custom;
-            this._datePicker.Name = "_datePicker";
             this._datePicker.Dock = System.Windows.Forms.DockStyle.Fill;
+            this._datePicker.Format = System.Windows.Forms.DateTimePickerFormat.Custom;
+            this._datePicker.Location = new System.Drawing.Point(107, 37);
+            this._datePicker.Name = "_datePicker";
+            this._datePicker.Size = new System.Drawing.Size(297, 28);
+            this._datePicker.TabIndex = 5;
             // 
             // rootLayout
             // 
-            this.rootLayout = new System.Windows.Forms.TableLayoutPanel();
             this.rootLayout.ColumnCount = 1;
             this.rootLayout.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
+            this.rootLayout.Controls.Add(this.headerLayout, 0, 0);
+            this.rootLayout.Controls.Add(this._formPanel, 0, 1);
+            this.rootLayout.Controls.Add(this.bottomBar, 0, 2);
+            this.rootLayout.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.rootLayout.Location = new System.Drawing.Point(0, 0);
+            this.rootLayout.Margin = new System.Windows.Forms.Padding(0);
+            this.rootLayout.Name = "rootLayout";
+            this.rootLayout.Padding = new System.Windows.Forms.Padding(8);
             this.rootLayout.RowCount = 3;
             this.rootLayout.RowStyles.Add(new System.Windows.Forms.RowStyle());
             this.rootLayout.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
             this.rootLayout.RowStyles.Add(new System.Windows.Forms.RowStyle());
-            this.rootLayout.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.rootLayout.Margin = new System.Windows.Forms.Padding(0);
-            this.rootLayout.Padding = new System.Windows.Forms.Padding(8);
-            this.rootLayout.Name = "rootLayout";
-
+            this.rootLayout.Size = new System.Drawing.Size(800, 600);
+            this.rootLayout.TabIndex = 0;
+            // 
             // headerLayout
             // 
-            this.headerLayout = new System.Windows.Forms.TableLayoutPanel();
             this.headerLayout.ColumnCount = 4;
             this.headerLayout.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle());
             this.headerLayout.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50F));
             this.headerLayout.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle());
             this.headerLayout.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50F));
-            this.headerLayout.RowCount = 2;
-            this.headerLayout.RowStyles.Add(new System.Windows.Forms.RowStyle());
-            this.headerLayout.RowStyles.Add(new System.Windows.Forms.RowStyle());
-            this.headerLayout.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.headerLayout.Name = "headerLayout";
-            // place header controls
             this.headerLayout.Controls.Add(this.lblCategory, 0, 0);
             this.headerLayout.Controls.Add(this._categoryCombo, 1, 0);
             this.headerLayout.Controls.Add(this.lblTitle, 2, 0);
             this.headerLayout.Controls.Add(this._titleBox, 3, 0);
             this.headerLayout.Controls.Add(this.lblDate, 0, 1);
             this.headerLayout.Controls.Add(this._datePicker, 1, 1);
-
-            // form panel row
-            this._formPanel.Dock = System.Windows.Forms.DockStyle.Fill;
-
+            this.headerLayout.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.headerLayout.Location = new System.Drawing.Point(11, 11);
+            this.headerLayout.Name = "headerLayout";
+            this.headerLayout.RowCount = 2;
+            this.headerLayout.RowStyles.Add(new System.Windows.Forms.RowStyle());
+            this.headerLayout.RowStyles.Add(new System.Windows.Forms.RowStyle());
+            this.headerLayout.Size = new System.Drawing.Size(778, 100);
+            this.headerLayout.TabIndex = 0;
+            // 
             // bottomBar
             // 
-            this.bottomBar = new System.Windows.Forms.FlowLayoutPanel();
-            this.bottomBar.FlowDirection = System.Windows.Forms.FlowDirection.RightToLeft;
-            this.bottomBar.Dock = System.Windows.Forms.DockStyle.Fill;
             this.bottomBar.AutoSize = true;
             this.bottomBar.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
-            this.bottomBar.Padding = new System.Windows.Forms.Padding(0);
             this.bottomBar.Controls.Add(this._btnGenerateSave);
-
-            // assemble rootLayout
-            this.rootLayout.Controls.Add(this.headerLayout, 0, 0);
-            this.rootLayout.Controls.Add(this._formPanel, 0, 1);
-            this.rootLayout.Controls.Add(this.bottomBar, 0, 2);
-
+            this.bottomBar.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.bottomBar.FlowDirection = System.Windows.Forms.FlowDirection.RightToLeft;
+            this.bottomBar.Location = new System.Drawing.Point(11, 523);
+            this.bottomBar.Name = "bottomBar";
+            this.bottomBar.Size = new System.Drawing.Size(778, 66);
+            this.bottomBar.TabIndex = 5;
+            // 
             // ItemCreateForm
             // 
             this.ClientSize = new System.Drawing.Size(800, 600);
             this.Controls.Add(this.rootLayout);
             this.Name = "ItemCreateForm";
             this.Text = "创建日志事项";
+            this.rootLayout.ResumeLayout(false);
+            this.rootLayout.PerformLayout();
+            this.headerLayout.ResumeLayout(false);
+            this.headerLayout.PerformLayout();
+            this.bottomBar.ResumeLayout(false);
             this.ResumeLayout(false);
-            this.PerformLayout();
 
         }
     }

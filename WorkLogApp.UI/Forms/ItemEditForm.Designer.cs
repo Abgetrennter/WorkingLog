@@ -62,13 +62,13 @@ namespace WorkLogApp.UI.Forms
             this._btnSave = new System.Windows.Forms.Button();
             this._btnCancel = new System.Windows.Forms.Button();
             this.rootLayout = new System.Windows.Forms.TableLayoutPanel();
-            this.bottomBar = new System.Windows.Forms.FlowLayoutPanel();
-            this._progressUpDown = new System.Windows.Forms.NumericUpDown();
             this.lblProgress = new System.Windows.Forms.Label();
+            this._progressUpDown = new System.Windows.Forms.NumericUpDown();
+            this.bottomBar = new System.Windows.Forms.FlowLayoutPanel();
             ((System.ComponentModel.ISupportInitialize)(this._sortUpDown)).BeginInit();
             this.rootLayout.SuspendLayout();
-            this.bottomBar.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this._progressUpDown)).BeginInit();
+            this.bottomBar.SuspendLayout();
             this.SuspendLayout();
             // 
             // lblTitle
@@ -225,14 +225,14 @@ namespace WorkLogApp.UI.Forms
             this._summaryBox.Location = new System.Drawing.Point(295, 247);
             this._summaryBox.Name = "_summaryBox";
             this._summaryBox.ScrollBars = System.Windows.Forms.RichTextBoxScrollBars.Vertical;
-            this._summaryBox.Size = new System.Drawing.Size(594, 135);
+            this._summaryBox.Size = new System.Drawing.Size(594, 45);
             this._summaryBox.TabIndex = 15;
             this._summaryBox.Text = "";
             // 
             // lblContent
             // 
             this.lblContent.AutoSize = true;
-            this.lblContent.Location = new System.Drawing.Point(11, 385);
+            this.lblContent.Location = new System.Drawing.Point(11, 295);
             this.lblContent.Name = "lblContent";
             this.lblContent.Size = new System.Drawing.Size(62, 18);
             this.lblContent.TabIndex = 16;
@@ -242,17 +242,17 @@ namespace WorkLogApp.UI.Forms
             // 
             this._contentBox.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
             this._contentBox.Dock = System.Windows.Forms.DockStyle.Fill;
-            this._contentBox.Location = new System.Drawing.Point(295, 388);
+            this._contentBox.Location = new System.Drawing.Point(295, 298);
             this._contentBox.Name = "_contentBox";
-            this._contentBox.Size = new System.Drawing.Size(594, 230);
+            this._contentBox.Size = new System.Drawing.Size(594, 288);
             this._contentBox.TabIndex = 17;
             this._contentBox.Text = "";
             // 
             // _btnSave
             // 
-            this._btnSave.Location = new System.Drawing.Point(800, 3);
+            this._btnSave.Location = new System.Drawing.Point(505, 3);
             this._btnSave.Name = "_btnSave";
-            this._btnSave.Size = new System.Drawing.Size(75, 23);
+            this._btnSave.Size = new System.Drawing.Size(182, 42);
             this._btnSave.TabIndex = 0;
             this._btnSave.Text = "保存";
             this._btnSave.Click += new System.EventHandler(this.OnSaveClickNew);
@@ -260,9 +260,9 @@ namespace WorkLogApp.UI.Forms
             // _btnCancel
             // 
             this._btnCancel.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-            this._btnCancel.Location = new System.Drawing.Point(719, 3);
+            this._btnCancel.Location = new System.Drawing.Point(693, 3);
             this._btnCancel.Name = "_btnCancel";
-            this._btnCancel.Size = new System.Drawing.Size(75, 23);
+            this._btnCancel.Size = new System.Drawing.Size(182, 42);
             this._btnCancel.TabIndex = 1;
             this._btnCancel.Text = "取消";
             this._btnCancel.Click += new System.EventHandler(this.OnCancelClick);
@@ -304,34 +304,12 @@ namespace WorkLogApp.UI.Forms
             this.rootLayout.RowStyles.Add(new System.Windows.Forms.RowStyle());
             this.rootLayout.RowStyles.Add(new System.Windows.Forms.RowStyle());
             this.rootLayout.RowStyles.Add(new System.Windows.Forms.RowStyle());
-            this.rootLayout.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 30F));
-            this.rootLayout.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 50F));
+            this.rootLayout.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 14.85411F));
+            this.rootLayout.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 85.14589F));
             this.rootLayout.RowStyles.Add(new System.Windows.Forms.RowStyle());
-            this.rootLayout.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 20F));
+            this.rootLayout.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 52F));
             this.rootLayout.Size = new System.Drawing.Size(900, 650);
             this.rootLayout.TabIndex = 0;
-            // 
-            // bottomBar
-            // 
-            this.bottomBar.AutoSize = true;
-            this.bottomBar.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
-            this.rootLayout.SetColumnSpan(this.bottomBar, 2);
-            this.bottomBar.Controls.Add(this._btnSave);
-            this.bottomBar.Controls.Add(this._btnCancel);
-            this.bottomBar.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.bottomBar.FlowDirection = System.Windows.Forms.FlowDirection.RightToLeft;
-            this.bottomBar.Location = new System.Drawing.Point(11, 624);
-            this.bottomBar.Name = "bottomBar";
-            this.bottomBar.Size = new System.Drawing.Size(878, 15);
-            this.bottomBar.TabIndex = 18;
-            // 
-            // _progressUpDown
-            // 
-            this._progressUpDown.Dock = System.Windows.Forms.DockStyle.Left;
-            this._progressUpDown.Location = new System.Drawing.Point(295, 111);
-            this._progressUpDown.Name = "_progressUpDown";
-            this._progressUpDown.Size = new System.Drawing.Size(120, 28);
-            this._progressUpDown.TabIndex = 7;
             // 
             // lblProgress
             // 
@@ -341,6 +319,28 @@ namespace WorkLogApp.UI.Forms
             this.lblProgress.Size = new System.Drawing.Size(125, 18);
             this.lblProgress.TabIndex = 6;
             this.lblProgress.Text = "进度(0-100)：";
+            // 
+            // _progressUpDown
+            // 
+            this._progressUpDown.Dock = System.Windows.Forms.DockStyle.Left;
+            this._progressUpDown.Location = new System.Drawing.Point(295, 111);
+            this._progressUpDown.Name = "_progressUpDown";
+            this._progressUpDown.Size = new System.Drawing.Size(120, 28);
+            this._progressUpDown.TabIndex = 7;
+            // 
+            // bottomBar
+            // 
+            this.bottomBar.AutoSize = true;
+            this.bottomBar.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
+            this.rootLayout.SetColumnSpan(this.bottomBar, 2);
+            this.bottomBar.Controls.Add(this._btnCancel);
+            this.bottomBar.Controls.Add(this._btnSave);
+            this.bottomBar.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.bottomBar.FlowDirection = System.Windows.Forms.FlowDirection.RightToLeft;
+            this.bottomBar.Location = new System.Drawing.Point(11, 592);
+            this.bottomBar.Name = "bottomBar";
+            this.bottomBar.Size = new System.Drawing.Size(878, 47);
+            this.bottomBar.TabIndex = 18;
             // 
             // ItemEditForm
             // 
@@ -353,8 +353,8 @@ namespace WorkLogApp.UI.Forms
             ((System.ComponentModel.ISupportInitialize)(this._sortUpDown)).EndInit();
             this.rootLayout.ResumeLayout(false);
             this.rootLayout.PerformLayout();
-            this.bottomBar.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this._progressUpDown)).EndInit();
+            this.bottomBar.ResumeLayout(false);
             this.ResumeLayout(false);
 
         }
