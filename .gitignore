@@ -5,3 +5,5 @@
 *.xlsx
 .vs/
 WorkLogApp.Services/obj/
+*.txt
+*.exe

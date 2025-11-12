@@ -22,9 +22,6 @@ namespace WorkLogApp.UI.Forms
         private Button _btnInsert;
         private DataGridView _gridPlaceholders;
         private Button _btnSave;
-        private System.Windows.Forms.DataGridViewTextBoxColumn _colName;
-        private System.Windows.Forms.DataGridViewComboBoxColumn _colType;
-        private System.Windows.Forms.DataGridViewTextBoxColumn _colOptions;
         private System.Windows.Forms.TableLayoutPanel rootLayout;
 
         protected override void Dispose(bool disposing)
