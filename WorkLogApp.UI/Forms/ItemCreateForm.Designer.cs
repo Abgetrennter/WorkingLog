@@ -14,6 +14,9 @@ namespace WorkLogApp.UI.Forms
         private TextBox _titleBox;
         private DynamicFormPanel _formPanel;
         private Button _btnGenerateSave;
+        private System.Windows.Forms.TableLayoutPanel rootLayout;
+        private System.Windows.Forms.TableLayoutPanel headerLayout;
+        private System.Windows.Forms.FlowLayoutPanel bottomBar;
 
         protected override void Dispose(bool disposing)
         {
@@ -88,15 +91,60 @@ namespace WorkLogApp.UI.Forms
             this._formPanel.TabIndex = 4;
             this._formPanel.Paint += new System.Windows.Forms.PaintEventHandler(this._formPanel_Paint);
             // 
+            // rootLayout
+            // 
+            this.rootLayout = new System.Windows.Forms.TableLayoutPanel();
+            this.rootLayout.ColumnCount = 1;
+            this.rootLayout.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
+            this.rootLayout.RowCount = 3;
+            this.rootLayout.RowStyles.Add(new System.Windows.Forms.RowStyle());
+            this.rootLayout.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
+            this.rootLayout.RowStyles.Add(new System.Windows.Forms.RowStyle());
+            this.rootLayout.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.rootLayout.Margin = new System.Windows.Forms.Padding(0);
+            this.rootLayout.Padding = new System.Windows.Forms.Padding(8);
+            this.rootLayout.Name = "rootLayout";
+
+            // headerLayout
+            // 
+            this.headerLayout = new System.Windows.Forms.TableLayoutPanel();
+            this.headerLayout.ColumnCount = 4;
+            this.headerLayout.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle());
+            this.headerLayout.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50F));
+            this.headerLayout.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle());
+            this.headerLayout.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50F));
+            this.headerLayout.RowCount = 1;
+            this.headerLayout.RowStyles.Add(new System.Windows.Forms.RowStyle());
+            this.headerLayout.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.headerLayout.Name = "headerLayout";
+            // place header controls
+            this.headerLayout.Controls.Add(this.lblCategory, 0, 0);
+            this.headerLayout.Controls.Add(this._categoryCombo, 1, 0);
+            this.headerLayout.Controls.Add(this.lblTitle, 2, 0);
+            this.headerLayout.Controls.Add(this._titleBox, 3, 0);
+
+            // form panel row
+            this._formPanel.Dock = System.Windows.Forms.DockStyle.Fill;
+
+            // bottomBar
+            // 
+            this.bottomBar = new System.Windows.Forms.FlowLayoutPanel();
+            this.bottomBar.FlowDirection = System.Windows.Forms.FlowDirection.RightToLeft;
+            this.bottomBar.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.bottomBar.AutoSize = true;
+            this.bottomBar.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
+            this.bottomBar.Padding = new System.Windows.Forms.Padding(0);
+            this.bottomBar.Controls.Add(this._btnGenerateSave);
+
+            // assemble rootLayout
+            this.rootLayout.Controls.Add(this.headerLayout, 0, 0);
+            this.rootLayout.Controls.Add(this._formPanel, 0, 1);
+            this.rootLayout.Controls.Add(this.bottomBar, 0, 2);
+
             // ItemCreateForm
             // 
             this.ClientSize = new System.Drawing.Size(800, 600);
-            this.Controls.Add(this.lblCategory);
-            this.Controls.Add(this._categoryCombo);
-            this.Controls.Add(this.lblTitle);
-            this.Controls.Add(this._titleBox);
-            this.Controls.Add(this._formPanel);
-            this.Controls.Add(this._btnGenerateSave);
+            this.Controls.Add(this.rootLayout);
             this.Name = "ItemCreateForm";
             this.Text = "创建日志事项";
             this.ResumeLayout(false);

@@ -25,6 +25,7 @@ namespace WorkLogApp.UI.Forms
         private System.Windows.Forms.DataGridViewTextBoxColumn _colName;
         private System.Windows.Forms.DataGridViewComboBoxColumn _colType;
         private System.Windows.Forms.DataGridViewTextBoxColumn _colOptions;
+        private System.Windows.Forms.TableLayoutPanel rootLayout;
 
         protected override void Dispose(bool disposing)
         {
@@ -45,18 +46,20 @@ namespace WorkLogApp.UI.Forms
             this._layoutRight = new System.Windows.Forms.TableLayoutPanel();
             this.lblFormat = new System.Windows.Forms.Label();
             this._txtFormatTemplate = new System.Windows.Forms.RichTextBox();
-            this.lblQuick = new System.Windows.Forms.Label();
             this._cmbInsert = new System.Windows.Forms.ComboBox();
             this._btnInsert = new System.Windows.Forms.Button();
             this._gridPlaceholders = new System.Windows.Forms.DataGridView();
             this.colName = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.colType = new System.Windows.Forms.DataGridViewComboBoxColumn();
             this.colOptions = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.lblQuick = new System.Windows.Forms.Label();
             this._btnSave = new System.Windows.Forms.Button();
+            this.rootLayout = new System.Windows.Forms.TableLayoutPanel();
             this.leftPanel.SuspendLayout();
             this.rightPanel.SuspendLayout();
             this._layoutRight.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this._gridPlaceholders)).BeginInit();
+            this.rootLayout.SuspendLayout();
             this.SuspendLayout();
             // 
             // leftPanel
@@ -64,11 +67,11 @@ namespace WorkLogApp.UI.Forms
             this.leftPanel.Controls.Add(this._lstCategories);
             this.leftPanel.Controls.Add(this._btnRemove);
             this.leftPanel.Controls.Add(this._btnAdd);
-            this.leftPanel.Dock = System.Windows.Forms.DockStyle.Left;
-            this.leftPanel.Location = new System.Drawing.Point(0, 0);
+            this.leftPanel.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.leftPanel.Location = new System.Drawing.Point(3, 3);
             this.leftPanel.Name = "leftPanel";
             this.leftPanel.Padding = new System.Windows.Forms.Padding(8);
-            this.leftPanel.Size = new System.Drawing.Size(189, 670);
+            this.leftPanel.Size = new System.Drawing.Size(194, 664);
             this.leftPanel.TabIndex = 1;
             // 
             // _lstCategories
@@ -77,7 +80,7 @@ namespace WorkLogApp.UI.Forms
             this._lstCategories.ItemHeight = 18;
             this._lstCategories.Location = new System.Drawing.Point(8, 134);
             this._lstCategories.Name = "_lstCategories";
-            this._lstCategories.Size = new System.Drawing.Size(173, 528);
+            this._lstCategories.Size = new System.Drawing.Size(178, 522);
             this._lstCategories.TabIndex = 0;
             this._lstCategories.SelectedIndexChanged += new System.EventHandler(this.OnCategoriesSelectedIndexChanged);
             // 
@@ -87,7 +90,7 @@ namespace WorkLogApp.UI.Forms
             this._btnRemove.Font = new System.Drawing.Font("宋体", 15F);
             this._btnRemove.Location = new System.Drawing.Point(8, 68);
             this._btnRemove.Name = "_btnRemove";
-            this._btnRemove.Size = new System.Drawing.Size(173, 66);
+            this._btnRemove.Size = new System.Drawing.Size(178, 66);
             this._btnRemove.TabIndex = 1;
             this._btnRemove.Text = "删除分类";
             this._btnRemove.Click += new System.EventHandler(this.OnRemoveCategory);
@@ -98,7 +101,7 @@ namespace WorkLogApp.UI.Forms
             this._btnAdd.Font = new System.Drawing.Font("宋体", 15F);
             this._btnAdd.Location = new System.Drawing.Point(8, 8);
             this._btnAdd.Name = "_btnAdd";
-            this._btnAdd.Size = new System.Drawing.Size(173, 60);
+            this._btnAdd.Size = new System.Drawing.Size(178, 60);
             this._btnAdd.TabIndex = 2;
             this._btnAdd.Text = "新增分类";
             this._btnAdd.Click += new System.EventHandler(this.OnAddCategory);
@@ -107,10 +110,10 @@ namespace WorkLogApp.UI.Forms
             // 
             this.rightPanel.Controls.Add(this._layoutRight);
             this.rightPanel.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.rightPanel.Location = new System.Drawing.Point(189, 0);
+            this.rightPanel.Location = new System.Drawing.Point(203, 3);
             this.rightPanel.Name = "rightPanel";
             this.rightPanel.Padding = new System.Windows.Forms.Padding(8);
-            this.rightPanel.Size = new System.Drawing.Size(782, 670);
+            this.rightPanel.Size = new System.Drawing.Size(765, 664);
             this.rightPanel.TabIndex = 0;
             // 
             // _layoutRight
@@ -135,7 +138,7 @@ namespace WorkLogApp.UI.Forms
             this._layoutRight.RowStyles.Add(new System.Windows.Forms.RowStyle());
             this._layoutRight.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 50F));
             this._layoutRight.RowStyles.Add(new System.Windows.Forms.RowStyle());
-            this._layoutRight.Size = new System.Drawing.Size(766, 654);
+            this._layoutRight.Size = new System.Drawing.Size(749, 648);
             this._layoutRight.TabIndex = 0;
             // 
             // lblFormat
@@ -158,30 +161,18 @@ namespace WorkLogApp.UI.Forms
             this._txtFormatTemplate.Margin = new System.Windows.Forms.Padding(0, 0, 0, 8);
             this._txtFormatTemplate.Name = "_txtFormatTemplate";
             this._txtFormatTemplate.ScrollBars = System.Windows.Forms.RichTextBoxScrollBars.Vertical;
-            this._txtFormatTemplate.Size = new System.Drawing.Size(766, 259);
+            this._txtFormatTemplate.Size = new System.Drawing.Size(749, 256);
             this._txtFormatTemplate.TabIndex = 1;
             this._txtFormatTemplate.Text = "";
-            // 
-            // lblQuick
-            // 
-            this.lblQuick.AutoSize = true;
-            this.lblQuick.Font = new System.Drawing.Font("宋体", 12F);
-            this.lblQuick.Location = new System.Drawing.Point(0, 289);
-            this.lblQuick.Margin = new System.Windows.Forms.Padding(0, 0, 6, 4);
-            this.lblQuick.Name = "lblQuick";
-            this.lblQuick.Size = new System.Drawing.Size(202, 24);
-            this.lblQuick.TabIndex = 2;
-            this.lblQuick.Text = "快速插入占位符：";
-            this.lblQuick.TextAlign = System.Drawing.ContentAlignment.TopCenter;
             // 
             // _cmbInsert
             // 
             this._cmbInsert.Dock = System.Windows.Forms.DockStyle.Fill;
             this._cmbInsert.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            this._cmbInsert.Location = new System.Drawing.Point(208, 289);
+            this._cmbInsert.Location = new System.Drawing.Point(208, 286);
             this._cmbInsert.Margin = new System.Windows.Forms.Padding(0, 0, 6, 4);
             this._cmbInsert.Name = "_cmbInsert";
-            this._cmbInsert.Size = new System.Drawing.Size(430, 26);
+            this._cmbInsert.Size = new System.Drawing.Size(413, 26);
             this._cmbInsert.TabIndex = 3;
             // 
             // _btnInsert
@@ -189,7 +180,7 @@ namespace WorkLogApp.UI.Forms
             this._btnInsert.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this._btnInsert.AutoSize = true;
             this._btnInsert.Font = new System.Drawing.Font("宋体", 12F);
-            this._btnInsert.Location = new System.Drawing.Point(647, 292);
+            this._btnInsert.Location = new System.Drawing.Point(630, 289);
             this._btnInsert.Name = "_btnInsert";
             this._btnInsert.Size = new System.Drawing.Size(116, 50);
             this._btnInsert.TabIndex = 4;
@@ -206,11 +197,11 @@ namespace WorkLogApp.UI.Forms
             this.colOptions});
             this._layoutRight.SetColumnSpan(this._gridPlaceholders, 3);
             this._gridPlaceholders.Dock = System.Windows.Forms.DockStyle.Fill;
-            this._gridPlaceholders.Location = new System.Drawing.Point(0, 353);
+            this._gridPlaceholders.Location = new System.Drawing.Point(0, 350);
             this._gridPlaceholders.Margin = new System.Windows.Forms.Padding(0, 8, 0, 8);
             this._gridPlaceholders.Name = "_gridPlaceholders";
             this._gridPlaceholders.RowHeadersWidth = 62;
-            this._gridPlaceholders.Size = new System.Drawing.Size(766, 251);
+            this._gridPlaceholders.Size = new System.Drawing.Size(749, 248);
             this._gridPlaceholders.TabIndex = 5;
             this._gridPlaceholders.CellContentClick += new System.Windows.Forms.DataGridViewCellEventHandler(this._gridPlaceholders_CellContentClick_1);
             // 
@@ -232,26 +223,53 @@ namespace WorkLogApp.UI.Forms
             this.colOptions.MinimumWidth = 8;
             this.colOptions.Name = "colOptions";
             // 
+            // lblQuick
+            // 
+            this.lblQuick.AutoSize = true;
+            this.lblQuick.Font = new System.Drawing.Font("宋体", 12F);
+            this.lblQuick.Location = new System.Drawing.Point(0, 286);
+            this.lblQuick.Margin = new System.Windows.Forms.Padding(0, 0, 6, 4);
+            this.lblQuick.Name = "lblQuick";
+            this.lblQuick.Size = new System.Drawing.Size(202, 24);
+            this.lblQuick.TabIndex = 2;
+            this.lblQuick.Text = "快速插入占位符：";
+            this.lblQuick.TextAlign = System.Drawing.ContentAlignment.TopCenter;
+            // 
             // _btnSave
             // 
             this._btnSave.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right)));
             this._btnSave.AutoSize = true;
             this._btnSave.BackColor = System.Drawing.SystemColors.Control;
             this._btnSave.Font = new System.Drawing.Font("宋体", 12F);
-            this._btnSave.Location = new System.Drawing.Point(208, 612);
+            this._btnSave.Location = new System.Drawing.Point(208, 606);
             this._btnSave.Margin = new System.Windows.Forms.Padding(0);
             this._btnSave.Name = "_btnSave";
-            this._btnSave.Size = new System.Drawing.Size(436, 42);
+            this._btnSave.Size = new System.Drawing.Size(419, 42);
             this._btnSave.TabIndex = 6;
             this._btnSave.Text = "保存";
             this._btnSave.UseVisualStyleBackColor = false;
             this._btnSave.Click += new System.EventHandler(this.OnSaveCategory);
             // 
+            // rootLayout
+            // 
+            this.rootLayout.ColumnCount = 2;
+            this.rootLayout.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 200F));
+            this.rootLayout.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
+            this.rootLayout.Controls.Add(this.leftPanel, 0, 0);
+            this.rootLayout.Controls.Add(this.rightPanel, 1, 0);
+            this.rootLayout.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.rootLayout.Location = new System.Drawing.Point(0, 0);
+            this.rootLayout.Margin = new System.Windows.Forms.Padding(0);
+            this.rootLayout.Name = "rootLayout";
+            this.rootLayout.RowCount = 1;
+            this.rootLayout.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
+            this.rootLayout.Size = new System.Drawing.Size(971, 670);
+            this.rootLayout.TabIndex = 0;
+            // 
             // CategoryManageForm
             // 
             this.ClientSize = new System.Drawing.Size(971, 670);
-            this.Controls.Add(this.rightPanel);
-            this.Controls.Add(this.leftPanel);
+            this.Controls.Add(this.rootLayout);
             this.Name = "CategoryManageForm";
             this.Text = "分类与模板管理";
             this.leftPanel.ResumeLayout(false);
@@ -259,6 +277,7 @@ namespace WorkLogApp.UI.Forms
             this._layoutRight.ResumeLayout(false);
             this._layoutRight.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this._gridPlaceholders)).EndInit();
+            this.rootLayout.ResumeLayout(false);
             this.ResumeLayout(false);
 
         }
