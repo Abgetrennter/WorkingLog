@@ -351,6 +351,7 @@ namespace WorkLogApp.UI.Forms
                 .Where(x => x != null)
                 .ToList();
             _currentItems = ordered;
+            //OnSaveClick(null, EventArgs.Empty);
         }
 
         /// <summary>
