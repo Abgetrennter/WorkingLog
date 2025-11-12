@@ -293,5 +293,10 @@ namespace WorkLogApp.UI.Forms
         {
 
         }
+
+        private void _gridPlaceholders_CellContentClick_1(object sender, DataGridViewCellEventArgs e)
+        {
+
+        }
     }
 }
