@@ -2,6 +2,7 @@ using System;
 using System.Drawing;
 using System.IO;
 using System.Linq;
+using System.Diagnostics;
 using System.Windows.Forms;
 using WorkLogApp.Core.Models;
 using WorkLogApp.Services.Interfaces;
@@ -404,6 +405,43 @@ namespace WorkLogApp.UI.Forms
                 cnt += 1;
                 counters[key] = cnt;
                 it.SortOrder = cnt;
+            }
+        }
+
+        private void OnOpenFileLocationClick(object sender, EventArgs e)
+        {
+            try
+            {
+                var baseDir = AppDomain.CurrentDomain.BaseDirectory;
+                var dataDir = Path.Combine(baseDir, "Data");
+                Directory.CreateDirectory(dataDir);
+
+                var month = _monthPicker.Value;
+                var fileName = "worklog_" + new DateTime(month.Year, month.Month, 1).ToString("yyyyMM") + ".xlsx";
+                var filePath = Path.Combine(dataDir, fileName);
+
+                if (File.Exists(filePath))
+                {
+                    Process.Start(new ProcessStartInfo
+                    {
+                        FileName = "explorer.exe",
+                        Arguments = "/e,/select,\"" + filePath + "\"",
+                        UseShellExecute = true
+                    });
+                }
+                else
+                {
+                    Process.Start(new ProcessStartInfo
+                    {
+                        FileName = "explorer.exe",
+                        Arguments = dataDir,
+                        UseShellExecute = true
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(this, "打开文件位置失败：" + ex.Message, "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
     }
