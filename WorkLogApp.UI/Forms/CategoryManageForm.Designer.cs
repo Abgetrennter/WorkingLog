@@ -39,6 +39,7 @@ namespace WorkLogApp.UI.Forms
             this.leftPanel = new System.Windows.Forms.Panel();
             this._lstCategories = new System.Windows.Forms.ListBox();
             this._btnRemove = new System.Windows.Forms.Button();
+            this._btnAddChild = new System.Windows.Forms.Button();
             this._btnAdd = new System.Windows.Forms.Button();
             this.rightPanel = new System.Windows.Forms.Panel();
             this._layoutRight = new System.Windows.Forms.TableLayoutPanel();
@@ -62,7 +63,6 @@ namespace WorkLogApp.UI.Forms
             // 
             // leftPanel
             // 
-            this._btnAddChild = new System.Windows.Forms.Button();
             this.leftPanel.Controls.Add(this._lstCategories);
             this.leftPanel.Controls.Add(this._btnRemove);
             this.leftPanel.Controls.Add(this._btnAddChild);
@@ -78,9 +78,9 @@ namespace WorkLogApp.UI.Forms
             // 
             this._lstCategories.Dock = System.Windows.Forms.DockStyle.Fill;
             this._lstCategories.ItemHeight = 18;
-            this._lstCategories.Location = new System.Drawing.Point(8, 134);
+            this._lstCategories.Location = new System.Drawing.Point(8, 200);
             this._lstCategories.Name = "_lstCategories";
-            this._lstCategories.Size = new System.Drawing.Size(178, 522);
+            this._lstCategories.Size = new System.Drawing.Size(178, 456);
             this._lstCategories.TabIndex = 0;
             this._lstCategories.SelectedIndexChanged += new System.EventHandler(this.OnCategoriesSelectedIndexChanged);
             // 
@@ -88,7 +88,7 @@ namespace WorkLogApp.UI.Forms
             // 
             this._btnRemove.Dock = System.Windows.Forms.DockStyle.Top;
             this._btnRemove.Font = new System.Drawing.Font("宋体", 15F);
-            this._btnRemove.Location = new System.Drawing.Point(8, 68);
+            this._btnRemove.Location = new System.Drawing.Point(8, 134);
             this._btnRemove.Name = "_btnRemove";
             this._btnRemove.Size = new System.Drawing.Size(178, 66);
             this._btnRemove.TabIndex = 1;
