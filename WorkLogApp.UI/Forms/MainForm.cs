@@ -5,6 +5,7 @@ using System.Linq;
 using System.Diagnostics;
 using System.Windows.Forms;
 using WorkLogApp.Core.Models;
+using WorkLogApp.Core.Enums;
 using WorkLogApp.Services.Interfaces;
 using WorkLogApp.Services.Implementations;
 using WorkLogApp.UI.UI;
@@ -39,6 +40,15 @@ namespace WorkLogApp.UI.Forms
                 _listView.DragEnter += OnListViewDragEnter;
                 _listView.DragOver += OnListViewDragOver;
                 _listView.DragDrop += OnListViewDragDrop;
+
+                var cms = new ContextMenuStrip();
+                var miMilestone = new ToolStripMenuItem("追加里程碑...");
+                var miDone = new ToolStripMenuItem("标记为已完成");
+                miMilestone.Click += OnAppendMilestoneClick;
+                miDone.Click += OnMarkDoneClick;
+                cms.Items.Add(miMilestone);
+                cms.Items.Add(miDone);
+                _listView.ContextMenuStrip = cms;
 
                 _monthPicker.Format = DateTimePickerFormat.Custom;
                 _monthPicker.CustomFormat = "yyyy-MM";
@@ -184,6 +194,11 @@ namespace WorkLogApp.UI.Forms
                 var monthDays = svc.ImportMonth(monthRef, dataDir) ?? Enumerable.Empty<WorkLog>();
                 _allMonthItems = monthDays.ToList();
 
+                if (!_chkShowByMonth.Checked)
+                {
+                    EnsureDailyCarryovers();
+                }
+
                 if (_chkShowByMonth.Checked)
                 {
                     _currentItems = _allMonthItems.SelectMany(d => d.Items ?? new System.Collections.Generic.List<WorkLogItem>()).ToList();
@@ -207,23 +222,145 @@ namespace WorkLogApp.UI.Forms
         {
             _listView.BeginUpdate();
             _listView.Items.Clear();
+            _listView.Groups.Clear();
+            var groupActive = new ListViewGroup("未完成", HorizontalAlignment.Left);
+            var groupDone = new ListViewGroup("已完成", HorizontalAlignment.Left);
+            _listView.Groups.Add(groupActive);
+            _listView.Groups.Add(groupDone);
             foreach (var it in items)
             {
                 var content = (it.ItemContent ?? string.Empty).Replace("\r", " ").Replace("\n", " ");
                 if (content.Length > 200) content = content.Substring(0, 200) + "...";
+                var statusZh = it.Status == StatusEnum.Todo ? "待办" : it.Status == StatusEnum.Doing ? "进行中" : it.Status == StatusEnum.Done ? "已完成" : it.Status == StatusEnum.Blocked ? "阻塞" : "已取消";
                 var lv = new ListViewItem(new[]
                 {
                     it.LogDate.ToString("yyyy-MM-dd"),
                     it.ItemTitle ?? string.Empty,
+                    statusZh,
                     content,
                     it.Tags ?? string.Empty,
                     it.StartTime.HasValue ? it.StartTime.Value.ToString("yyyy-MM-dd HH:mm") : string.Empty,
                     it.EndTime.HasValue ? it.EndTime.Value.ToString("yyyy-MM-dd HH:mm") : string.Empty
                 });
                 lv.Tag = it;
+                lv.Group = it.Status == StatusEnum.Done ? groupDone : groupActive;
                 _listView.Items.Add(lv);
             }
             _listView.EndUpdate();
+        }
+
+        private static string GetTaskIdFromTags(string tags)
+        {
+            var t = tags ?? string.Empty;
+            var m = System.Text.RegularExpressions.Regex.Match(t, "@task=([0-9a-fA-F-]{36})");
+            return m.Success ? m.Groups[1].Value : string.Empty;
+        }
+
+        private void OnAppendMilestoneClick(object sender, EventArgs e)
+        {
+            if (_listView.SelectedItems.Count == 0) return;
+            var lv = _listView.SelectedItems[0];
+            var item = lv.Tag as WorkLogItem;
+            if (item == null) return;
+            using (var f = new Form())
+            {
+                f.Text = "追加里程碑";
+                f.StartPosition = FormStartPosition.CenterParent;
+                var cb = new ComboBox { Left = 10, Top = 10, Width = 240, DropDownStyle = ComboBoxStyle.DropDownList };
+                cb.Items.AddRange(new object[] { "开始", "需求确认", "方案设计", "开发中", "联调", "阻塞", "解除阻塞", "提交上线", "验证通过", "完成", "取消" });
+                cb.SelectedIndex = 3;
+                var tb = new TextBox { Left = 10, Top = 50, Width = 240 };
+                var ok = new Button { Text = "确定", Left = 70, Top = 90, Width = 80, DialogResult = DialogResult.OK };
+                var cancel = new Button { Text = "取消", Left = 170, Top = 90, Width = 80, DialogResult = DialogResult.Cancel };
+                f.Controls.Add(cb); f.Controls.Add(tb); f.Controls.Add(ok); f.Controls.Add(cancel);
+                f.AcceptButton = ok; f.CancelButton = cancel; f.ClientSize = new Size(260, 130);
+                if (f.ShowDialog(this) == DialogResult.OK)
+                {
+                    var type = cb.SelectedItem?.ToString() ?? "开发中";
+                    var note = tb.Text ?? string.Empty;
+                    item.ItemContent = AppendMilestoneText(item.ItemContent, _dayPicker.Value.Date, type, note);
+                    item.Status = MapMilestoneTypeToStatus(type, item.Status);
+                    RefreshItems();
+                    OnSaveClick(null, EventArgs.Empty);
+                }
+            }
+        }
+
+        private void OnMarkDoneClick(object sender, EventArgs e)
+        {
+            if (_listView.SelectedItems.Count == 0) return;
+            var lv = _listView.SelectedItems[0];
+            var item = lv.Tag as WorkLogItem;
+            if (item == null) return;
+            item.ItemContent = AppendMilestoneText(item.ItemContent, _dayPicker.Value.Date, "完成", "");
+            item.Status = StatusEnum.Done;
+            RefreshItems();
+            OnSaveClick(null, EventArgs.Empty);
+        }
+
+        private StatusEnum MapMilestoneTypeToStatus(string type, StatusEnum current)
+        {
+            switch (type)
+            {
+                case "完成": return StatusEnum.Done;
+                case "取消": return StatusEnum.Cancelled;
+                case "阻塞": return StatusEnum.Blocked;
+                default: return current == StatusEnum.Todo ? StatusEnum.Doing : current;
+            }
+        }
+
+        private static string SetTaskIdTag(string tags, Guid id)
+        {
+            var t = tags ?? string.Empty;
+            var parts = t.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries).ToList();
+            parts = parts.Where(s => !s.StartsWith("@task=")).ToList();
+            parts.Add("@task=" + id.ToString());
+            return string.Join(" ", parts);
+        }
+
+        private static string AppendMilestoneText(string content, DateTime date, string type, string note)
+        {
+            var baseText = content ?? string.Empty;
+            var marker = "【里程碑】";
+            if (!baseText.Contains(marker)) baseText = (baseText + (baseText.EndsWith("\n") ? string.Empty : Environment.NewLine) + marker + Environment.NewLine);
+            var line = "- " + date.ToString("yyyy-MM-dd") + " " + type + "：" + (note ?? string.Empty);
+            return baseText + line + Environment.NewLine;
+        }
+
+        private void EnsureDailyCarryovers()
+        {
+            var today = _dayPicker.Value.Date;
+            var prev = today.AddDays(-1);
+            var prevDay = _allMonthItems.FirstOrDefault(d => d.LogDate.Date == prev);
+            var todayDay = _allMonthItems.FirstOrDefault(d => d.LogDate.Date == today);
+            if (todayDay == null)
+            {
+                todayDay = new WorkLog { LogDate = today, Items = new System.Collections.Generic.List<WorkLogItem>() };
+                _allMonthItems.Add(todayDay);
+            }
+            var todayTaskIds = new System.Collections.Generic.HashSet<string>(todayDay.Items.Select(i => GetTaskIdFromTags(i.Tags)).Where(s => !string.IsNullOrEmpty(s)));
+            foreach (var it in (prevDay?.Items ?? new System.Collections.Generic.List<WorkLogItem>()))
+            {
+                if (it.Status == StatusEnum.Done || it.Status == StatusEnum.Cancelled) continue;
+                var tid = GetTaskIdFromTags(it.Tags);
+                if (string.IsNullOrEmpty(tid))
+                {
+                    tid = Guid.NewGuid().ToString();
+                    it.Tags = SetTaskIdTag(it.Tags, Guid.Parse(tid));
+                }
+                if (todayTaskIds.Contains(tid)) continue;
+                var carry = new WorkLogItem
+                {
+                    LogDate = today,
+                    ItemTitle = it.ItemTitle,
+                    ItemContent = AppendMilestoneText(string.Empty, today, "继承", "承接未完成事项"),
+                    CategoryId = it.CategoryId,
+                    Status = StatusEnum.Todo,
+                    Tags = SetTaskIdTag(it.Tags, Guid.Parse(tid)),
+                };
+                todayDay.Items.Add(carry);
+                todayTaskIds.Add(tid);
+            }
         }
 
         private void _monthPicker_ValueChanged(object sender, EventArgs e)
