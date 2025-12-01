@@ -15,3 +15,4 @@ WorkLogApp.UI/bin/Debug/Data/worklog_202511.xlsx
 **/obj/
 Logs/
 Data/
+*.jpg

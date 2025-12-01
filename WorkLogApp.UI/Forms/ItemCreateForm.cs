@@ -1,6 +1,9 @@
 using System;
 using System.Drawing;
+using System.IO;
+using System.Text.RegularExpressions;
 using System.Windows.Forms;
+using WorkLogApp.Core.Enums;
 using WorkLogApp.Core.Models;
 using WorkLogApp.Services.Interfaces;
 using WorkLogApp.Services.Implementations;
@@ -59,6 +62,11 @@ namespace WorkLogApp.UI.Forms
             _categoryCombo.TemplateService = _templateService;
             _categoryCombo.SelectedIndexChanged += (s, e) => BuildFormForCategory();
 
+            // 初始化状态下拉
+            _statusCombo.Items.Clear();
+            _statusCombo.Items.AddRange(new object[] { "待办", "进行中", "已完成", "阻塞", "已取消" });
+            _statusCombo.SelectedIndex = 0;
+
             // 初次构建表单（基于模板服务）
             BuildFormForCategory();
         }
@@ -93,28 +101,73 @@ namespace WorkLogApp.UI.Forms
 
             var values = _formPanel.GetFieldValues();
             values["CategoryPath"] = categoryName ?? string.Empty;
+
+            var status = StatusEnum.Todo;
+            switch (_statusCombo.SelectedItem?.ToString())
+            {
+                case "进行中": status = StatusEnum.Doing; break;
+                case "已完成": status = StatusEnum.Done; break;
+                case "阻塞": status = StatusEnum.Blocked; break;
+                case "已取消": status = StatusEnum.Cancelled; break;
+            }
+
             var item = new WorkLogItem
             {
                 LogDate = _datePicker.Value.Date,
+                Status = status,
                 ItemTitle = _titleBox.Text?.Trim(),
-                CategoryId = StableIdFromName(categoryName),
-                Tags = string.IsNullOrWhiteSpace(categoryName) ? null : categoryName
+                Tags = _tagsBox.Text?.Trim(),
+                StartTime = _startPicker.Checked ? (DateTime?)_startPicker.Value : null,
+                EndTime = _endPicker.Checked ? (DateTime?)_endPicker.Value : null,
+                CategoryId = StableIdFromName(categoryName)
             };
+
+            // 如果分类模板名不为空，但用户未填写标签，可选择自动补充分类名到标签（可选）
+            if (string.IsNullOrWhiteSpace(item.Tags) && !string.IsNullOrWhiteSpace(categoryName))
+            {
+                item.Tags = categoryName;
+            }
             var content = _templateService.Render(catTpl.FormatTemplate, values, item);
-            // 将初始内容同步到模型，确保编辑窗体与模型一致
+            // 将初始内容同步到模型
             item.ItemContent = content;
 
-            // 打开编辑窗口，允许再次修改并保存纯文本
-            using (var editor = new ItemEditForm(item, content))
+            try
             {
-                editor.StartPosition = FormStartPosition.CenterParent;
-                var result = editor.ShowDialog(this);
-                if (result == DialogResult.OK)
+                var baseDir = AppDomain.CurrentDomain.BaseDirectory;
+                var dataDir = Path.Combine(baseDir, "Data");
+                if (!Directory.Exists(dataDir)) Directory.CreateDirectory(dataDir);
+
+                IImportExportService exportService = new ImportExportService();
+                var day = new WorkLog { LogDate = item.LogDate.Date, Items = new System.Collections.Generic.List<WorkLogItem> { item } };
+                var success = exportService.ExportMonth(item.LogDate, new[] { day }, dataDir);
+
+                if (!success)
                 {
-                    // 编辑窗口已提示保存成功并关闭，此处直接关闭创建界面
-                    Close();
+                    MessageBox.Show(this, "保存失败：导出未成功", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
                 }
+
+                // 文本备份
+                var safeTitle = string.IsNullOrWhiteSpace(item.ItemTitle) ? "untitled" : SanitizeFileName(item.ItemTitle);
+                var fileName = $"{item.LogDate:yyyy-MM-dd}_{safeTitle}.txt";
+                var filePath = Path.Combine(dataDir, fileName);
+                File.WriteAllText(filePath, item.ItemContent);
+
+                // MessageBox.Show(this, "保存成功", "提示", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                this.DialogResult = DialogResult.OK;
+                this.Close();
             }
+            catch (Exception ex)
+            {
+                MessageBox.Show(this, "保存失败：" + ex.Message, "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private static string SanitizeFileName(string name)
+        {
+            var invalid = new string(Path.GetInvalidFileNameChars());
+            var pattern = "[" + Regex.Escape(invalid) + "]";
+            return Regex.Replace(name, pattern, "_");
         }
 
         private void _formPanel_Paint(object sender, PaintEventArgs e)
