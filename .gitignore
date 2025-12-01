@@ -4,10 +4,10 @@
 *.cache
 *.xlsx
 .vs/
-WorkLogApp.Services/obj/
+WorkLogApp.Services/obj/*
 *.txt
 *.exe
-WorkLogApp.UI/bin/Debug/Data/worklog_202511.xlsx
+*.xlsx
 *.zip
 
 # Release前常规忽略
@@ -16,3 +16,5 @@ WorkLogApp.UI/bin/Debug/Data/worklog_202511.xlsx
 Logs/
 Data/
 *.jpg
+WorkLogApp.Services/obj/
+dist/*

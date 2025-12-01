@@ -78,7 +78,7 @@ namespace WorkLogApp.UI.Forms
             // topPanel
             // 
             this.topPanel.AutoScroll = true;
-            this.topPanel.AutoSize = false;
+            this.topPanel.AutoSize = true;
             this.topPanel.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
             this.topPanel.Controls.Add(this._btnCreate);
             this.topPanel.Controls.Add(this._chkShowByMonth);
