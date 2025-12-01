@@ -20,6 +20,7 @@ namespace WorkLogApp.UI.Forms
         private FlowLayoutPanel topPanel;
         private ColumnHeader _colDate;
         private ColumnHeader _colTitle;
+        private ColumnHeader _colStatus;
         private ColumnHeader _colContent;
         private ColumnHeader _colTags;
         private ColumnHeader _colStart;
@@ -64,6 +65,7 @@ namespace WorkLogApp.UI.Forms
             this._topSeparator = new System.Windows.Forms.Panel();
             this._colDate = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this._colTitle = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this._colStatus = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this._colContent = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this._colTags = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this._colStart = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
@@ -214,6 +216,7 @@ namespace WorkLogApp.UI.Forms
             this._listView.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
             this._colDate,
             this._colTitle,
+            this._colStatus,
             this._colContent,
             this._colTags,
             this._colStart,
@@ -227,6 +230,7 @@ namespace WorkLogApp.UI.Forms
             this._listView.Size = new System.Drawing.Size(994, 620);
             this._listView.TabIndex = 0;
             this._listView.UseCompatibleStateImageBehavior = false;
+            this._listView.ShowGroups = true;
             this._listView.View = System.Windows.Forms.View.Details;
             // 
             // _topSeparator
@@ -245,6 +249,11 @@ namespace WorkLogApp.UI.Forms
             // 
             this._colTitle.Text = "标题";
             this._colTitle.Width = 200;
+            // 
+            // _colStatus
+            // 
+            this._colStatus.Text = "状态";
+            this._colStatus.Width = 100;
             // 
             // _colContent
             // 

@@ -19,11 +19,11 @@ namespace WorkLogApp.Services.Implementations
         private const string SheetName = "工作日志";
         private static readonly string[] Header = new[]
         {
-            "LogDate","ItemTitle","ItemContent","CategoryId","StartTime","EndTime","Tags","SortOrder"
+            "LogDate","ItemTitle","ItemContent","CategoryId","Status","StartTime","EndTime","Tags","SortOrder"
         };
         private static readonly string[] HeaderZh = new[]
         {
-            "日期","标题","内容","分类ID","开始时间","结束时间","标签","排序"
+            "日期","标题","内容","分类ID","状态","开始时间","结束时间","标签","排序"
         };
         private static readonly Dictionary<string, string> HeaderNameMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         {
@@ -31,6 +31,7 @@ namespace WorkLogApp.Services.Implementations
             {"标题","ItemTitle"},
             {"内容","ItemContent"},
             {"分类ID","CategoryId"},
+            {"状态","Status"},
             {"开始时间","StartTime"},
             {"结束时间","EndTime"},
             {"标签","Tags"},
@@ -248,19 +249,20 @@ namespace WorkLogApp.Services.Implementations
                         ? nm
                         : (!string.IsNullOrWhiteSpace(item.Tags) && idToName.ContainsValue(item.Tags) ? item.Tags : item.CategoryId.ToString());
                     row.GetCell(3).SetCellValue(catName);
-                    row.GetCell(4).SetCellValue(item.StartTime.HasValue ? item.StartTime.Value.ToString("yyyy-MM-dd HH:mm") : string.Empty);
-                    row.GetCell(5).SetCellValue(item.EndTime.HasValue ? item.EndTime.Value.ToString("yyyy-MM-dd HH:mm") : string.Empty);
-                    row.GetCell(6).SetCellValue(item.Tags ?? string.Empty);
-                    row.GetCell(7).SetCellValue(item.SortOrder ?? 0);
-                    // 应用列样式（数字居中、时间右对齐、标题加粗、全表格边框）
-                    row.GetCell(0).CellStyle = blockStyle;     // 日期
-                    row.GetCell(1).CellStyle = titleStyle;     // 标题（加粗）
-                    row.GetCell(2).CellStyle = blockStyle;     // 内容
-                    row.GetCell(3).CellStyle = numberStyle;    // 分类ID
-                    row.GetCell(4).CellStyle = timeStyle;      // 开始时间
-                    row.GetCell(5).CellStyle = timeStyle;      // 结束时间
-                    row.GetCell(6).CellStyle = blockStyle;     // 标签
-                    row.GetCell(7).CellStyle = numberStyle;    // 排序
+                    row.GetCell(4).SetCellValue(ToChineseStatus(item.Status));
+                    row.GetCell(5).SetCellValue(item.StartTime.HasValue ? item.StartTime.Value.ToString("yyyy-MM-dd HH:mm") : string.Empty);
+                    row.GetCell(6).SetCellValue(item.EndTime.HasValue ? item.EndTime.Value.ToString("yyyy-MM-dd HH:mm") : string.Empty);
+                    row.GetCell(7).SetCellValue(item.Tags ?? string.Empty);
+                    row.GetCell(8).SetCellValue(item.SortOrder ?? 0);
+                    row.GetCell(0).CellStyle = blockStyle;
+                    row.GetCell(1).CellStyle = titleStyle;
+                    row.GetCell(2).CellStyle = blockStyle;
+                    row.GetCell(3).CellStyle = numberStyle;
+                    row.GetCell(4).CellStyle = blockStyle;
+                    row.GetCell(5).CellStyle = timeStyle;
+                    row.GetCell(6).CellStyle = timeStyle;
+                    row.GetCell(7).CellStyle = blockStyle;
+                    row.GetCell(8).CellStyle = numberStyle;
                 }
                 // 每个日期块的最后一行写入当日总结（标题=当日总结，内容=总结文本）
                 rowIndex++;
@@ -278,14 +280,15 @@ namespace WorkLogApp.Services.Implementations
             }
 
             // 列宽适配（可读性优化，内容列加宽，数字列缩窄）
-            sheet.SetColumnWidth(0, 20 * 256); // 日期
-            sheet.SetColumnWidth(1, 30 * 256); // 标题
-            sheet.SetColumnWidth(2, 80 * 256); // 内容（很长）
-            sheet.SetColumnWidth(3, 10 * 256); // 分类ID
-            sheet.SetColumnWidth(4, 12 * 256); // 开始时间
-            sheet.SetColumnWidth(5, 12 * 256); // 结束时间
-            sheet.SetColumnWidth(6, 10 * 256); // 标签
-            sheet.SetColumnWidth(7, 8 * 256);  // 排序
+            sheet.SetColumnWidth(0, 20 * 256);
+            sheet.SetColumnWidth(1, 30 * 256);
+            sheet.SetColumnWidth(2, 80 * 256);
+            sheet.SetColumnWidth(3, 12 * 256);
+            sheet.SetColumnWidth(4, 10 * 256);
+            sheet.SetColumnWidth(5, 12 * 256);
+            sheet.SetColumnWidth(6, 12 * 256);
+            sheet.SetColumnWidth(7, 10 * 256);
+            sheet.SetColumnWidth(8, 8 * 256);
         }
 
         private static string GetChineseWeekday(DateTime dt)
@@ -515,17 +518,39 @@ namespace WorkLogApp.Services.Implementations
             DateTime dt; return DateTime.TryParse(s, out dt) ? (DateTime?)dt : null;
         }
 
+        private static string ToChineseStatus(StatusEnum status)
+        {
+            switch (status)
+            {
+                case StatusEnum.Todo: return "待办";
+                case StatusEnum.Doing: return "进行中";
+                case StatusEnum.Done: return "已完成";
+                case StatusEnum.Blocked: return "阻塞";
+                case StatusEnum.Cancelled: return "已取消";
+                default: return "待办";
+            }
+        }
+
         private static StatusEnum ParseStatus(string s)
         {
-            // 优先尝试解析为数值枚举
-            if (int.TryParse(s, out var iv))
+            var text = (s ?? string.Empty).Trim();
+            if (int.TryParse(text, out var iv))
             {
                 if (Enum.IsDefined(typeof(StatusEnum), iv))
                     return (StatusEnum)iv;
             }
-            // 兼容旧文件以字符串方式存储
-            if (Enum.TryParse<StatusEnum>(s, out var status)) return status;
-            return StatusEnum.Todo;
+            if (Enum.TryParse<StatusEnum>(text, out var status)) return status;
+            switch (text)
+            {
+                case "待办": return StatusEnum.Todo;
+                case "进行中": return StatusEnum.Doing;
+                case "已完成": return StatusEnum.Done;
+                case "阻塞":
+                case "受阻": return StatusEnum.Blocked;
+                case "已取消":
+                case "取消": return StatusEnum.Cancelled;
+                default: return StatusEnum.Todo;
+            }
         }
 
         private static Dictionary<string, int> GetHeaderIndexes(ISheet sheet)
@@ -550,14 +575,6 @@ namespace WorkLogApp.Services.Implementations
                     {
                         dict[name] = c;
                     }
-                }
-            }
-            foreach (var col in Header)
-            {
-                if (!dict.ContainsKey(col))
-                {
-                    var idx = Array.IndexOf(Header, col);
-                    dict[col] = idx >= 0 ? idx : dict.Count;
                 }
             }
             return dict;
