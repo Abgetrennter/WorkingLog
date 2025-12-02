@@ -164,7 +164,15 @@ namespace WorkLogApp.UI.Forms
                 // 文本备份
                 var safeTitle = string.IsNullOrWhiteSpace(item.ItemTitle) ? "untitled" : SanitizeFileName(item.ItemTitle);
                 var fileName = $"{item.LogDate:yyyy-MM-dd}_{safeTitle}.txt";
-                var filePath = Path.Combine(dataDir, fileName);
+                
+                // 按照 yyyy/MM/dd 结构存储
+                var year = item.LogDate.ToString("yyyy");
+                var month = item.LogDate.ToString("MM");
+                var dayStr = item.LogDate.ToString("dd");
+                var txtDir = Path.Combine(dataDir, year, month, dayStr);
+                if (!Directory.Exists(txtDir)) Directory.CreateDirectory(txtDir);
+
+                var filePath = Path.Combine(txtDir, fileName);
                 File.WriteAllText(filePath, item.ItemContent);
 
                 this.DialogResult = DialogResult.OK;

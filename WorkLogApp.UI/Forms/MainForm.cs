@@ -463,7 +463,8 @@ namespace WorkLogApp.UI.Forms
         {
             try
             {
-                var path = AppDomain.CurrentDomain.BaseDirectory;
+                var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data");
+                if (!Directory.Exists(path)) Directory.CreateDirectory(path);
                 System.Diagnostics.Process.Start("explorer.exe", path);
             }
             catch { }
