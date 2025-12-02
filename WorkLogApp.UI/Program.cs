@@ -55,7 +55,8 @@ namespace WorkLogApp.UI
                 var templateService = new TemplateService();
                 templateService.LoadTemplates(templatesPath);
 
-                var main = new Forms.MainForm(templateService);
+                var importExportService = new ImportExportService();
+                var main = new Forms.MainForm(templateService, importExportService);
                 UIStyleManager.ApplyVisualEnhancements(main);
                 Application.Run(main);
             }
