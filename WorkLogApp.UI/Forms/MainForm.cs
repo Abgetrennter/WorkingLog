@@ -7,6 +7,7 @@ using System.Diagnostics;
 using System.Windows.Forms;
 using WorkLogApp.Core.Models;
 using WorkLogApp.Core.Enums;
+using WorkLogApp.Core.Helpers;
 using WorkLogApp.Services.Interfaces;
 using WorkLogApp.Services.Implementations;
 using WorkLogApp.UI.UI;
@@ -41,6 +42,7 @@ namespace WorkLogApp.UI.Forms
             }
 
             InitializeComponent();
+            InitToolTips();
             IconHelper.ApplyIcon(this);
 
             UIStyleManager.ApplyVisualEnhancements(this);
@@ -251,7 +253,7 @@ namespace WorkLogApp.UI.Forms
             {
                 var lv = new ListViewItem(item.LogDate.ToString("yyyy-MM-dd")) { Tag = item };
                 lv.SubItems.Add(item.ItemTitle ?? "");
-                lv.SubItems.Add(item.Status.ToString());
+                lv.SubItems.Add(item.Status.ToChinese());
                 lv.SubItems.Add(item.ItemContent ?? "");
                 lv.SubItems.Add(item.Tags ?? "");
                 lv.SubItems.Add(item.StartTime?.ToString("yyyy-MM-dd HH:mm") ?? "");
@@ -457,6 +459,19 @@ namespace WorkLogApp.UI.Forms
                     OnSaveClick(null, null);
                 }
             }
+        }
+
+        private void InitToolTips()
+        {
+            var toolTip = new ToolTip();
+            toolTip.SetToolTip(_btnCreate, "创建新的日志事项");
+            toolTip.SetToolTip(_btnCategoryManage, "管理分类和模板");
+            toolTip.SetToolTip(_btnImportWizard, "导入外部日志数据");
+            toolTip.SetToolTip(_btnImport, "刷新当前数据显示");
+            toolTip.SetToolTip(_btnDailySummary, "编辑每日总结内容");
+            toolTip.SetToolTip(_btnSave, "保存所有更改到本地文件");
+            toolTip.SetToolTip(_btnOpenFileLocation, "打开数据文件所在目录");
+            toolTip.SetToolTip(_chkShowByMonth, "切换显示模式：选中则显示整月数据，否则仅显示选中日期的数据");
         }
 
         private void OnOpenFileLocationClick(object sender, EventArgs e)

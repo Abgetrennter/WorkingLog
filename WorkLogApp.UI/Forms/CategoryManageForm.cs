@@ -62,6 +62,14 @@ namespace WorkLogApp.UI.Forms
             // Initial Load
             LoadCategoryTree();
             RefreshPlaceholderInsertList();
+            InitToolTips();
+        }
+
+        private void InitToolTips()
+        {
+            var toolTip = new ToolTip();
+            toolTip.SetToolTip(_btnInsert, "将选中的占位符插入到模板编辑框光标位置");
+            toolTip.SetToolTip(_btnSave, "保存当前模板和分类的修改");
         }
 
         private void SetupNewLayout()

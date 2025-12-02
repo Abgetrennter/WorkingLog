@@ -24,6 +24,8 @@ namespace WorkLogApp.UI.Forms
             UIStyleManager.ApplyVisualEnhancements(this);
             UIStyleManager.ApplyLightTheme(this);
 
+            InitToolTips();
+
             // 设计期：填充示例文件名与预览项，便于在设计器中查看列表布局
             if (UIStyleManager.IsDesignMode)
             {
@@ -40,6 +42,13 @@ namespace WorkLogApp.UI.Forms
                 catch { }
                 return;
             }
+        }
+
+        private void InitToolTips()
+        {
+            var toolTip = new ToolTip();
+            toolTip.SetToolTip(_btnChoose, "选择要导入的Excel文件");
+            toolTip.SetToolTip(_btnImport, "执行导入操作");
         }
 
         private void OnChooseFile(object sender, EventArgs e)
