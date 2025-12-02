@@ -13,7 +13,15 @@ namespace WorkLogApp.UI.Forms
     public partial class CategoryManageForm : Form
     {
         private readonly ITemplateService _templateService;
-        private readonly string[] _placeholderTypes = new[] { "text", "textarea", "select", "checkbox", "datetime" };
+        // Map internal type (key) to display name (value)
+        private readonly Dictionary<string, string> _typeMap = new Dictionary<string, string>
+        {
+            { "text", "文本框" },
+            { "textarea", "多行文本" },
+            { "select", "下拉选择" },
+            { "checkbox", "复选框" },
+            { "datetime", "日期时间" }
+        };
         private Category _selectedCategory;
         private WorkTemplate _selectedTemplate;
 
@@ -33,6 +41,13 @@ namespace WorkLogApp.UI.Forms
         {
             _templateService = templateService;
             InitializeComponent();
+            
+            // Initialize placeholder types
+            if (colType != null)
+            {
+                colType.Items.AddRange(_typeMap.Values.ToArray());
+            }
+
             IconHelper.ApplyIcon(this);
             
             // Rebuild UI manually since we are drastically changing it and the designer might be confused by the switch
@@ -111,9 +126,11 @@ namespace WorkLogApp.UI.Forms
                 var row = _gridPlaceholders.Rows[e.RowIndex];
                 if (row.IsNewRow) return;
                 var name = Convert.ToString(row.Cells["colName"].Value)?.Trim();
-                var type = Convert.ToString(row.Cells["colType"].Value)?.Trim();
+                var displayType = Convert.ToString(row.Cells["colType"].Value)?.Trim();
                 if (string.IsNullOrEmpty(name)) return;
-                InsertPlaceholderToken(name, type);
+                // Convert display name to internal type
+                var typeKey = _typeMap.FirstOrDefault(x => x.Value == displayType).Key ?? "text";
+                InsertPlaceholderToken(name, typeKey);
                 _txtFormatTemplate.Focus();
             };
             _gridPlaceholders.RowsAdded += (s, e) => RefreshPlaceholderInsertList();
@@ -367,7 +384,9 @@ namespace WorkLogApp.UI.Forms
                     {
                         opts = string.Join("|", t.Options[kv.Key]);
                     }
-                    _gridPlaceholders.Rows.Add(kv.Key, kv.Value, opts);
+                    // Convert internal type to display name
+                    string displayType = _typeMap.ContainsKey(kv.Value) ? _typeMap[kv.Value] : kv.Value;
+                    _gridPlaceholders.Rows.Add(kv.Key, displayType, opts);
                 }
             }
             RefreshPlaceholderInsertList();
@@ -415,12 +434,14 @@ namespace WorkLogApp.UI.Forms
             {
                 if (row.IsNewRow) continue;
                 var name = Convert.ToString(row.Cells["colName"].Value)?.Trim();
-                var type = Convert.ToString(row.Cells["colType"].Value)?.Trim();
+                var displayType = Convert.ToString(row.Cells["colType"].Value)?.Trim();
                 var opts = Convert.ToString(row.Cells["colOptions"].Value)?.Trim();
 
                 if (!string.IsNullOrEmpty(name))
                 {
-                    placeholders[name] = type;
+                    // Convert display name back to internal type
+                    var typeKey = _typeMap.FirstOrDefault(x => x.Value == displayType).Key ?? "text";
+                    placeholders[name] = typeKey;
                     if (!string.IsNullOrEmpty(opts))
                     {
                         options[name] = opts.Split('|').Select(s => s.Trim()).ToList();

@@ -301,7 +301,7 @@ namespace WorkLogApp.UI.Forms
             // 
             this.AcceptButton = this._btnSave;
             this.CancelButton = this._btnCancel;
-            this.ClientSize = new System.Drawing.Size(900, 650);
+            this.ClientSize = new System.Drawing.Size(1125, 812);
             this.Controls.Add(this.rootLayout);
             this.Name = "ItemEditForm";
             this.Text = "编辑日志事项";

@@ -19,8 +19,8 @@ namespace WorkLogApp.UI.Forms
         {
             Text = "每日总结";
             StartPosition = FormStartPosition.CenterParent;
-            Width = 700;
-            Height = 500;
+            Width = 875;
+            Height = 625;
             IconHelper.ApplyIcon(this);
 
             _textBox = new TextBox
@@ -56,8 +56,8 @@ namespace WorkLogApp.UI.Forms
         {
             Text = "每日总结";
             StartPosition = FormStartPosition.CenterParent;
-            Width = 700;
-            Height = 500;
+            Width = 875;
+            Height = 625;
 
             _textBox = new TextBox
             {
