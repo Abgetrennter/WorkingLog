@@ -45,8 +45,18 @@ namespace WorkLogApp.UI.Forms
         private void InitializeFields()
         {
             // 状态
-            _statusComboBox.DataSource = Enum.GetValues(typeof(StatusEnum));
-            _statusComboBox.SelectedItem = _item.Status;
+            var statusOptions = new System.Collections.Generic.List<StatusOption>
+            {
+                new StatusOption { Text = "待办", Value = StatusEnum.Todo },
+                new StatusOption { Text = "进行中", Value = StatusEnum.Doing },
+                new StatusOption { Text = "已完成", Value = StatusEnum.Done },
+                new StatusOption { Text = "阻塞", Value = StatusEnum.Blocked },
+                new StatusOption { Text = "已取消", Value = StatusEnum.Cancelled }
+            };
+            _statusComboBox.DisplayMember = "Text";
+            _statusComboBox.ValueMember = "Value";
+            _statusComboBox.DataSource = statusOptions;
+            _statusComboBox.SelectedValue = _item.Status;
 
             // 日期
             _datePicker.Value = _item.LogDate == default(DateTime) ? DateTime.Now.Date : _item.LogDate;
@@ -103,7 +113,7 @@ namespace WorkLogApp.UI.Forms
                 _item.ItemContent = _contentBox.Text ?? string.Empty;
                 _item.LogDate = _datePicker.Value.Date;
                 
-                if (_statusComboBox.SelectedItem is StatusEnum s)
+                if (_statusComboBox.SelectedValue is StatusEnum s)
                 {
                     _item.Status = s;
                 }
@@ -191,6 +201,12 @@ namespace WorkLogApp.UI.Forms
         {
             DialogResult = DialogResult.Cancel;
             Close();
+        }
+
+        private class StatusOption
+        {
+            public string Text { get; set; }
+            public StatusEnum Value { get; set; }
         }
     }
 }

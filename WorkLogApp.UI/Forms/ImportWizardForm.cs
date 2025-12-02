@@ -32,8 +32,8 @@ namespace WorkLogApp.UI.Forms
                     _lblFile.Text = "示例.xlsx";
                     _previewList.BeginUpdate();
                     _previewList.Items.Clear();
-                    _previewList.Items.Add(new ListViewItem(new[] { DateTime.Today.ToString("yyyy-MM-dd"), "示例：周会记录", "团队;沟通" }));
-                    _previewList.Items.Add(new ListViewItem(new[] { DateTime.Today.AddDays(-2).ToString("yyyy-MM-dd"), "示例：Bug 修复", "缺陷;修复" }));
+                    _previewList.Items.Add(new ListViewItem(new[] { DateTime.Today.ToString("yyyy-MM-dd"), "示例：周会记录", "团队;沟通", "Done", "10:00-11:00" }));
+                    _previewList.Items.Add(new ListViewItem(new[] { DateTime.Today.AddDays(-2).ToString("yyyy-MM-dd"), "示例：Bug 修复", "缺陷;修复", "Doing", "14:00-" }));
                     _previewList.EndUpdate();
                     _btnImport.Enabled = false;
                 }
@@ -70,7 +70,9 @@ namespace WorkLogApp.UI.Forms
                     {
                         it.LogDate.ToString("yyyy-MM-dd"),
                         it.ItemTitle ?? string.Empty,
-                        it.Tags ?? string.Empty
+                        it.Tags ?? string.Empty,
+                        it.Status.ToString(),
+                        $"{(it.StartTime.HasValue ? it.StartTime.Value.ToString("HH:mm") : "")}-{(it.EndTime.HasValue ? it.EndTime.Value.ToString("HH:mm") : "")}"
                     });
                     _previewList.Items.Add(lv);
                 }
