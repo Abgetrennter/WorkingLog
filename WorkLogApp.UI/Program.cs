@@ -50,7 +50,9 @@ namespace WorkLogApp.UI
                 var env = ConfigurationManager.AppSettings["ConfigEnvironment"] ?? "dev";
                 var baseDir = AppDomain.CurrentDomain.BaseDirectory;
                 var configPath = Path.Combine(baseDir, "Configs", $"{env}.config.json");
-                var templatesPath = Path.Combine(baseDir, "Templates", "templates.json");
+                
+                var relativeTplPath = ConfigurationManager.AppSettings["TemplatesPath"] ?? "Templates\\templates.json";
+                var templatesPath = Path.Combine(baseDir, relativeTplPath);
 
                 var templateService = new TemplateService();
                 templateService.LoadTemplates(templatesPath);
