@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using System.Windows.Forms;
+using WorkLogApp.Core.Models;
 using WorkLogApp.Services.Interfaces;
 
 namespace WorkLogApp.UI.Controls
@@ -12,7 +13,9 @@ namespace WorkLogApp.UI.Controls
         private ITemplateService _templateService;
         private ToolStripDropDown _dropDown;
         private TreeView _treeView;
-        private string _selectedCategoryName;
+        private Category _selectedCategory;
+
+        public event EventHandler<Category> SelectedCategoryChanged;
 
         public CategoryTreeComboBox()
         {
@@ -21,11 +24,19 @@ namespace WorkLogApp.UI.Controls
             {
                 BorderStyle = BorderStyle.FixedSingle,
                 HideSelection = false,
-                PathSeparator = "-",
-                Font = Font
+                Font = Font,
+                FullRowSelect = true
             };
             _treeView.NodeMouseClick += OnNodeClicked;
-            var host = new ToolStripControlHost(_treeView) { AutoSize = false, Margin = Padding.Empty, Padding = Padding.Empty, Size = new Size(240, 260) };
+            
+            var host = new ToolStripControlHost(_treeView) 
+            { 
+                AutoSize = false, 
+                Margin = Padding.Empty, 
+                Padding = Padding.Empty, 
+                Size = new Size(240, 260) 
+            };
+            
             _dropDown = new ToolStripDropDown { Padding = Padding.Empty };
             _dropDown.Items.Add(host);
         }
@@ -48,43 +59,92 @@ namespace WorkLogApp.UI.Controls
             }
         }
 
+        public Category SelectedCategory
+        {
+            get => _selectedCategory;
+            set
+            {
+                if (_selectedCategory != value)
+                {
+                    _selectedCategory = value;
+                    Items.Clear();
+                    if (_selectedCategory != null)
+                    {
+                        Items.Add(_selectedCategory.Name);
+                        SelectedIndex = 0;
+                    }
+                    SelectedCategoryChanged?.Invoke(this, _selectedCategory);
+                }
+            }
+        }
+
         public void ReloadCategories()
         {
+            // Preserve selection if possible
+            var currentId = _selectedCategory?.Id;
+
             Items.Clear();
             _treeView.BeginUpdate();
             _treeView.Nodes.Clear();
+            
             if (_templateService == null)
             {
                 _treeView.EndUpdate();
                 return;
             }
-            var map = new Dictionary<string, TreeNode>(StringComparer.OrdinalIgnoreCase);
-            var names = _templateService.GetCategoryNames() ?? Enumerable.Empty<string>();
-            foreach (var name in names.OrderBy(n => n))
+
+            var categories = _templateService.GetAllCategories();
+            var nodes = BuildTree(categories);
+            foreach (var node in nodes)
             {
-                var parts = name.Split(new[] { '-' }, StringSplitOptions.RemoveEmptyEntries);
-                string path = string.Empty;
-                TreeNode parent = null;
-                for (int i = 0; i < parts.Length; i++)
-                {
-                    path = i == 0 ? parts[0] : path + "-" + parts[i];
-                    if (!map.TryGetValue(path, out var node))
-                    {
-                        node = new TreeNode(parts[i]) { Name = path };
-                        if (parent == null) _treeView.Nodes.Add(node);
-                        else parent.Nodes.Add(node);
-                        map[path] = node;
-                    }
-                    parent = node;
-                }
+                _treeView.Nodes.Add(node);
             }
+
             _treeView.ExpandAll();
             _treeView.EndUpdate();
-            var first = names.FirstOrDefault();
-            if (first != null) SetSelectedCategory(first);
+
+            // Restore selection
+            if (currentId != null)
+            {
+                var cat = _templateService.GetCategory(currentId);
+                if (cat != null)
+                {
+                    SetSelectedCategory(cat);
+                }
+                else
+                {
+                    SelectedCategory = null;
+                }
+            }
         }
 
-        public string SelectedCategoryName => _selectedCategoryName;
+        private List<TreeNode> BuildTree(List<Category> categories)
+        {
+            var nodes = new Dictionary<string, TreeNode>();
+            var rootNodes = new List<TreeNode>();
+
+            // First pass: create all nodes
+            foreach (var cat in categories)
+            {
+                var node = new TreeNode(cat.Name) { Tag = cat };
+                nodes[cat.Id] = node;
+            }
+
+            // Second pass: build hierarchy
+            foreach (var cat in categories)
+            {
+                if (!string.IsNullOrEmpty(cat.ParentId) && nodes.TryGetValue(cat.ParentId, out var parentNode))
+                {
+                    parentNode.Nodes.Add(nodes[cat.Id]);
+                }
+                else
+                {
+                    rootNodes.Add(nodes[cat.Id]);
+                }
+            }
+
+            return rootNodes;
+        }
 
         protected override void OnMouseDown(MouseEventArgs e)
         {
@@ -103,24 +163,31 @@ namespace WorkLogApp.UI.Controls
             if (_dropDown == null) return;
             _treeView.Font = Font;
             var host = _dropDown.Items[0] as ToolStripControlHost;
-            if (host != null) host.Size = new Size(Width, 260);
+            if (host != null) host.Size = new Size(Math.Max(Width, 240), 260);
             _dropDown.Show(this, new Point(0, Height));
             _treeView.Focus();
         }
 
+        public bool OnlySelectLeaf { get; set; } = false;
+
         private void OnNodeClicked(object sender, TreeNodeMouseClickEventArgs e)
         {
-            var path = e.Node.FullPath;
-            SetSelectedCategory(path);
-            _dropDown.Close();
+            if (e.Node.Tag is Category cat)
+            {
+                if (OnlySelectLeaf && e.Node.Nodes.Count > 0)
+                {
+                    // If we only allow leaf nodes, and this node has children, do nothing (expand/collapse happens automatically by TreeView)
+                    return;
+                }
+                
+                SetSelectedCategory(cat);
+                _dropDown.Close();
+            }
         }
 
-        private void SetSelectedCategory(string path)
+        private void SetSelectedCategory(Category cat)
         {
-            _selectedCategoryName = path;
-            Items.Clear();
-            Items.Add(path);
-            SelectedIndex = 0;
+            SelectedCategory = cat;
         }
     }
 }

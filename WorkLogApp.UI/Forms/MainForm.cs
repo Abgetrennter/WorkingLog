@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 using System.Linq;
@@ -26,6 +27,19 @@ namespace WorkLogApp.UI.Forms
         public MainForm(ITemplateService templateService)
         {
             _templateService = templateService;
+            
+            // Initialize templates immediately if needed
+            // Assume paths are handled by service or Program.cs. 
+            // Program.cs should ideally load templates.
+            // Let's load here to be safe if not loaded.
+            var baseDir = AppDomain.CurrentDomain.BaseDirectory;
+            var tplPath = Path.Combine(baseDir, "Templates", "data.json");
+            if (!_templateService.LoadTemplates(tplPath))
+            {
+                // Maybe fallback to old templates.json if data.json missing?
+                // No, requirements said "rewrite", so we start fresh.
+            }
+
             InitializeComponent();
             IconHelper.ApplyIcon(this);
 
@@ -199,186 +213,62 @@ namespace WorkLogApp.UI.Forms
 
                 if (!_chkShowByMonth.Checked)
                 {
-                    EnsureDailyCarryovers();
-                }
-
-                if (_chkShowByMonth.Checked)
-                {
-                    _currentItems = _allMonthItems.SelectMany(d => d.Items ?? new System.Collections.Generic.List<WorkLogItem>()).ToList();
+                    // 显示当天
+                    _currentItems = _allMonthItems
+                        .Where(d => d.LogDate.Date == selectedDate.Date)
+                        .SelectMany(d => d.Items)
+                        .OrderBy(i => i.SortOrder)
+                        .ToList();
                 }
                 else
                 {
-                    _currentItems = _allMonthItems.Where(d => d.LogDate.Date == selectedDate.Date)
-                        .SelectMany(d => d.Items ?? new System.Collections.Generic.List<WorkLogItem>())
+                    // 显示全月
+                    _currentItems = _allMonthItems
+                        .SelectMany(d => d.Items)
+                        .OrderBy(i => i.LogDate)
+                        .ThenBy(i => i.SortOrder)
                         .ToList();
                 }
 
-                BindItems(_currentItems);
+                BindListView(_currentItems);
             }
             catch (Exception ex)
             {
-                MessageBox.Show(this, "导入失败：" + ex.Message, "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show(this, "加载数据失败：" + ex.Message, "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
-        private void BindItems(System.Collections.Generic.IEnumerable<WorkLogItem> items)
+        private void BindListView(System.Collections.Generic.List<WorkLogItem> items)
         {
             _listView.BeginUpdate();
             _listView.Items.Clear();
-            _listView.Groups.Clear();
-            var groupActive = new ListViewGroup("未完成", HorizontalAlignment.Left);
-            var groupDone = new ListViewGroup("已完成", HorizontalAlignment.Left);
-            _listView.Groups.Add(groupActive);
-            _listView.Groups.Add(groupDone);
-            foreach (var it in items)
+            foreach (var item in items)
             {
-                var content = (it.ItemContent ?? string.Empty).Replace("\r", " ").Replace("\n", " ");
-                if (content.Length > 200) content = content.Substring(0, 200) + "...";
-                var statusZh = it.Status == StatusEnum.Todo ? "待办" : it.Status == StatusEnum.Doing ? "进行中" : it.Status == StatusEnum.Done ? "已完成" : it.Status == StatusEnum.Blocked ? "阻塞" : "已取消";
-                var lv = new ListViewItem(new[]
-                {
-                    it.LogDate.ToString("yyyy-MM-dd"),
-                    it.ItemTitle ?? string.Empty,
-                    statusZh,
-                    content,
-                    it.Tags ?? string.Empty,
-                    it.StartTime.HasValue ? it.StartTime.Value.ToString("yyyy-MM-dd HH:mm") : string.Empty,
-                    it.EndTime.HasValue ? it.EndTime.Value.ToString("yyyy-MM-dd HH:mm") : string.Empty
-                });
-                lv.Tag = it;
-                lv.Group = it.Status == StatusEnum.Done ? groupDone : groupActive;
+                var lv = new ListViewItem(item.LogDate.ToString("yyyy-MM-dd")) { Tag = item };
+                lv.SubItems.Add(item.ItemTitle ?? "");
+                lv.SubItems.Add(item.ItemContent ?? "");
+                lv.SubItems.Add(item.Tags ?? "");
+                lv.SubItems.Add(item.StartTime?.ToString("yyyy-MM-dd HH:mm") ?? "");
+                lv.SubItems.Add(item.EndTime?.ToString("yyyy-MM-dd HH:mm") ?? "");
                 _listView.Items.Add(lv);
             }
             _listView.EndUpdate();
         }
 
-        private static string GetTaskIdFromTags(string tags)
-        {
-            var t = tags ?? string.Empty;
-            var m = System.Text.RegularExpressions.Regex.Match(t, "@task=([0-9a-fA-F-]{36})");
-            return m.Success ? m.Groups[1].Value : string.Empty;
-        }
-
-        private void OnAppendMilestoneClick(object sender, EventArgs e)
+        private void OnListViewDoubleClick(object sender, EventArgs e)
         {
             if (_listView.SelectedItems.Count == 0) return;
-            var lv = _listView.SelectedItems[0];
-            var item = lv.Tag as WorkLogItem;
+            var item = _listView.SelectedItems[0].Tag as WorkLogItem;
             if (item == null) return;
-            using (var f = new Form())
+
+            using (var form = new ItemEditForm(item, null))
             {
-                f.Text = "追加里程碑";
-                f.StartPosition = FormStartPosition.CenterParent;
-                var cb = new ComboBox { Left = 10, Top = 10, Width = 240, DropDownStyle = ComboBoxStyle.DropDownList };
-                cb.Items.AddRange(new object[] { "开始", "需求确认", "方案设计", "开发中", "联调", "阻塞", "解除阻塞", "提交上线", "验证通过", "完成", "取消" });
-                cb.SelectedIndex = 3;
-                var tb = new TextBox { Left = 10, Top = 50, Width = 240 };
-                var ok = new Button { Text = "确定", Left = 70, Top = 90, Width = 80, DialogResult = DialogResult.OK };
-                var cancel = new Button { Text = "取消", Left = 170, Top = 90, Width = 80, DialogResult = DialogResult.Cancel };
-                f.Controls.Add(cb); f.Controls.Add(tb); f.Controls.Add(ok); f.Controls.Add(cancel);
-                f.AcceptButton = ok; f.CancelButton = cancel; f.ClientSize = new Size(260, 130);
-                if (f.ShowDialog(this) == DialogResult.OK)
+                form.StartPosition = FormStartPosition.CenterParent;
+                if (form.ShowDialog(this) == DialogResult.OK)
                 {
-                    var type = cb.SelectedItem?.ToString() ?? "开发中";
-                    var note = tb.Text ?? string.Empty;
-                    item.ItemContent = AppendMilestoneText(item.ItemContent, _dayPicker.Value.Date, type, note);
-                    item.Status = MapMilestoneTypeToStatus(type, item.Status);
-                    RefreshItems();
-                    OnSaveClick(null, EventArgs.Empty);
+                    // 修改后保存
+                    OnSaveClick(null, null);
                 }
-            }
-        }
-
-        private void OnMarkDoneClick(object sender, EventArgs e)
-        {
-            if (_listView.SelectedItems.Count == 0) return;
-            var lv = _listView.SelectedItems[0];
-            var item = lv.Tag as WorkLogItem;
-            if (item == null) return;
-            item.ItemContent = AppendMilestoneText(item.ItemContent, _dayPicker.Value.Date, "完成", "");
-            item.Status = StatusEnum.Done;
-            RefreshItems();
-            OnSaveClick(null, EventArgs.Empty);
-        }
-
-        private StatusEnum MapMilestoneTypeToStatus(string type, StatusEnum current)
-        {
-            switch (type)
-            {
-                case "完成": return StatusEnum.Done;
-                case "取消": return StatusEnum.Cancelled;
-                case "阻塞": return StatusEnum.Blocked;
-                default: return current == StatusEnum.Todo ? StatusEnum.Doing : current;
-            }
-        }
-
-        private static string SetTaskIdTag(string tags, Guid id)
-        {
-            var t = tags ?? string.Empty;
-            var parts = t.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries).ToList();
-            parts = parts.Where(s => !s.StartsWith("@task=")).ToList();
-            parts.Add("@task=" + id.ToString());
-            return string.Join(" ", parts);
-        }
-
-        private static string AppendMilestoneText(string content, DateTime date, string type, string note)
-        {
-            var baseText = content ?? string.Empty;
-            var marker = "【里程碑】";
-            if (!baseText.Contains(marker)) baseText = (baseText + (baseText.EndsWith("\n") ? string.Empty : Environment.NewLine) + marker + Environment.NewLine);
-            var line = "- " + date.ToString("yyyy-MM-dd") + " " + type + "：" + (note ?? string.Empty);
-            return baseText + line + Environment.NewLine;
-        }
-
-        private void EnsureDailyCarryovers()
-        {
-            var today = _dayPicker.Value.Date;
-            var prev = today.AddDays(-1);
-            var prevDay = _allMonthItems.FirstOrDefault(d => d.LogDate.Date == prev);
-            var todayDay = _allMonthItems.FirstOrDefault(d => d.LogDate.Date == today);
-            if (todayDay == null)
-            {
-                todayDay = new WorkLog { LogDate = today, Items = new System.Collections.Generic.List<WorkLogItem>() };
-                _allMonthItems.Add(todayDay);
-            }
-            var todayTaskIds = new System.Collections.Generic.HashSet<string>(todayDay.Items.Select(i => GetTaskIdFromTags(i.Tags)).Where(s => !string.IsNullOrEmpty(s)));
-            foreach (var it in (prevDay?.Items ?? new System.Collections.Generic.List<WorkLogItem>()))
-            {
-                if (it.Status == StatusEnum.Done || it.Status == StatusEnum.Cancelled) continue;
-                var tid = GetTaskIdFromTags(it.Tags);
-                if (string.IsNullOrEmpty(tid))
-                {
-                    tid = Guid.NewGuid().ToString();
-                    it.Tags = SetTaskIdTag(it.Tags, Guid.Parse(tid));
-                }
-                if (todayTaskIds.Contains(tid)) continue;
-                var carry = new WorkLogItem
-                {
-                    LogDate = today,
-                    ItemTitle = it.ItemTitle,
-                    ItemContent = AppendMilestoneText(string.Empty, today, "继承", "承接未完成事项"),
-                    CategoryId = it.CategoryId,
-                    Status = StatusEnum.Todo,
-                    Tags = SetTaskIdTag(it.Tags, Guid.Parse(tid)),
-                };
-                todayDay.Items.Add(carry);
-                todayTaskIds.Add(tid);
-            }
-        }
-
-        private void _monthPicker_ValueChanged(object sender, EventArgs e)
-        {
-            if (_chkShowByMonth.Checked)
-            {
-                RefreshItems();
-            }
-        }
-
-        private void OnDayPickerValueChanged(object sender, EventArgs e)
-        {
-            if (!_chkShowByMonth.Checked)
-            {
-                RefreshItems();
             }
         }
 
@@ -390,164 +280,114 @@ namespace WorkLogApp.UI.Forms
 
         private void SetScopeUI()
         {
-            var byMonth = _chkShowByMonth.Checked;
-            _monthPicker.Visible = byMonth;
-            _dayPicker.Visible = !byMonth;
-            _btnDailySummary.Visible = !byMonth;
-        }
-
-        private void OnListViewDoubleClick(object sender, EventArgs e)
-        {
-            try
+            if (_chkShowByMonth.Checked)
             {
-                if (_listView.SelectedItems.Count == 0) return;
-                var lv = _listView.SelectedItems[0];
-                var item = lv.Tag as WorkLogItem;
-                if (item == null)
-                {
-                    MessageBox.Show(this, "无法定位原始数据项。", "提示", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    return;
-                }
-
-                using (var form = new ItemEditForm(item, null))
-                {
-                    form.StartPosition = FormStartPosition.CenterParent;
-                    var result = form.ShowDialog(this);
-                    if (result == DialogResult.OK)
-                    {
-                        // 覆盖导出当前月份数据并刷新列表
-                        var baseDir = AppDomain.CurrentDomain.BaseDirectory;
-                        var dataDir = Path.Combine(baseDir, "Data");
-                        Directory.CreateDirectory(dataDir);
-                        var month = _monthPicker.Value;
-                        IImportExportService svc = new ImportExportService();
-                        svc.RewriteMonth(month, _allMonthItems, dataDir);
-                        RefreshItems();
-                        MessageBox.Show(this, "已保存修改并重新生成当月 Excel。", "成功", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    }
-                }
+                _dayPicker.Visible = false;
+                _monthPicker.Visible = true;
             }
-            catch (Exception ex)
+            else
             {
-                MessageBox.Show(this, "打开编辑窗口失败：" + ex.Message, "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                _dayPicker.Visible = true;
+                _monthPicker.Visible = false;
             }
         }
 
-        private void OnDailySummaryClick(object sender, EventArgs e)
+        private void OnDayPickerValueChanged(object sender, EventArgs e)
         {
-            var selectedDate = _dayPicker.Value.Date;
-            var day = _allMonthItems.FirstOrDefault(d => d.LogDate.Date == selectedDate);
-            var existing = day?.DailySummary;
-
-            var fallback = string.Join("；", _currentItems.Select(it => it.ItemTitle).Where(s => !string.IsNullOrWhiteSpace(s)));
-            var initial = string.IsNullOrWhiteSpace(existing) ? fallback : existing;
-
-            using (var form = new DailySummaryForm(day?.Items ?? new System.Collections.Generic.List<WorkLogItem>(), existing))
+            if (!_chkShowByMonth.Checked)
             {
-                form.StartPosition = FormStartPosition.CenterParent;
-                var result = form.ShowDialog(this);
-                if (result == DialogResult.OK)
-                {
-                    var text = form.SummaryText ?? string.Empty;
-                    ApplyDailySummary(selectedDate, text);
-                    OnSaveClick(null, EventArgs.Empty);
-                }
+                RefreshItems();
             }
-        }
-
-        private void ApplyDailySummary(DateTime date, string summary)
-        {
-            var day = _allMonthItems.FirstOrDefault(d => d.LogDate.Date == date.Date);
-            if (day == null)
-            {
-                day = new WorkLog { LogDate = date.Date };
-                _allMonthItems.Add(day);
-            }
-            day.DailySummary = summary ?? string.Empty;
         }
 
         private void OnListViewItemDrag(object sender, ItemDragEventArgs e)
         {
-            if (e.Item is ListViewItem it)
-            {
-                _listView.DoDragDrop(it, DragDropEffects.Move);
-            }
+            _listView.DoDragDrop(e.Item, DragDropEffects.Move);
         }
 
         private void OnListViewDragEnter(object sender, DragEventArgs e)
         {
-            if (e.Data.GetDataPresent(typeof(ListViewItem)))
-            {
-                e.Effect = DragDropEffects.Move;
-            }
-            else
-            {
-                e.Effect = DragDropEffects.None;
-            }
+            e.Effect = DragDropEffects.Move;
         }
 
         private void OnListViewDragOver(object sender, DragEventArgs e)
         {
-            if (e.Data.GetDataPresent(typeof(ListViewItem)))
+            var pt = _listView.PointToClient(new Point(e.X, e.Y));
+            var item = _listView.GetItemAt(pt.X, pt.Y);
+            if (item != null)
             {
-                e.Effect = DragDropEffects.Move;
+                item.EnsureVisible();
             }
         }
 
         private void OnListViewDragDrop(object sender, DragEventArgs e)
         {
-            if (!e.Data.GetDataPresent(typeof(ListViewItem))) return;
-            var dragged = (ListViewItem)e.Data.GetData(typeof(ListViewItem));
-            var p = _listView.PointToClient(new Point(e.X, e.Y));
-            var target = _listView.GetItemAt(p.X, p.Y);
-            int fromIndex = dragged.Index;
-            int toIndex = target != null ? target.Index : _listView.Items.Count - 1;
-            if (toIndex == fromIndex) return;
+            var pt = _listView.PointToClient(new Point(e.X, e.Y));
+            var targetItem = _listView.GetItemAt(pt.X, pt.Y);
+            var draggedItem = (ListViewItem)e.Data.GetData(typeof(ListViewItem));
 
-            _listView.BeginUpdate();
-            _listView.Items.RemoveAt(fromIndex);
-            if (toIndex > fromIndex) toIndex--;
-            _listView.Items.Insert(toIndex, dragged);
-            _listView.EndUpdate();
+            if (draggedItem != null && targetItem != null && draggedItem != targetItem)
+            {
+                var items = _currentItems; // 当前显示的列表引用
+                var srcLog = draggedItem.Tag as WorkLogItem;
+                var dstLog = targetItem.Tag as WorkLogItem;
 
-            var ordered = _listView.Items
-                .Cast<ListViewItem>()
-                .Select(x => x.Tag as WorkLogItem)
-                .Where(x => x != null)
-                .ToList();
-            _currentItems = ordered;
-            //OnSaveClick(null, EventArgs.Empty);
+                if (srcLog != null && dstLog != null)
+                {
+                    // 简单交换 SortOrder？或者插入排序
+                    // 这里做简单的插入排序逻辑：
+                    // 在 UI 上移动位置
+                    var targetIndex = targetItem.Index;
+                    _listView.Items.Remove(draggedItem);
+                    _listView.Items.Insert(targetIndex, draggedItem);
+                    
+                    // 触发保存逻辑会重新计算 SortOrder
+                    // 但需要先更新内存中的 _currentItems 顺序
+                    // _currentItems 只是一个 View，真实数据在 _allMonthItems
+                    // 我们只需要标记顺序变了，在 Save 时会根据 ListView 顺序重写 SortOrder
+                }
+            }
         }
 
-        /// <summary>
-        /// 根据当前视图更新 SortOrder：
-        /// - 日视图：仅更新该日的 SortOrder 为当前显示顺序（1..N）
-        /// - 月视图：按当前列表顺序为每个日期分别编号（每个日期从 1..N）
-        /// </summary>
         private void UpdateSortOrderByCurrentView()
         {
-            if (_currentItems == null || _currentItems.Count == 0) return;
-
-            if (!_chkShowByMonth.Checked)
+            // 根据 ListView 中的顺序，更新 item.SortOrder
+            for (int i = 0; i < _listView.Items.Count; i++)
             {
-                // 日视图：当前列表只包含当天
-                int order = 1;
-                foreach (var it in _currentItems)
+                var lv = _listView.Items[i];
+                var item = lv.Tag as WorkLogItem;
+                if (item != null)
                 {
-                    it.SortOrder = order++;
+                    item.SortOrder = i;
                 }
-                return;
             }
+        }
 
-            // 月视图：按照当前列表顺序为每个日期单独递增编号
-            var counters = new System.Collections.Generic.Dictionary<DateTime, int>();
-            foreach (var it in _currentItems)
+        // Legacy Event Handlers
+        private void _monthPicker_ValueChanged(object sender, EventArgs e)
+        {
+            RefreshItems();
+        }
+
+        private void OnDailySummaryClick(object sender, EventArgs e)
+        {
+            var date = _dayPicker.Value.Date;
+            var log = _allMonthItems.FirstOrDefault(x => x.LogDate.Date == date);
+            var items = log?.Items ?? new List<WorkLogItem>();
+            var summary = log?.DailySummary;
+
+            using (var form = new DailySummaryForm(items, summary))
             {
-                var key = it.LogDate.Date;
-                if (!counters.TryGetValue(key, out var cnt)) cnt = 0;
-                cnt += 1;
-                counters[key] = cnt;
-                it.SortOrder = cnt;
+                if (form.ShowDialog(this) == DialogResult.OK)
+                {
+                    if (log == null)
+                    {
+                        log = new WorkLog { LogDate = date, Items = new List<WorkLogItem>() };
+                        _allMonthItems.Add(log);
+                    }
+                    log.DailySummary = form.SummaryText;
+                    OnSaveClick(null, null);
+                }
             }
         }
 
@@ -555,37 +395,10 @@ namespace WorkLogApp.UI.Forms
         {
             try
             {
-                var baseDir = AppDomain.CurrentDomain.BaseDirectory;
-                var dataDir = Path.Combine(baseDir, "Data");
-                Directory.CreateDirectory(dataDir);
-
-                var month = _monthPicker.Value;
-                var fileName = "worklog_" + new DateTime(month.Year, month.Month, 1).ToString("yyyyMM") + ".xlsx";
-                var filePath = Path.Combine(dataDir, fileName);
-
-                if (File.Exists(filePath))
-                {
-                    Process.Start(new ProcessStartInfo
-                    {
-                        FileName = "explorer.exe",
-                        Arguments = "/e,/select,\"" + filePath + "\"",
-                        UseShellExecute = true
-                    });
-                }
-                else
-                {
-                    Process.Start(new ProcessStartInfo
-                    {
-                        FileName = "explorer.exe",
-                        Arguments = dataDir,
-                        UseShellExecute = true
-                    });
-                }
+                var path = AppDomain.CurrentDomain.BaseDirectory;
+                System.Diagnostics.Process.Start("explorer.exe", path);
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(this, "打开文件位置失败：" + ex.Message, "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
+            catch { }
         }
     }
 }
