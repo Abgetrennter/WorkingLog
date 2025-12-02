@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text.RegularExpressions;
 using System.Web.Script.Serialization;
 using WorkLogApp.Core.Models;
@@ -10,44 +11,252 @@ namespace WorkLogApp.Services.Implementations
 {
     public class TemplateService : ITemplateService
     {
-        private TemplateRoot _templateRoot;
+        private TemplateStore _store;
         private string _templatesPath;
+        private readonly object _lock = new object();
 
         public bool LoadTemplates(string templatesJsonPath)
         {
-            if (!File.Exists(templatesJsonPath)) return false;
-            var json = File.ReadAllText(templatesJsonPath);
-            var serializer = new JavaScriptSerializer();
-            _templateRoot = serializer.Deserialize<TemplateRoot>(json);
-            _templatesPath = templatesJsonPath;
-            return _templateRoot?.Templates != null;
+            lock (_lock)
+            {
+                _templatesPath = templatesJsonPath;
+                if (!File.Exists(templatesJsonPath))
+                {
+                    // Initialize empty store if file doesn't exist
+                    _store = new TemplateStore();
+                    return true;
+                }
+
+                try
+                {
+                    var json = File.ReadAllText(templatesJsonPath);
+                    var serializer = new JavaScriptSerializer();
+                    _store = serializer.Deserialize<TemplateStore>(json);
+                    
+                    // Fallback if deserialization returns null (e.g. empty file)
+                    if (_store == null) _store = new TemplateStore();
+                    
+                    // Ensure lists are not null
+                    if (_store.Categories == null) _store.Categories = new List<Category>();
+                    if (_store.Templates == null) _store.Templates = new List<WorkTemplate>();
+                    
+                    return true;
+                }
+                catch
+                {
+                    // On error (e.g. format mismatch), init empty
+                    _store = new TemplateStore();
+                    return false;
+                }
+            }
         }
 
         public bool SaveTemplates()
         {
-            if (_templateRoot == null || _templateRoot.Templates == null) return false;
-            if (string.IsNullOrWhiteSpace(_templatesPath)) return false;
-            try
+            lock (_lock)
             {
-                var serializer = new JavaScriptSerializer();
-                var json = serializer.Serialize(_templateRoot);
-                var dir = Path.GetDirectoryName(_templatesPath);
-                if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
-                File.WriteAllText(_templatesPath, json);
-                return true;
-            }
-            catch
-            {
-                return false;
+                if (_store == null || string.IsNullOrWhiteSpace(_templatesPath)) return false;
+                try
+                {
+                    var serializer = new JavaScriptSerializer();
+                    var json = serializer.Serialize(_store);
+                    var dir = Path.GetDirectoryName(_templatesPath);
+                    if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
+                    File.WriteAllText(_templatesPath, json);
+                    return true;
+                }
+                catch
+                {
+                    return false;
+                }
             }
         }
 
-        public string Render(string formatTemplate, Dictionary<string, object> fieldValues, WorkLogItem item)
+        #region Category Operations
+
+        public List<Category> GetAllCategories()
         {
-            var result = formatTemplate ?? string.Empty;
+            lock (_lock)
+            {
+                // Return flat list, UI can build tree
+                // Or we could build tree here if needed, but let's return all flat data
+                // Sort by SortOrder
+                return _store?.Categories.OrderBy(c => c.SortOrder).ToList() ?? new List<Category>();
+            }
+        }
+
+        public Category GetCategory(string id)
+        {
+            lock (_lock)
+            {
+                return _store?.Categories.FirstOrDefault(c => c.Id == id);
+            }
+        }
+
+        public Category CreateCategory(string name, string parentId)
+        {
+            lock (_lock)
+            {
+                if (_store == null) _store = new TemplateStore();
+                var category = new Category
+                {
+                    Id = Guid.NewGuid().ToString(),
+                    Name = name,
+                    ParentId = parentId,
+                    SortOrder = 0 // Default to top or bottom? Let's say 0.
+                };
+                _store.Categories.Add(category);
+                SaveTemplates();
+                return category;
+            }
+        }
+
+        public bool UpdateCategory(Category category)
+        {
+            lock (_lock)
+            {
+                var existing = _store?.Categories.FirstOrDefault(c => c.Id == category.Id);
+                if (existing == null) return false;
+
+                existing.Name = category.Name;
+                existing.SortOrder = category.SortOrder;
+                // ParentId usually changed via Move
+                
+                return SaveTemplates();
+            }
+        }
+
+        public bool DeleteCategory(string id)
+        {
+            lock (_lock)
+            {
+                if (_store == null) return false;
+                
+                // Recursive check? For now, simple delete. 
+                // UI should handle warnings about children.
+                // But we should probably delete children too to avoid orphans?
+                // Or just delete the node and let orphans be orphans (bad idea).
+                // Let's delete the node.
+                
+                var toDelete = _store.Categories.FirstOrDefault(c => c.Id == id);
+                if (toDelete == null) return false;
+
+                _store.Categories.Remove(toDelete);
+                
+                // Also remove templates associated? 
+                // Maybe we should keep them or nullify their category?
+                // Let's remove templates for now to keep it clean.
+                _store.Templates.RemoveAll(t => t.CategoryId == id);
+
+                // Remove children recursively? 
+                // A robust implementation would find all descendants.
+                var children = _store.Categories.Where(c => c.ParentId == id).ToList();
+                foreach(var child in children)
+                {
+                    DeleteCategory(child.Id); // Recursive delete
+                }
+
+                return SaveTemplates();
+            }
+        }
+
+        public bool MoveCategory(string id, string newParentId)
+        {
+            lock (_lock)
+            {
+                var cat = _store?.Categories.FirstOrDefault(c => c.Id == id);
+                if (cat == null) return false;
+                
+                // Prevent circular reference
+                if (id == newParentId) return false;
+                
+                // TODO: Check if newParentId is a child of id (prevent making a node its own descendant)
+                if (IsDescendant(id, newParentId)) return false;
+
+                cat.ParentId = newParentId;
+                return SaveTemplates();
+            }
+        }
+
+        private bool IsDescendant(string potentialAncestorId, string potentialDescendantId)
+        {
+            if (string.IsNullOrEmpty(potentialDescendantId)) return false;
+            var current = GetCategory(potentialDescendantId);
+            while (current != null)
+            {
+                if (current.ParentId == potentialAncestorId) return true;
+                if (string.IsNullOrEmpty(current.ParentId)) break;
+                current = GetCategory(current.ParentId);
+            }
+            return false;
+        }
+
+        #endregion
+
+        #region Template Operations
+
+        public List<WorkTemplate> GetTemplatesByCategory(string categoryId)
+        {
+            lock (_lock)
+            {
+                return _store?.Templates.Where(t => t.CategoryId == categoryId).ToList() ?? new List<WorkTemplate>();
+            }
+        }
+
+        public WorkTemplate GetTemplate(string id)
+        {
+            lock (_lock)
+            {
+                return _store?.Templates.FirstOrDefault(t => t.Id == id);
+            }
+        }
+
+        public WorkTemplate CreateTemplate(WorkTemplate template)
+        {
+            lock (_lock)
+            {
+                if (_store == null) _store = new TemplateStore();
+                if (string.IsNullOrEmpty(template.Id)) template.Id = Guid.NewGuid().ToString();
+                
+                _store.Templates.Add(template);
+                SaveTemplates();
+                return template;
+            }
+        }
+
+        public bool UpdateTemplate(WorkTemplate template)
+        {
+            lock (_lock)
+            {
+                if (_store == null) return false;
+                var index = _store.Templates.FindIndex(t => t.Id == template.Id);
+                if (index < 0) return false;
+
+                _store.Templates[index] = template;
+                return SaveTemplates();
+            }
+        }
+
+        public bool DeleteTemplate(string id)
+        {
+            lock (_lock)
+            {
+                if (_store == null) return false;
+                var count = _store.Templates.RemoveAll(t => t.Id == id);
+                return count > 0 && SaveTemplates();
+            }
+        }
+
+        #endregion
+
+        #region Rendering
+
+        public string Render(string content, Dictionary<string, object> fieldValues, WorkLogItem item)
+        {
+            var result = content ?? string.Empty;
             if (fieldValues != null)
             {
-                // 支持 {字段} 与 {字段:格式}（主要用于日期时间）
+                // 支持 {字段} 与 {字段:格式}
                 result = Regex.Replace(result, "\\{([^:{}]+)(?::([^{}]+))?\\}", match =>
                 {
                     var name = match.Groups[1].Value;
@@ -59,135 +268,23 @@ namespace WorkLogApp.Services.Implementations
 
                     if (format != null)
                     {
-                        // 日期格式化优先
                         if (value is DateTime dt)
                             return dt.ToString(format);
-                        // 尝试解析字符串为日期
                         if (value is string s && DateTime.TryParse(s, out var parsed))
                             return parsed.ToString(format);
-                        // 其他类型按 ToString 输出
                         return Convert.ToString(value);
                     }
                     return Convert.ToString(value);
                 });
             }
-            // 系统字段占位符示例
+            
+            // System fields
             result = result.Replace("{ItemTitle}", item?.ItemTitle ?? string.Empty);
-            var catPath = fieldValues != null && fieldValues.TryGetValue("CategoryPath", out var cp)
-                ? Convert.ToString(cp) ?? string.Empty
-                : string.Empty;
-            result = result.Replace("{CategoryPath}", catPath);
+            // result = result.Replace("{CategoryPath}", ...); // Need to reconstruct if needed
+
             return result;
         }
 
-        public CategoryTemplate GetCategoryTemplate(string categoryName)
-        {
-            if (_templateRoot == null || _templateRoot.Templates == null) return null;
-            if (_templateRoot.Templates.TryGetValue(categoryName, out var cat))
-            {
-                return cat?.CategoryTemplate;
-            }
-            return null;
-        }
-
-        public CategoryTemplate GetMergedCategoryTemplate(string categoryName)
-        {
-            if (_templateRoot == null || _templateRoot.Templates == null) return null;
-            if (string.IsNullOrWhiteSpace(categoryName)) return null;
-
-            var parts = categoryName.Split(new[] { '-' }, StringSplitOptions.RemoveEmptyEntries);
-            var keys = new List<string>();
-            for (int i = 0; i < parts.Length; i++)
-            {
-                keys.Add(string.Join("-", parts, 0, i + 1));
-            }
-
-            CategoryTemplate merged = null;
-            foreach (var key in keys)
-            {
-                if (_templateRoot.Templates.TryGetValue(key, out var cat) && cat?.CategoryTemplate != null)
-                {
-                    var tpl = cat.CategoryTemplate;
-                    if (merged == null)
-                    {
-                        merged = new CategoryTemplate
-                        {
-                            FormatTemplate = tpl.FormatTemplate ?? string.Empty,
-                            Placeholders = tpl.Placeholders != null ? new Dictionary<string, string>(tpl.Placeholders, StringComparer.OrdinalIgnoreCase) : new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase),
-                            Options = tpl.Options != null ? CloneOptions(tpl.Options) : new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase)
-                        };
-                    }
-                    else
-                    {
-                        var fmt = tpl.FormatTemplate;
-                        if (!string.IsNullOrWhiteSpace(fmt))
-                        {
-                            if (string.IsNullOrEmpty(merged.FormatTemplate)) merged.FormatTemplate = fmt;
-                            else merged.FormatTemplate = merged.FormatTemplate + Environment.NewLine + Environment.NewLine + fmt;
-                        }
-
-                        if (tpl.Placeholders != null)
-                        {
-                            foreach (var kv in tpl.Placeholders)
-                            {
-                                merged.Placeholders[kv.Key] = kv.Value;
-                            }
-                        }
-
-                        if (tpl.Options != null)
-                        {
-                            foreach (var kv in tpl.Options)
-                            {
-                                if (!merged.Options.TryGetValue(kv.Key, out var list))
-                                {
-                                    merged.Options[kv.Key] = new List<string>(kv.Value ?? new List<string>());
-                                }
-                                else
-                                {
-                                    var set = new HashSet<string>(list);
-                                    foreach (var opt in kv.Value ?? new List<string>())
-                                    {
-                                        if (set.Add(opt)) list.Add(opt);
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            return merged;
-        }
-
-        private static Dictionary<string, List<string>> CloneOptions(Dictionary<string, List<string>> src)
-        {
-            var dict = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
-            foreach (var kv in src)
-            {
-                dict[kv.Key] = kv.Value != null ? new List<string>(kv.Value) : new List<string>();
-            }
-            return dict;
-        }
-
-        public IEnumerable<string> GetCategoryNames()
-        {
-            if (_templateRoot?.Templates == null) yield break;
-            foreach (var key in _templateRoot.Templates.Keys)
-                yield return key;
-        }
-
-        public bool AddOrUpdateCategoryTemplate(string categoryName, CategoryTemplate template)
-        {
-            if (_templateRoot == null) _templateRoot = new TemplateRoot { Templates = new Dictionary<string, TemplateCategory>() };
-            if (_templateRoot.Templates == null) _templateRoot.Templates = new Dictionary<string, TemplateCategory>();
-            _templateRoot.Templates[categoryName] = new TemplateCategory { CategoryTemplate = template };
-            return true;
-        }
-
-        public bool RemoveCategory(string categoryName)
-        {
-            if (_templateRoot?.Templates == null) return false;
-            return _templateRoot.Templates.Remove(categoryName);
-        }
+        #endregion
     }
 }

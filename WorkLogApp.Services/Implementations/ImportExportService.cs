@@ -88,24 +88,22 @@ namespace WorkLogApp.Services.Implementations
         {
             var sheet = wb.CreateSheet(SheetName);
 
-            // 准备模板名称映射：CategoryId(稳定哈希) → 模板名称
-            var idToName = new Dictionary<int, string>();
+            // 准备模板名称映射：CategoryId(GUID) → 模板名称
+            var idToName = new Dictionary<string, string>();
             try
             {
                 var baseDir = AppDomain.CurrentDomain.BaseDirectory;
-                var templatesPath = Path.Combine(baseDir, "Templates", "templates.json");
+                var templatesPath = Path.Combine(baseDir, "Templates", "data.json");
                 var tplSvc = new TemplateService();
                 if (tplSvc.LoadTemplates(templatesPath))
                 {
-                    foreach (var name in tplSvc.GetCategoryNames())
+                    foreach (var cat in tplSvc.GetAllCategories())
                     {
-                        var id = StableIdFromName(name);
-                        // 后写覆盖前写：允许后续同哈希的更精确名称覆盖（理论上不应发生冲突）
-                        idToName[id] = name;
+                        idToName[cat.Id] = cat.Name;
                     }
                 }
             }
-            catch { /* 忽略模板加载失败，回退为写数值ID */ }
+            catch { /* 忽略模板加载失败 */ }
 
             // 写入中文表头
             var header = sheet.CreateRow(0);
@@ -245,9 +243,9 @@ namespace WorkLogApp.Services.Implementations
                     row.GetCell(1).SetCellValue(item.ItemTitle ?? string.Empty);
                     row.GetCell(2).SetCellValue(item.ItemContent ?? string.Empty);
                     // 分类ID列写模板名称；若无法解析则回退数值ID
-                    var catName = idToName.TryGetValue(item.CategoryId, out var nm)
+                    var catName = idToName.TryGetValue(item.CategoryId ?? "", out var nm)
                         ? nm
-                        : (!string.IsNullOrWhiteSpace(item.Tags) && idToName.ContainsValue(item.Tags) ? item.Tags : item.CategoryId.ToString());
+                        : (!string.IsNullOrWhiteSpace(item.Tags) && idToName.ContainsValue(item.Tags) ? item.Tags : item.CategoryId);
                     row.GetCell(3).SetCellValue(catName);
                     row.GetCell(4).SetCellValue(ToChineseStatus(item.Status));
                     row.GetCell(5).SetCellValue(item.StartTime.HasValue ? item.StartTime.Value.ToString("yyyy-MM-dd HH:mm") : string.Empty);
@@ -371,16 +369,7 @@ namespace WorkLogApp.Services.Implementations
                     item.ItemContent = GetString(row, indexes["ItemContent"]);
                     // 分类ID：支持文字名称（模板名）或数字ID，若为名称则生成稳定数值ID
                     {
-                        var catText = GetString(row, indexes["CategoryId"]);
-                        int cid;
-                        if (int.TryParse(catText, out cid))
-                        {
-                            item.CategoryId = cid;
-                        }
-                        else
-                        {
-                            item.CategoryId = StableIdFromName(catText);
-                        }
+                        item.CategoryId = GetString(row, indexes["CategoryId"]);
                     }
                     if (indexes.TryGetValue("Status", out var idxStatus))
                     {
@@ -464,16 +453,7 @@ namespace WorkLogApp.Services.Implementations
                     item.ItemContent = GetString(row, indexes["ItemContent"]);
                     // 分类ID：支持文字名称（模板名）或数字ID，若为名称则生成稳定数值ID
                     {
-                        var catText = GetString(row, indexes["CategoryId"]);
-                        int cid;
-                        if (int.TryParse(catText, out cid))
-                        {
-                            item.CategoryId = cid;
-                        }
-                        else
-                        {
-                            item.CategoryId = StableIdFromName(catText);
-                        }
+                        item.CategoryId = GetString(row, indexes["CategoryId"]);
                     }
                     if (indexes.TryGetValue("Status", out var idxStatus2))
                     {
@@ -578,24 +558,6 @@ namespace WorkLogApp.Services.Implementations
                 }
             }
             return dict;
-        }
-
-        // 以模板名称生成稳定的正整数 ID（FNV-1a 32-bit）
-        private static int StableIdFromName(string name)
-        {
-            if (string.IsNullOrWhiteSpace(name)) return 0;
-            unchecked
-            {
-                const uint fnvOffset = 2166136261;
-                const uint fnvPrime = 16777619;
-                uint hash = fnvOffset;
-                foreach (var ch in name)
-                {
-                    hash ^= ch;
-                    hash *= fnvPrime;
-                }
-                return (int)(hash & 0x7FFFFFFF);
-            }
         }
     }
 }

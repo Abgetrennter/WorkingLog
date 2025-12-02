@@ -5,13 +5,26 @@ namespace WorkLogApp.Services.Interfaces
 {
     public interface ITemplateService
     {
+        // Initialization
         bool LoadTemplates(string templatesJsonPath);
         bool SaveTemplates();
-        string Render(string formatTemplate, Dictionary<string, object> fieldValues, WorkLogItem item);
-        CategoryTemplate GetCategoryTemplate(string categoryName);
-        CategoryTemplate GetMergedCategoryTemplate(string categoryName);
-        IEnumerable<string> GetCategoryNames();
-        bool AddOrUpdateCategoryTemplate(string categoryName, CategoryTemplate template);
-        bool RemoveCategory(string categoryName);
+
+        // Category Operations
+        List<Category> GetAllCategories();
+        Category GetCategory(string id);
+        Category CreateCategory(string name, string parentId);
+        bool UpdateCategory(Category category);
+        bool DeleteCategory(string id);
+        bool MoveCategory(string id, string newParentId);
+
+        // Template Operations
+        List<WorkTemplate> GetTemplatesByCategory(string categoryId);
+        WorkTemplate GetTemplate(string id);
+        WorkTemplate CreateTemplate(WorkTemplate template);
+        bool UpdateTemplate(WorkTemplate template);
+        bool DeleteTemplate(string id);
+
+        // Rendering
+        string Render(string content, Dictionary<string, object> values, WorkLogItem item);
     }
 }

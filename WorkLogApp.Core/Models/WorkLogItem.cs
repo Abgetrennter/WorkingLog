@@ -8,7 +8,7 @@ namespace WorkLogApp.Core.Models
         public DateTime LogDate { get; set; }
         public string ItemTitle { get; set; }
         public string ItemContent { get; set; }
-        public int CategoryId { get; set; }
+        public string CategoryId { get; set; }
         public StatusEnum Status { get; set; }
         public DateTime? StartTime { get; set; }
         public DateTime? EndTime { get; set; }

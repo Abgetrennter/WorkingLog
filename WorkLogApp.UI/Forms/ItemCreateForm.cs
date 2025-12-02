@@ -1,6 +1,8 @@
 using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
+using System.Linq;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
 using WorkLogApp.Core.Enums;
@@ -15,7 +17,7 @@ namespace WorkLogApp.UI.Forms
     public partial class ItemCreateForm : Form
     {
         private readonly ITemplateService _templateService;
-        
+        private WorkTemplate _currentTemplate;
         
         // 设计期支持：提供无参构造，便于设计器实例化
         public ItemCreateForm() : this(new TemplateService())
@@ -27,71 +29,72 @@ namespace WorkLogApp.UI.Forms
             _templateService = templateService;
             InitializeComponent();
             IconHelper.ApplyIcon(this);
-
+            
             // 应用统一样式（字体、缩放、抗锯齿）
             UIStyleManager.ApplyVisualEnhancements(this);
             UIStyleManager.ApplyLightTheme(this);
 
-            // 设计期：填充示例数据与动态表单，避免依赖外部模板文件
-            if (UIStyleManager.IsDesignMode)
-            {
-                try
-                {
-                    _titleBox.Text = "示例标题";
-                    _categoryCombo.Items.Clear();
-                    _categoryCombo.Items.AddRange(new object[] { "通用", "任务", "会议" });
-                    if (_categoryCombo.Items.Count > 0) _categoryCombo.SelectedIndex = 0;
-
-                    var placeholders = new System.Collections.Generic.Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-                    {
-                        ["标题"] = "text",
-                        ["标签"] = "checkbox",
-                        ["日期"] = "datetime",
-                        ["内容"] = "textarea"
-                    };
-                    var options = new System.Collections.Generic.Dictionary<string, System.Collections.Generic.List<string>>(StringComparer.OrdinalIgnoreCase)
-                    {
-                        ["标签"] = new System.Collections.Generic.List<string> { "研发", "测试", "部署" }
-                    };
-                    _formPanel.BuildForm(placeholders, options);
-                }
-                catch { }
-                return;
-            }
+            if (UIStyleManager.IsDesignMode) return;
 
             // 运行时：将模板服务注入到分类选择控件，并响应选择变化
             _categoryCombo.TemplateService = _templateService;
-            _categoryCombo.SelectedIndexChanged += (s, e) => BuildFormForCategory();
+            _categoryCombo.OnlySelectLeaf = true; // Only allow selecting leaf nodes (which map to templates)
+            
+            _categoryCombo.SelectedCategoryChanged += (s, cat) => LoadTemplateForCategory(cat);
 
             // 初始化状态下拉
             _statusCombo.Items.Clear();
             _statusCombo.Items.AddRange(new object[] { "待办", "进行中", "已完成", "阻塞", "已取消" });
             _statusCombo.SelectedIndex = 0;
-
-            // 初次构建表单（基于模板服务）
-            BuildFormForCategory();
+        }
+        
+        private void LoadTemplateForCategory(Category category)
+        {
+            _currentTemplate = null;
+            _formPanel.BuildForm(new Dictionary<string, string>()); // Clear form
+            
+            if (category == null) return;
+            
+            var templates = _templateService.GetTemplatesByCategory(category.Id);
+            var tpl = templates.FirstOrDefault();
+            
+            if (tpl != null)
+            {
+                _currentTemplate = tpl;
+                BuildFormForTemplate(tpl);
+                
+                // Auto-fill tags
+                if (tpl.Tags != null && tpl.Tags.Any())
+                {
+                    var existingTags = _tagsBox.Text.Split(new[] { ',', '，', ' ' }, StringSplitOptions.RemoveEmptyEntries).ToList();
+                    foreach(var tag in tpl.Tags)
+                    {
+                        if (!existingTags.Contains(tag)) existingTags.Add(tag);
+                    }
+                    _tagsBox.Text = string.Join(", ", existingTags);
+                }
+            }
         }
 
-        private void BuildFormForCategory()
+        private void BuildFormForTemplate(WorkTemplate tpl)
         {
-            var categoryName = _categoryCombo.SelectedCategoryName;
-            var catTpl = _templateService.GetMergedCategoryTemplate(categoryName);
-            if (catTpl == null)
-            {
-                _formPanel.BuildForm(new System.Collections.Generic.Dictionary<string, string>());
-                return;
-            }
-            _formPanel.BuildForm(catTpl.Placeholders, catTpl.Options);
+            if (tpl == null) return;
+            _formPanel.BuildForm(tpl.Placeholders, tpl.Options);
         }
 
         private void OnGenerateAndSave(object sender, EventArgs e)
         {
-            var categoryName = _categoryCombo.SelectedCategoryName;
-            var catTpl = _templateService.GetMergedCategoryTemplate(categoryName);
-            if (catTpl == null)
+            // Validate
+             if (_categoryCombo.SelectedCategory == null)
             {
-                MessageBox.Show(this, "未找到分类模板。", "提示", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show(this, "请选择分类。", "提示", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
+            }
+            
+            if (_currentTemplate == null)
+            {
+                 // If no template selected (or auto-loaded), warn user
+                 if (MessageBox.Show("当前分类没有关联模板，确定要继续吗？", "提示", MessageBoxButtons.YesNo) == DialogResult.No) return;
             }
 
             if (string.IsNullOrWhiteSpace(_titleBox.Text))
@@ -101,8 +104,13 @@ namespace WorkLogApp.UI.Forms
             }
 
             var values = _formPanel.GetFieldValues();
-            values["CategoryPath"] = categoryName ?? string.Empty;
-
+            
+            // Build category path string for display/log if needed
+            // We might want to store full path name or just ID.
+            // WorkLogItem has CategoryId (int). New system uses GUID string.
+            // This is a breaking change for WorkLogItem.CategoryId if it expects int.
+            // Let's check WorkLogItem definition.
+            
             var status = StatusEnum.Todo;
             switch (_statusCombo.SelectedItem?.ToString())
             {
@@ -120,16 +128,21 @@ namespace WorkLogApp.UI.Forms
                 Tags = _tagsBox.Text?.Trim(),
                 StartTime = _startPicker.Checked ? (DateTime?)_startPicker.Value : null,
                 EndTime = _endPicker.Checked ? (DateTime?)_endPicker.Value : null,
-                CategoryId = StableIdFromName(categoryName)
+                CategoryId = _categoryCombo.SelectedCategory.Id
             };
 
-            // 如果分类模板名不为空，但用户未填写标签，可选择自动补充分类名到标签（可选）
-            if (string.IsNullOrWhiteSpace(item.Tags) && !string.IsNullOrWhiteSpace(categoryName))
+            // Generate Content
+            string content = "";
+            if (_currentTemplate != null)
             {
-                item.Tags = categoryName;
+                content = _templateService.Render(_currentTemplate.Content, values, item);
             }
-            var content = _templateService.Render(catTpl.FormatTemplate, values, item);
-            // 将初始内容同步到模型
+            else
+            {
+                // Fallback content
+                content = item.ItemTitle;
+            }
+            
             item.ItemContent = content;
 
             try
@@ -154,7 +167,6 @@ namespace WorkLogApp.UI.Forms
                 var filePath = Path.Combine(dataDir, fileName);
                 File.WriteAllText(filePath, item.ItemContent);
 
-                // MessageBox.Show(this, "保存成功", "提示", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 this.DialogResult = DialogResult.OK;
                 this.Close();
             }
@@ -179,24 +191,6 @@ namespace WorkLogApp.UI.Forms
         private void lblCategory_Click(object sender, EventArgs e)
         {
 
-        }
-
-        // 以模板名称生成稳定的正整数 ID（FNV-1a 32-bit）
-        private static int StableIdFromName(string name)
-        {
-            if (string.IsNullOrWhiteSpace(name)) return 0;
-            unchecked
-            {
-                const uint fnvOffset = 2166136261;
-                const uint fnvPrime = 16777619;
-                uint hash = fnvOffset;
-                foreach (var ch in name)
-                {
-                    hash ^= ch;
-                    hash *= fnvPrime;
-                }
-                return (int)(hash & 0x7FFFFFFF);
-            }
         }
     }
 }
