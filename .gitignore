@@ -18,3 +18,4 @@ Data/
 *.jpg
 WorkLogApp.Services/obj/
 dist/*
+tools/node_modules/*

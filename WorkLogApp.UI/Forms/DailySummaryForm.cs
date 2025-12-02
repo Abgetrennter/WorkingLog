@@ -21,6 +21,7 @@ namespace WorkLogApp.UI.Forms
             StartPosition = FormStartPosition.CenterParent;
             Width = 700;
             Height = 500;
+            IconHelper.ApplyIcon(this);
 
             _textBox = new TextBox
             {

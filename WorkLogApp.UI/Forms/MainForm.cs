@@ -27,6 +27,7 @@ namespace WorkLogApp.UI.Forms
         {
             _templateService = templateService;
             InitializeComponent();
+            IconHelper.ApplyIcon(this);
 
             UIStyleManager.ApplyVisualEnhancements(this);
             UIStyleManager.ApplyLightTheme(this);
@@ -41,6 +42,7 @@ namespace WorkLogApp.UI.Forms
                 _listView.DragOver += OnListViewDragOver;
                 _listView.DragDrop += OnListViewDragDrop;
 
+                /*
                 var cms = new ContextMenuStrip();
                 var miMilestone = new ToolStripMenuItem("追加里程碑...");
                 var miDone = new ToolStripMenuItem("标记为已完成");
@@ -49,6 +51,7 @@ namespace WorkLogApp.UI.Forms
                 cms.Items.Add(miMilestone);
                 cms.Items.Add(miDone);
                 _listView.ContextMenuStrip = cms;
+                */
 
                 _monthPicker.Format = DateTimePickerFormat.Custom;
                 _monthPicker.CustomFormat = "yyyy-MM";

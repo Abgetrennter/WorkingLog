@@ -10,6 +10,7 @@
     <AssemblyName>WorkLogApp.UI</AssemblyName>
     <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
+    <ApplicationIcon>app.ico</ApplicationIcon>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
     <DebugSymbols>true</DebugSymbols>
@@ -78,9 +79,11 @@
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="UI\UIStyleManager.cs" />
+    <Compile Include="UI\IconHelper.cs" />
   </ItemGroup>
   <!-- 为避免在 dotnet build 下触发 x86 GenerateResource 宿主问题，暂不编译 resx。若需使用 VS 设计器自动资源，请在本地 VS 环境启用。 -->
   <ItemGroup>
+    <EmbeddedResource Include="app.ico" />
     <None Include="App.config" />
     <None Include="..\Configs\dev.config.json">
       <Link>Configs\dev.config.json</Link>
