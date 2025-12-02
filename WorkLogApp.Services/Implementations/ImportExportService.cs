@@ -312,80 +312,102 @@ namespace WorkLogApp.Services.Implementations
             var filePath = Path.Combine(inputDirectory, fileName);
             if (!File.Exists(filePath)) return list;
 
-            using (var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+            try
             {
-                var wb = new XSSFWorkbook(fs);
-                var sheet = wb.GetSheet(SheetName) ?? (wb.NumberOfSheets > 0 ? wb.GetSheetAt(0) : null);
-                if (sheet == null) return list;
-
-                var indexes = GetHeaderIndexes(sheet);
-                DateTime currentDate = DateTime.MinValue;
-                var dayMap = new Dictionary<DateTime, WorkLog>();
-
-                for (int r = 1; r <= sheet.LastRowNum; r++)
+                using (var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
                 {
-                    var row = sheet.GetRow(r);
-                    if (row == null) continue;
-                    var firstCellText = GetString(row, 0);
-                    if (!string.IsNullOrWhiteSpace(firstCellText) && firstCellText.StartsWith("====="))
+                    // Use WorkbookFactory to support both xls and xlsx
+                    IWorkbook wb;
+                    try
                     {
-                        var m = Regex.Match(firstCellText, "=+\\s*(\\d{4}年\\d{2}月\\d{2}日)(?:\\s+星期[一二三四五六日天])?\\s*=+");
-                        if (m.Success && DateTime.TryParseExact(m.Groups[1].Value, "yyyy年MM月dd日", CultureInfo.InvariantCulture, DateTimeStyles.None, out var dt))
+                        wb = WorkbookFactory.Create(fs);
+                    }
+                    catch (Exception)
+                    {
+                        // Fallback or retry? If it fails here, maybe not an Excel file.
+                        return list;
+                    }
+
+                    var sheet = wb.GetSheet(SheetName) ?? (wb.NumberOfSheets > 0 ? wb.GetSheetAt(0) : null);
+                    if (sheet == null) return list;
+
+                    var indexes = GetHeaderIndexes(sheet);
+                    DateTime currentDate = DateTime.MinValue;
+                    var dayMap = new Dictionary<DateTime, WorkLog>();
+
+                    for (int r = 1; r <= sheet.LastRowNum; r++)
+                    {
+                        try
                         {
-                            currentDate = dt.Date;
-                            if (!dayMap.ContainsKey(currentDate))
+                            var row = sheet.GetRow(r);
+                            if (row == null) continue;
+                            var firstCellText = GetString(row, 0);
+                            if (!string.IsNullOrWhiteSpace(firstCellText) && firstCellText.StartsWith("====="))
                             {
-                                dayMap[currentDate] = new WorkLog { LogDate = currentDate, Items = new List<WorkLogItem>() };
+                                var m = Regex.Match(firstCellText, "=+\\s*(\\d{4}年\\d{2}月\\d{2}日)(?:\\s+星期[一二三四五六日天])?\\s*=+");
+                                if (m.Success && DateTime.TryParseExact(m.Groups[1].Value, "yyyy年MM月dd日", CultureInfo.InvariantCulture, DateTimeStyles.None, out var dt))
+                                {
+                                    currentDate = dt.Date;
+                                    if (!dayMap.ContainsKey(currentDate))
+                                    {
+                                        dayMap[currentDate] = new WorkLog { LogDate = currentDate, Items = new List<WorkLogItem>() };
+                                    }
+                                }
+                                continue;
                             }
-                        }
-                        continue;
-                    }
 
-                    // 识别总结行（标题=当日总结）
-                    var title = GetString(row, indexes["ItemTitle"]);
-                    if (string.Equals(title, "当日总结", StringComparison.OrdinalIgnoreCase))
-                    {
-                        var dt = currentDate != DateTime.MinValue
-                            ? currentDate
-                            : ParseNullableDateTime(GetString(row, indexes["LogDate"]))?.Date ?? monthStart;
-                        if (!dayMap.ContainsKey(dt))
+                            // 识别总结行（标题=当日总结）
+                            var title = GetValue(row, indexes, "ItemTitle");
+                            if (string.Equals(title, "当日总结", StringComparison.OrdinalIgnoreCase))
+                            {
+                                var dt = currentDate != DateTime.MinValue
+                                    ? currentDate
+                                    : ParseNullableDateTime(GetValue(row, indexes, "LogDate"))?.Date ?? monthStart;
+                                if (!dayMap.ContainsKey(dt))
+                                {
+                                    dayMap[dt] = new WorkLog { LogDate = dt, Items = new List<WorkLogItem>() };
+                                }
+                                dayMap[dt].DailySummary = GetValue(row, indexes, "ItemContent");
+                                continue;
+                            }
+
+                            var dtItem = currentDate != DateTime.MinValue
+                                ? currentDate
+                                : ParseNullableDateTime(GetValue(row, indexes, "LogDate"))?.Date ?? monthStart;
+                            if (!dayMap.ContainsKey(dtItem))
+                            {
+                                dayMap[dtItem] = new WorkLog { LogDate = dtItem, Items = new List<WorkLogItem>() };
+                            }
+                            var item = new WorkLogItem();
+                            item.LogDate = dtItem;
+                            item.ItemTitle = GetValue(row, indexes, "ItemTitle");
+                            item.ItemContent = GetValue(row, indexes, "ItemContent");
+                            // 分类ID：支持文字名称（模板名）或数字ID，若为名称则生成稳定数值ID
+                            {
+                                item.CategoryId = GetValue(row, indexes, "CategoryId");
+                            }
+                            
+                            var statusStr = GetValue(row, indexes, "Status");
+                            item.Status = !string.IsNullOrEmpty(statusStr) ? ParseStatus(statusStr) : StatusEnum.Todo;
+
+                            item.StartTime = ParseNullableDateTime(GetValue(row, indexes, "StartTime"));
+                            item.EndTime = ParseNullableDateTime(GetValue(row, indexes, "EndTime"));
+                            item.Tags = GetValue(row, indexes, "Tags");
+                            item.SortOrder = ParseNullableInt(GetValue(row, indexes, "SortOrder"));
+                            dayMap[dtItem].Items.Add(item);
+                        }
+                        catch (Exception)
                         {
-                            dayMap[dt] = new WorkLog { LogDate = dt, Items = new List<WorkLogItem>() };
+                            // Skip bad row
+                            continue;
                         }
-                        dayMap[dt].DailySummary = GetString(row, indexes["ItemContent"]);
-                        continue;
                     }
-
-                    var dtItem = currentDate != DateTime.MinValue
-                        ? currentDate
-                        : ParseNullableDateTime(GetString(row, indexes["LogDate"]))?.Date ?? monthStart;
-                    if (!dayMap.ContainsKey(dtItem))
-                    {
-                        dayMap[dtItem] = new WorkLog { LogDate = dtItem, Items = new List<WorkLogItem>() };
-                    }
-                    var item = new WorkLogItem();
-                    item.LogDate = dtItem;
-                    item.ItemTitle = GetString(row, indexes["ItemTitle"]);
-                    item.ItemContent = GetString(row, indexes["ItemContent"]);
-                    // 分类ID：支持文字名称（模板名）或数字ID，若为名称则生成稳定数值ID
-                    {
-                        item.CategoryId = GetString(row, indexes["CategoryId"]);
-                    }
-                    if (indexes.TryGetValue("Status", out var idxStatus))
-                    {
-                        item.Status = ParseStatus(GetString(row, idxStatus));
-                    }
-                    else
-                    {
-                        item.Status = StatusEnum.Todo;
-                    }
-                    item.StartTime = ParseNullableDateTime(GetString(row, indexes["StartTime"]));
-                    item.EndTime = ParseNullableDateTime(GetString(row, indexes["EndTime"]));
-                    item.Tags = GetString(row, indexes["Tags"]);
-                    item.SortOrder = ParseNullableInt(GetString(row, indexes["SortOrder"]));
-                    dayMap[dtItem].Items.Add(item);
+                    list = dayMap.Values.OrderBy(d => d.LogDate.Date).ToList();
                 }
-                list = dayMap.Values.OrderBy(d => d.LogDate.Date).ToList();
+            }
+            catch (Exception)
+            {
+                // File access error
             }
             return list;
         }
@@ -396,91 +418,161 @@ namespace WorkLogApp.Services.Implementations
             if (string.IsNullOrWhiteSpace(filePath)) return list;
             if (!File.Exists(filePath)) return list;
 
-            using (var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+            try
             {
-                var wb = new XSSFWorkbook(fs);
-                var sheet = wb.GetSheet(SheetName) ?? (wb.NumberOfSheets > 0 ? wb.GetSheetAt(0) : null);
-                if (sheet == null) return list;
-
-                var indexes = GetHeaderIndexes(sheet);
-                DateTime currentDate = DateTime.MinValue;
-                var dayMap = new Dictionary<DateTime, WorkLog>();
-
-                for (int r = 1; r <= sheet.LastRowNum; r++)
+                using (var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
                 {
-                    var row = sheet.GetRow(r);
-                    if (row == null) continue;
-                    var firstCellText = GetString(row, 0);
-                    if (!string.IsNullOrWhiteSpace(firstCellText) && firstCellText.StartsWith("====="))
+                    IWorkbook wb;
+                    try
                     {
-                        var m = Regex.Match(firstCellText, "=+\\s*(\\d{4}年\\d{2}月\\d{2}日)(?:\\s+星期[一二三四五六日天])?\\s*=+");
-                        if (m.Success && DateTime.TryParseExact(m.Groups[1].Value, "yyyy年MM月dd日", CultureInfo.InvariantCulture, DateTimeStyles.None, out var dt))
+                        wb = WorkbookFactory.Create(fs);
+                    }
+                    catch
+                    {
+                        return list;
+                    }
+
+                    var sheet = wb.GetSheet(SheetName) ?? (wb.NumberOfSheets > 0 ? wb.GetSheetAt(0) : null);
+                    if (sheet == null) return list;
+
+                    var indexes = GetHeaderIndexes(sheet);
+                    DateTime currentDate = DateTime.MinValue;
+                    var dayMap = new Dictionary<DateTime, WorkLog>();
+
+                    for (int r = 1; r <= sheet.LastRowNum; r++)
+                    {
+                        try
                         {
-                            currentDate = dt.Date;
-                            if (!dayMap.ContainsKey(currentDate))
+                            var row = sheet.GetRow(r);
+                            if (row == null) continue;
+                            var firstCellText = GetString(row, 0);
+                            if (!string.IsNullOrWhiteSpace(firstCellText) && firstCellText.StartsWith("====="))
                             {
-                                dayMap[currentDate] = new WorkLog { LogDate = currentDate, Items = new List<WorkLogItem>() };
+                                var m = Regex.Match(firstCellText, "=+\\s*(\\d{4}年\\d{2}月\\d{2}日)(?:\\s+星期[一二三四五六日天])?\\s*=+");
+                                if (m.Success && DateTime.TryParseExact(m.Groups[1].Value, "yyyy年MM月dd日", CultureInfo.InvariantCulture, DateTimeStyles.None, out var dt))
+                                {
+                                    currentDate = dt.Date;
+                                    if (!dayMap.ContainsKey(currentDate))
+                                    {
+                                        dayMap[currentDate] = new WorkLog { LogDate = currentDate, Items = new List<WorkLogItem>() };
+                                    }
+                                }
+                                continue;
                             }
-                        }
-                        continue;
-                    }
 
-                    // 识别总结行（标题=当日总结）
-                    var title = GetString(row, indexes["ItemTitle"]);
-                    if (string.Equals(title, "当日总结", StringComparison.OrdinalIgnoreCase))
-                    {
-                        var dt = currentDate != DateTime.MinValue
-                            ? currentDate
-                            : ParseNullableDateTime(GetString(row, indexes["LogDate"]))?.Date ?? DateTime.MinValue;
-                        if (!dayMap.ContainsKey(dt))
+                            // 识别总结行（标题=当日总结）
+                            var title = GetValue(row, indexes, "ItemTitle");
+                            if (string.Equals(title, "当日总结", StringComparison.OrdinalIgnoreCase))
+                            {
+                                var dt = currentDate != DateTime.MinValue
+                                    ? currentDate
+                                    : ParseNullableDateTime(GetValue(row, indexes, "LogDate"))?.Date ?? DateTime.MinValue;
+                                if (!dayMap.ContainsKey(dt))
+                                {
+                                    dayMap[dt] = new WorkLog { LogDate = dt, Items = new List<WorkLogItem>() };
+                                }
+                                dayMap[dt].DailySummary = GetValue(row, indexes, "ItemContent");
+                                continue;
+                            }
+
+                            var dtItem = currentDate != DateTime.MinValue
+                                ? currentDate
+                                : ParseNullableDateTime(GetValue(row, indexes, "LogDate"))?.Date ?? DateTime.MinValue;
+                            if (!dayMap.ContainsKey(dtItem))
+                            {
+                                dayMap[dtItem] = new WorkLog { LogDate = dtItem, Items = new List<WorkLogItem>() };
+                            }
+                            var item = new WorkLogItem();
+                            item.LogDate = dtItem;
+                            item.ItemTitle = GetValue(row, indexes, "ItemTitle");
+                            item.ItemContent = GetValue(row, indexes, "ItemContent");
+                            // 分类ID：支持文字名称（模板名）或数字ID，若为名称则生成稳定数值ID
+                            {
+                                item.CategoryId = GetValue(row, indexes, "CategoryId");
+                            }
+                            
+                            var statusStr = GetValue(row, indexes, "Status");
+                            item.Status = !string.IsNullOrEmpty(statusStr) ? ParseStatus(statusStr) : StatusEnum.Todo;
+
+                            item.StartTime = ParseNullableDateTime(GetValue(row, indexes, "StartTime"));
+                            item.EndTime = ParseNullableDateTime(GetValue(row, indexes, "EndTime"));
+                            item.Tags = GetValue(row, indexes, "Tags");
+                            item.SortOrder = ParseNullableInt(GetValue(row, indexes, "SortOrder"));
+                            dayMap[dtItem].Items.Add(item);
+                        }
+                        catch
                         {
-                            dayMap[dt] = new WorkLog { LogDate = dt, Items = new List<WorkLogItem>() };
+                            continue;
                         }
-                        dayMap[dt].DailySummary = GetString(row, indexes["ItemContent"]);
-                        continue;
                     }
-
-                    var dtItem = currentDate != DateTime.MinValue
-                        ? currentDate
-                        : ParseNullableDateTime(GetString(row, indexes["LogDate"]))?.Date ?? DateTime.MinValue;
-                    if (!dayMap.ContainsKey(dtItem))
-                    {
-                        dayMap[dtItem] = new WorkLog { LogDate = dtItem, Items = new List<WorkLogItem>() };
-                    }
-                    var item = new WorkLogItem();
-                    item.LogDate = dtItem;
-                    item.ItemTitle = GetString(row, indexes["ItemTitle"]);
-                    item.ItemContent = GetString(row, indexes["ItemContent"]);
-                    // 分类ID：支持文字名称（模板名）或数字ID，若为名称则生成稳定数值ID
-                    {
-                        item.CategoryId = GetString(row, indexes["CategoryId"]);
-                    }
-                    if (indexes.TryGetValue("Status", out var idxStatus2))
-                    {
-                        item.Status = ParseStatus(GetString(row, idxStatus2));
-                    }
-                    else
-                    {
-                        item.Status = StatusEnum.Todo;
-                    }
-                    item.StartTime = ParseNullableDateTime(GetString(row, indexes["StartTime"]));
-                    item.EndTime = ParseNullableDateTime(GetString(row, indexes["EndTime"]));
-                    item.Tags = GetString(row, indexes["Tags"]);
-                    item.SortOrder = ParseNullableInt(GetString(row, indexes["SortOrder"]));
-                    dayMap[dtItem].Items.Add(item);
+                    list = dayMap.Values.OrderBy(d => d.LogDate.Date).ToList();
                 }
-                list = dayMap.Values.OrderBy(d => d.LogDate.Date).ToList();
+            }
+            catch
+            {
+                // File access error
             }
             return list;
         }
 
+        private static string GetValue(IRow row, Dictionary<string, int> indexes, string key)
+        {
+            if (indexes.TryGetValue(key, out var index))
+            {
+                return GetString(row, index);
+            }
+            return string.Empty;
+        }
 
         private static string GetString(IRow row, int index)
         {
             var cell = row.GetCell(index);
             if (cell == null) return string.Empty;
-            cell.SetCellType(CellType.String);
-            return cell.StringCellValue ?? string.Empty;
+            
+            try 
+            {
+                // Handle different cell types safely
+                switch (cell.CellType)
+                {
+                    case CellType.String:
+                        return cell.StringCellValue ?? string.Empty;
+                    case CellType.Numeric:
+                        if (DateUtil.IsCellDateFormatted(cell))
+                        {
+                            return cell.DateCellValue.ToString("yyyy-MM-dd HH:mm:ss");
+                        }
+                        return cell.NumericCellValue.ToString(CultureInfo.CurrentCulture);
+                    case CellType.Boolean:
+                        return cell.BooleanCellValue.ToString();
+                    case CellType.Formula:
+                        // Try to get the calculated value
+                        try 
+                        {
+                             switch(cell.CachedFormulaResultType) 
+                             {
+                                 case CellType.String: return cell.StringCellValue;
+                                 case CellType.Numeric: return cell.NumericCellValue.ToString(CultureInfo.CurrentCulture);
+                                 case CellType.Boolean: return cell.BooleanCellValue.ToString();
+                                 default: return cell.CellFormula;
+                             }
+                        }
+                        catch 
+                        {
+                            return cell.CellFormula;
+                        }
+                    case CellType.Blank:
+                        return string.Empty;
+                    default:
+                        // Try to force string conversion as a fallback, but non-destructively if possible
+                        // Old method was: cell.SetCellType(CellType.String); return cell.StringCellValue;
+                        // We'll try ToString() first which is safer
+                        return cell.ToString();
+                }
+            }
+            catch
+            {
+                return string.Empty;
+            }
         }
 
         private static int ParseInt(string s)
