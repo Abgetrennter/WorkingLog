@@ -4,10 +4,8 @@
 *.cache
 *.xlsx
 .vs/
-WorkLogApp.Services/obj/*
 *.txt
 *.exe
-*.xlsx
 *.zip
 
 # Release前常规忽略
@@ -16,6 +14,5 @@ WorkLogApp.Services/obj/*
 Logs/
 Data/
 *.jpg
-WorkLogApp.Services/obj/
-dist/*
-tools/node_modules/*
+dist/
+tools/node_modules/
