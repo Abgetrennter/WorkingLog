@@ -19,6 +19,7 @@ namespace WorkLogApp.UI.Forms
         {
             _item = new WorkLogItem { LogDate = DateTime.Now.Date };
             InitializeComponent();
+            IconHelper.ApplyIcon(this);
             InitializeFields();
             UIStyleManager.ApplyVisualEnhancements(this);
             UIStyleManager.ApplyLightTheme(this);
@@ -29,6 +30,7 @@ namespace WorkLogApp.UI.Forms
         {
             _item = item ?? new WorkLogItem { LogDate = DateTime.Now.Date };
             InitializeComponent();
+            IconHelper.ApplyIcon(this);
 
             _titleBox.Text = _item.ItemTitle ?? string.Empty;
             _contentBox.Text = initialContent ?? _item.ItemContent ?? string.Empty;
@@ -42,7 +44,9 @@ namespace WorkLogApp.UI.Forms
 
         private void InitializeFields()
         {
-            // （已移除状态下拉）
+            // 状态
+            _statusComboBox.DataSource = Enum.GetValues(typeof(StatusEnum));
+            _statusComboBox.SelectedItem = _item.Status;
 
             // 日期
             _datePicker.Value = _item.LogDate == default(DateTime) ? DateTime.Now.Date : _item.LogDate;
@@ -98,7 +102,12 @@ namespace WorkLogApp.UI.Forms
                 _item.ItemTitle = title;
                 _item.ItemContent = _contentBox.Text ?? string.Empty;
                 _item.LogDate = _datePicker.Value.Date;
-                // 状态字段不再由表单编辑，保持现值或默认值
+                
+                if (_statusComboBox.SelectedItem is StatusEnum s)
+                {
+                    _item.Status = s;
+                }
+
                 _item.Tags = _tagsBox.Text?.Trim();
                 _item.StartTime = _startPicker.Checked ? (DateTime?)_startPicker.Value : null;
                 _item.EndTime = _endPicker.Checked ? (DateTime?)_endPicker.Value : null;

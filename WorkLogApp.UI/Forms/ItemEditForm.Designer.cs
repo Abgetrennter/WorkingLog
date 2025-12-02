@@ -11,6 +11,8 @@ namespace WorkLogApp.UI.Forms
         private TextBox _titleBox;
         private Label lblDate;
         private DateTimePicker _datePicker;
+        private Label lblStatus;
+        private ComboBox _statusComboBox;
         private Label lblTags;
         private TextBox _tagsBox;
         private Label lblStart;
@@ -41,6 +43,8 @@ namespace WorkLogApp.UI.Forms
             this._titleBox = new System.Windows.Forms.TextBox();
             this.lblDate = new System.Windows.Forms.Label();
             this._datePicker = new System.Windows.Forms.DateTimePicker();
+            this.lblStatus = new System.Windows.Forms.Label();
+            this._statusComboBox = new System.Windows.Forms.ComboBox();
             this.lblTags = new System.Windows.Forms.Label();
             this._tagsBox = new System.Windows.Forms.TextBox();
             this.lblStart = new System.Windows.Forms.Label();
@@ -95,6 +99,25 @@ namespace WorkLogApp.UI.Forms
             this._datePicker.Name = "_datePicker";
             this._datePicker.Size = new System.Drawing.Size(594, 28);
             this._datePicker.TabIndex = 3;
+            // 
+            // lblStatus
+            // 
+            this.lblStatus.AutoSize = true;
+            this.lblStatus.Location = new System.Drawing.Point(11, 92);
+            this.lblStatus.Name = "lblStatus";
+            this.lblStatus.Size = new System.Drawing.Size(62, 18);
+            this.lblStatus.TabIndex = 4;
+            this.lblStatus.Text = "状态：";
+            // 
+            // _statusComboBox
+            // 
+            this._statusComboBox.Dock = System.Windows.Forms.DockStyle.Fill;
+            this._statusComboBox.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this._statusComboBox.FormattingEnabled = true;
+            this._statusComboBox.Location = new System.Drawing.Point(295, 95);
+            this._statusComboBox.Name = "_statusComboBox";
+            this._statusComboBox.Size = new System.Drawing.Size(594, 26);
+            this._statusComboBox.TabIndex = 5;
             // 
             // 
             // lblTags
@@ -228,7 +251,8 @@ namespace WorkLogApp.UI.Forms
             this.rootLayout.Controls.Add(this._titleBox, 1, 0);
             this.rootLayout.Controls.Add(this.lblDate, 0, 1);
             this.rootLayout.Controls.Add(this._datePicker, 1, 1);
-            // （已移除状态控件行）
+            this.rootLayout.Controls.Add(this.lblStatus, 0, 2);
+            this.rootLayout.Controls.Add(this._statusComboBox, 1, 2);
             this.rootLayout.Controls.Add(this.lblTags, 0, 3);
             this.rootLayout.Controls.Add(this._tagsBox, 1, 3);
             this.rootLayout.Controls.Add(this.lblStart, 0, 4);

@@ -25,6 +25,7 @@ namespace WorkLogApp.UI.Forms
         {
             _templateService = templateService;
             InitializeComponent();
+            IconHelper.ApplyIcon(this);
 
             // 运行时增强：字体、缩放、抗锯齿
             UIStyleManager.ApplyVisualEnhancements(this);

@@ -31,7 +31,8 @@ namespace WorkLogApp.UI.Controls
                 {
                     Text = name + "：",
                     Location = new Point(10, y + 4),
-                    AutoSize = true
+                    AutoSize = true,
+                    MaximumSize = new Size(105, 0)
                 };
                 label.UseCompatibleTextRendering = true;
                 label.Font = UIStyleManager.BodyFont;
@@ -74,7 +75,9 @@ namespace WorkLogApp.UI.Controls
                 Controls.Add(input);
                 _controls[name] = input;
 
-                y += input.Height + 15;
+                // 确保下一行的Y坐标考虑了标签和输入框中较高者的高度，避免重叠
+                var rowHeight = Math.Max(label.Height + 4, input.Height);
+                y += rowHeight + 15;
             }
             AutoScroll = true;
         }
