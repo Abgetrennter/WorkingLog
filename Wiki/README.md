@@ -1,41 +1,40 @@
 # 工作日志桌面应用 Wiki
 
-- 适用版本：`.NET Framework 4.7.2`，WinForms，Excel 读写使用 `NPOI`
-- 目录：
-  - [项目概述](./1-项目概述.md)
-  - [UI 层（WorkLogApp.UI）](./2-UI层.md)
-  - [服务层（WorkLogApp.Services）](./3-服务层.md)
-  - [核心层（WorkLogApp.Core）](./4-核心层.md)
-  - [技术实现细节](./5-技术实现细节.md)
+本文档库提供了 **工作日志桌面应用 (WorkLogApp)** 的详细技术文档，涵盖架构设计、接口规范、数据结构及运维指南。
 
-```text
-WorkLogApp/
-├── WorkLogApp.UI            # 表示层（WinForms）
-├── WorkLogApp.Services      # 业务层（模板、导入导出）
-└── WorkLogApp.Core          # 领域层（模型、枚举、模板结构）
+## 📚 文档目录
+
+### 1. [技术架构](./1-技术架构.md)
+系统整体分层架构、核心模块职责说明及关键数据流向图。
+
+### 2. [API 接口规范](./2-API接口.md)
+服务层核心接口 (`ITemplateService`, `IImportExportService`) 定义与调用说明。
+
+### 3. [数据库设计](./3-数据库设计.md)
+基于 Excel 的文件存储结构定义、JSON 模板配置格式说明。
+
+### 4. [部署运维手册](./4-部署运维.md)
+环境要求、安装配置、备份恢复策略及日志排错指南。
+
+### 5. [性能优化指南](./5-性能优化.md)
+针对 Excel 读写、UI 渲染及大批量数据场景的优化策略。
+
+### 6. [常见问题解决方案](./6-常见问题.md)
+用户及开发者常见问题 (FAQ) 汇总。
+
+---
+
+## 🏗️ 快速概览
+
+```mermaid
+graph LR
+    UI[UI 层] --> Services[服务层]
+    Services --> Core[核心层]
+    Services --> Data[(Excel 数据)]
+    Services --> Config[JSON 模板]
 ```
 
-```text
-┌─────────────────────────────────────────────────────────────┐
-│                         WorkLogApp.UI                        │
-│  MainForm / ItemCreateForm / ItemEditForm / ImportWizard     │
-│  CategoryManageForm / Controls / UIStyleManager              │
-└───────────────▲───────────────────────────────▲─────────────┘
-                │                               │
-                │调用接口                        │引用模型
-                │                               │
-┌───────────────┴───────────────────────────────┴─────────────┐
-│                     WorkLogApp.Services                       │
-│  ITemplateService / TemplateService                           │
-│  IImportExportService / ImportExportService (NPOI)           │
-└───────────────▲──────────────────────────────────────────────┘
-                │引用模型
-┌───────────────┴──────────────────────────────────────────────┐
-│                         WorkLogApp.Core                       │
-│  WorkLog / WorkLogItem / StatusEnum                           │
-│  TemplateRoot / TemplateCategory / CategoryTemplate            │
-└───────────────────────────────────────────────────────────────┘
-```
-
-建议阅读顺序：从“项目概述”快速了解目标与架构，再按层阅读对应文档，并最后结合“技术实现细节”把握调用关系与关键算法。
-
+建议阅读顺序：
+1. 先阅读 **[技术架构](./1-技术架构.md)** 建立全局认知。
+2. 查阅 **[数据库设计](./3-数据库设计.md)** 理解数据存储方式。
+3. 根据开发或运维需求，深入阅读 **[API 接口](./2-API接口.md)** 或 **[部署运维](./4-部署运维.md)**。
