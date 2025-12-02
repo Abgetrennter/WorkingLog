@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 using System.Linq;
+using System.Configuration;
 using System.Diagnostics;
 using System.Windows.Forms;
 using WorkLogApp.Core.Models;
@@ -127,7 +128,8 @@ namespace WorkLogApp.UI.Forms
 
                 // 保存到当月 Excel
                 var baseDir = AppDomain.CurrentDomain.BaseDirectory;
-                var dataDir = Path.Combine(baseDir, "Data");
+                var relativePath = ConfigurationManager.AppSettings["DataPath"] ?? "Data";
+                var dataDir = Path.Combine(baseDir, relativePath);
                 Directory.CreateDirectory(dataDir);
 
                 var selectedDate = _dayPicker.Value;
@@ -190,7 +192,8 @@ namespace WorkLogApp.UI.Forms
             try
             {
                 var baseDir = AppDomain.CurrentDomain.BaseDirectory;
-                var dataDir = Path.Combine(baseDir, "Data");
+                var relativePath = ConfigurationManager.AppSettings["DataPath"] ?? "Data";
+                var dataDir = Path.Combine(baseDir, relativePath);
                 Directory.CreateDirectory(dataDir);
 
                 var selectedDate = _dayPicker.Value;
