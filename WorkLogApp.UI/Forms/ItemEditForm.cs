@@ -140,7 +140,15 @@ namespace WorkLogApp.UI.Forms
                 // 文本备份（可选）
                 var safeTitle = string.IsNullOrWhiteSpace(_item.ItemTitle) ? "untitled" : SanitizeFileName(_item.ItemTitle);
                 var fileName = $"{_item.LogDate:yyyy-MM-dd}_{safeTitle}.txt";
-                var filePath = Path.Combine(dataDir, fileName);
+                
+                // 按照 yyyy/MM/dd 结构存储
+                var year = _item.LogDate.ToString("yyyy");
+                var month = _item.LogDate.ToString("MM");
+                var dayStr = _item.LogDate.ToString("dd");
+                var txtDir = Path.Combine(dataDir, year, month, dayStr);
+                if (!Directory.Exists(txtDir)) Directory.CreateDirectory(txtDir);
+
+                var filePath = Path.Combine(txtDir, fileName);
                 File.WriteAllText(filePath, _item.ItemContent);
 
                 MessageBox.Show(this,
@@ -176,7 +184,15 @@ namespace WorkLogApp.UI.Forms
                 // 可选：文本备份，便于直接查看
                 var safeTitle = string.IsNullOrWhiteSpace(_item.ItemTitle) ? "untitled" : SanitizeFileName(_item.ItemTitle);
                 var fileName = $"{_item.LogDate:yyyy-MM-dd}_{safeTitle}.txt";
-                var filePath = Path.Combine(dataDir, fileName);
+                
+                // 按照 yyyy/MM/dd 结构存储
+                var year = _item.LogDate.ToString("yyyy");
+                var month = _item.LogDate.ToString("MM");
+                var dayStr = _item.LogDate.ToString("dd");
+                var txtDir = Path.Combine(dataDir, year, month, dayStr);
+                if (!Directory.Exists(txtDir)) Directory.CreateDirectory(txtDir);
+
+                var filePath = Path.Combine(txtDir, fileName);
                 File.WriteAllText(filePath, _item.ItemContent);
 
                 MessageBox.Show(this, $"已保存到 Excel 与文本备份:\n{Path.Combine(dataDir, "worklog_" + _item.LogDate.ToString("yyyyMM") + ".xlsx")}\n{filePath}", "保存成功", MessageBoxButtons.OK, MessageBoxIcon.Information);

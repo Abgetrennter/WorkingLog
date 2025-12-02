@@ -400,10 +400,15 @@ namespace WorkLogApp.UI.Forms
                 // Find where to put it. Maybe above _txtFormatTemplate?
                 // The layout is dynamic now.
                 var panel = _txtFormatTemplate.Parent;
-                var lblTags = new Label { Text = "标签(逗号分隔):", AutoSize = true, Location = new Point(10, _txtFormatTemplate.Top - 25) };
                 _txtTags = new TextBox { Location = new Point(120, _txtFormatTemplate.Top - 25), Width = 200 };
+                var lblTags = new Label { Text = "标签(逗号分隔):", AutoSize = true };
+                
                 panel.Controls.Add(lblTags);
                 panel.Controls.Add(_txtTags);
+
+                // Align label tightly to the left of the textbox
+                // Adding 3 to Top for better vertical alignment with the textbox text
+                lblTags.Location = new Point(_txtTags.Left - lblTags.PreferredWidth - 2, _txtTags.Top + 3);
             }
         }
 
