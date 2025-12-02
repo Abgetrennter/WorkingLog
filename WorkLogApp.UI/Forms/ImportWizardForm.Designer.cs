@@ -16,6 +16,8 @@ namespace WorkLogApp.UI.Forms
         private ColumnHeader _colDate;
         private ColumnHeader _colTitle;
         private ColumnHeader _colTags;
+        private ColumnHeader _colStatus;
+        private ColumnHeader _colTime;
         private System.Windows.Forms.TableLayoutPanel rootLayout;
 
         protected override void Dispose(bool disposing)
@@ -36,6 +38,8 @@ namespace WorkLogApp.UI.Forms
             this._colDate = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this._colTitle = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this._colTags = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this._colStatus = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this._colTime = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.bottomPanel = new System.Windows.Forms.Panel();
             this._btnImport = new System.Windows.Forms.Button();
             this.topPanel.SuspendLayout();
@@ -77,7 +81,9 @@ namespace WorkLogApp.UI.Forms
             this._previewList.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
             this._colDate,
             this._colTitle,
-            this._colTags});
+            this._colTags,
+            this._colStatus,
+            this._colTime});
             this._previewList.Dock = System.Windows.Forms.DockStyle.Fill;
             this._previewList.FullRowSelect = true;
             this._previewList.GridLines = true;
@@ -103,6 +109,16 @@ namespace WorkLogApp.UI.Forms
             // 
             this._colTags.Text = "标签";
             this._colTags.Width = 200;
+            // 
+            // _colStatus
+            // 
+            this._colStatus.Text = "状态";
+            this._colStatus.Width = 80;
+            // 
+            // _colTime
+            // 
+            this._colTime.Text = "时间";
+            this._colTime.Width = 120;
             // 
             // bottomPanel
             // 
@@ -144,7 +160,7 @@ namespace WorkLogApp.UI.Forms
             this.rootLayout.Controls.Add(this.bottomPanel, 0, 2);
             this.Controls.Add(this.rootLayout);
             this.Name = "ImportWizardForm";
-            this.Text = "导入向导（基础版）";
+            this.Text = "导入日志";
             this.topPanel.ResumeLayout(false);
             this.topPanel.PerformLayout();
             this.bottomPanel.ResumeLayout(false);

@@ -164,7 +164,7 @@ namespace WorkLogApp.UI.Forms
             this._btnImportWizard.Size = new System.Drawing.Size(130, 36);
             this._btnImportWizard.TabIndex = 5;
             this._btnImportWizard.Tag = "compact";
-            this._btnImportWizard.Text = "导入向导";
+            this._btnImportWizard.Text = "导入日志";
             this._btnImportWizard.Click += new System.EventHandler(this.OnImportWizardClick);
             // 
             // _btnImport

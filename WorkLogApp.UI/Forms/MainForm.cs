@@ -87,6 +87,7 @@ namespace WorkLogApp.UI.Forms
                     {
                         DateTime.Today.ToString("yyyy-MM-dd"),
                         "示例：需求评审会议",
+                        "Doing",
                         "讨论近期版本目标与测试范围……",
                         "会议;需求",
                         DateTime.Today.AddHours(9).ToString("yyyy-MM-dd HH:mm"),
@@ -96,6 +97,7 @@ namespace WorkLogApp.UI.Forms
                     {
                         DateTime.Today.AddDays(-1).ToString("yyyy-MM-dd"),
                         "示例：接口联调",
+                        "Done",
                         "修复返回格式，补充缺失字段",
                         "研发;联调",
                         DateTime.Today.AddDays(-1).AddHours(14).ToString("yyyy-MM-dd HH:mm"),
@@ -249,6 +251,7 @@ namespace WorkLogApp.UI.Forms
             {
                 var lv = new ListViewItem(item.LogDate.ToString("yyyy-MM-dd")) { Tag = item };
                 lv.SubItems.Add(item.ItemTitle ?? "");
+                lv.SubItems.Add(item.Status.ToString());
                 lv.SubItems.Add(item.ItemContent ?? "");
                 lv.SubItems.Add(item.Tags ?? "");
                 lv.SubItems.Add(item.StartTime?.ToString("yyyy-MM-dd HH:mm") ?? "");
