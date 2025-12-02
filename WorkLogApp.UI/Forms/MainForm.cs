@@ -17,30 +17,20 @@ namespace WorkLogApp.UI.Forms
     public partial class MainForm : Form
     {
         private readonly ITemplateService _templateService;
+        private readonly IImportExportService _importExportService;
         private System.Collections.Generic.List<WorkLogItem> _currentItems = new System.Collections.Generic.List<WorkLogItem>();
         private System.Collections.Generic.List<WorkLog> _allMonthItems = new System.Collections.Generic.List<WorkLog>();
 
         // 设计期支持：提供无参构造，方便设计器实例化
-        public MainForm() : this(new TemplateService())
+        public MainForm() : this(new TemplateService(), new ImportExportService())
         {
         }
 
-        public MainForm(ITemplateService templateService)
+        public MainForm(ITemplateService templateService, IImportExportService importExportService)
         {
             _templateService = templateService;
+            _importExportService = importExportService;
             
-            // Initialize templates immediately if needed
-            // Assume paths are handled by service or Program.cs. 
-            // Program.cs should ideally load templates.
-            // Let's load here to be safe if not loaded.
-            var baseDir = AppDomain.CurrentDomain.BaseDirectory;
-            var tplPath = Path.Combine(baseDir, "Templates", "data.json");
-            if (!_templateService.LoadTemplates(tplPath))
-            {
-                // Maybe fallback to old templates.json if data.json missing?
-                // No, requirements said "rewrite", so we start fresh.
-            }
-
             InitializeComponent();
             InitToolTips();
             IconHelper.ApplyIcon(this);
@@ -147,8 +137,7 @@ namespace WorkLogApp.UI.Forms
                     monthRef = new DateTime(_monthPicker.Value.Year, _monthPicker.Value.Month, 1);
                 }
 
-                IImportExportService svc = new ImportExportService();
-                svc.RewriteMonth(monthRef, _allMonthItems, dataDir);
+                _importExportService.RewriteMonth(monthRef, _allMonthItems, dataDir);
 
                 // 保存后重新绑定，以反映可能的排序变化
                 RefreshItems();
