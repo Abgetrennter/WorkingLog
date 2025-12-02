@@ -213,6 +213,9 @@ namespace WorkLogApp.UI.Forms
 
                 if (!_chkShowByMonth.Checked)
                 {
+                    // Auto-inherit logic
+                    CheckAndInheritItems(svc, dataDir);
+
                     // 显示当天
                     _currentItems = _allMonthItems
                         .Where(d => d.LogDate.Date == selectedDate.Date)
@@ -268,6 +271,68 @@ namespace WorkLogApp.UI.Forms
                 {
                     // 修改后保存
                     OnSaveClick(null, null);
+                }
+            }
+        }
+
+        private void CheckAndInheritItems(IImportExportService svc, string dataDir)
+        {
+            var targetDate = _dayPicker.Value.Date;
+            var targetLog = _allMonthItems.FirstOrDefault(x => x.LogDate.Date == targetDate);
+            
+            // If today already has items, do nothing
+            if (targetLog != null && targetLog.Items.Any()) return;
+            
+            var prevDate = targetDate.AddDays(-1);
+            List<WorkLogItem> prevItems = null;
+
+            // Check if prevDate is in current loaded month
+            if (prevDate.Month == targetDate.Month && prevDate.Year == targetDate.Year)
+            {
+                var prevLog = _allMonthItems.FirstOrDefault(x => x.LogDate.Date == prevDate);
+                if (prevLog != null) prevItems = prevLog.Items;
+            }
+            else
+            {
+                // Load previous month
+                var prevMonthRef = new DateTime(prevDate.Year, prevDate.Month, 1);
+                var prevMonthDays = svc.ImportMonth(prevMonthRef, dataDir);
+                if (prevMonthDays != null)
+                {
+                    var prevLog = prevMonthDays.FirstOrDefault(x => x.LogDate.Date == prevDate);
+                    if (prevLog != null) prevItems = prevLog.Items;
+                }
+            }
+
+            if (prevItems != null && prevItems.Any())
+            {
+                // Only inherit 'Doing' items
+                var inherited = prevItems.Where(i => i.Status == StatusEnum.Doing).ToList();
+                if (inherited.Any())
+                {
+                    if (targetLog == null)
+                    {
+                        targetLog = new WorkLog { LogDate = targetDate, Items = new List<WorkLogItem>() };
+                        _allMonthItems.Add(targetLog);
+                    }
+
+                    foreach (var item in inherited)
+                    {
+                        targetLog.Items.Add(new WorkLogItem
+                        {
+                            LogDate = targetDate,
+                            ItemTitle = item.ItemTitle,
+                            ItemContent = item.ItemContent,
+                            CategoryId = item.CategoryId,
+                            Status = StatusEnum.Doing,
+                            Tags = item.Tags,
+                            SortOrder = item.SortOrder
+                        });
+                    }
+
+                    // Save changes
+                    var monthRef = new DateTime(targetDate.Year, targetDate.Month, 1);
+                    svc.RewriteMonth(monthRef, _allMonthItems, dataDir);
                 }
             }
         }

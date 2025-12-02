@@ -45,7 +45,7 @@ namespace WorkLogApp.UI.Forms
             // 初始化状态下拉
             _statusCombo.Items.Clear();
             _statusCombo.Items.AddRange(new object[] { "待办", "进行中", "已完成", "阻塞", "已取消" });
-            _statusCombo.SelectedIndex = 0;
+            _statusCombo.SelectedIndex = 2; // Default to "已完成"
         }
         
         private void LoadTemplateForCategory(Category category)

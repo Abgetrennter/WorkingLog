@@ -300,7 +300,7 @@ namespace WorkLogApp.UI.Forms
             // 
             // ItemCreateForm
             // 
-            this.ClientSize = new System.Drawing.Size(843, 659);
+            this.ClientSize = new System.Drawing.Size(1054, 824);
             this.Controls.Add(this.rootLayout);
             this.Name = "ItemCreateForm";
             this.Text = "创建日志事项";

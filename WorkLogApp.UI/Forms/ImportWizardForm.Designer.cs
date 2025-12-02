@@ -126,7 +126,7 @@ namespace WorkLogApp.UI.Forms
             // 
             // ImportWizardForm
             // 
-            this.ClientSize = new System.Drawing.Size(800, 600);
+            this.ClientSize = new System.Drawing.Size(1000, 750);
             this.rootLayout = new System.Windows.Forms.TableLayoutPanel();
             this.rootLayout.ColumnCount = 1;
             this.rootLayout.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
