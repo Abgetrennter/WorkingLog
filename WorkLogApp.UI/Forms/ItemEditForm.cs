@@ -3,6 +3,7 @@ using System.IO;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
 using WorkLogApp.Core.Enums;
+using WorkLogApp.Core.Helpers;
 using WorkLogApp.Core.Models;
 using WorkLogApp.Services.Implementations;
 using WorkLogApp.Services.Interfaces;
@@ -23,6 +24,7 @@ namespace WorkLogApp.UI.Forms
             InitializeFields();
             UIStyleManager.ApplyVisualEnhancements(this);
             UIStyleManager.ApplyLightTheme(this);
+            InitToolTips();
         }
 
         
@@ -40,22 +42,23 @@ namespace WorkLogApp.UI.Forms
             // 应用统一样式并设置 1.5 倍行距
             UIStyleManager.ApplyVisualEnhancements(this);
             UIStyleManager.ApplyLightTheme(this);
+            InitToolTips();
+        }
+
+        private void InitToolTips()
+        {
+            var toolTip = new ToolTip();
+            toolTip.SetToolTip(_btnSave, "保存修改并关闭窗口");
+            toolTip.SetToolTip(_btnCancel, "放弃修改并关闭窗口");
+            toolTip.SetToolTip(_sortUpDown, "设置排序权重，数字越小越靠前");
         }
 
         private void InitializeFields()
         {
             // 状态
-            var statusOptions = new System.Collections.Generic.List<StatusOption>
-            {
-                new StatusOption { Text = "待办", Value = StatusEnum.Todo },
-                new StatusOption { Text = "进行中", Value = StatusEnum.Doing },
-                new StatusOption { Text = "已完成", Value = StatusEnum.Done },
-                new StatusOption { Text = "阻塞", Value = StatusEnum.Blocked },
-                new StatusOption { Text = "已取消", Value = StatusEnum.Cancelled }
-            };
-            _statusComboBox.DisplayMember = "Text";
-            _statusComboBox.ValueMember = "Value";
-            _statusComboBox.DataSource = statusOptions;
+            _statusComboBox.DisplayMember = "Value";
+            _statusComboBox.ValueMember = "Key";
+            _statusComboBox.DataSource = StatusHelper.GetList();
             _statusComboBox.SelectedValue = _item.Status;
 
             // 日期
@@ -217,12 +220,6 @@ namespace WorkLogApp.UI.Forms
         {
             DialogResult = DialogResult.Cancel;
             Close();
-        }
-
-        private class StatusOption
-        {
-            public string Text { get; set; }
-            public StatusEnum Value { get; set; }
         }
     }
 }

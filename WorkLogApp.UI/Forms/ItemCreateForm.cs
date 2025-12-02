@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
 using WorkLogApp.Core.Enums;
+using WorkLogApp.Core.Helpers;
 using WorkLogApp.Core.Models;
 using WorkLogApp.Services.Interfaces;
 using WorkLogApp.Services.Implementations;
@@ -43,11 +44,20 @@ namespace WorkLogApp.UI.Forms
             _categoryCombo.SelectedCategoryChanged += (s, cat) => LoadTemplateForCategory(cat);
 
             // 初始化状态下拉
-            _statusCombo.Items.Clear();
-            _statusCombo.Items.AddRange(new object[] { "待办", "进行中", "已完成", "阻塞", "已取消" });
-            _statusCombo.SelectedIndex = 2; // Default to "已完成"
+            _statusCombo.DisplayMember = "Value";
+            _statusCombo.ValueMember = "Key";
+            _statusCombo.DataSource = StatusHelper.GetList();
+            _statusCombo.SelectedValue = StatusEnum.Done; // Default to "已完成"
+            
+            InitToolTips();
         }
         
+        private void InitToolTips()
+        {
+            var toolTip = new ToolTip();
+            toolTip.SetToolTip(_btnGenerateSave, "根据模板生成内容并保存日志");
+        }
+
         private void LoadTemplateForCategory(Category category)
         {
             _currentTemplate = null;
@@ -112,12 +122,9 @@ namespace WorkLogApp.UI.Forms
             // Let's check WorkLogItem definition.
             
             var status = StatusEnum.Todo;
-            switch (_statusCombo.SelectedItem?.ToString())
+            if (_statusCombo.SelectedValue is StatusEnum s)
             {
-                case "进行中": status = StatusEnum.Doing; break;
-                case "已完成": status = StatusEnum.Done; break;
-                case "阻塞": status = StatusEnum.Blocked; break;
-                case "已取消": status = StatusEnum.Cancelled; break;
+                status = s;
             }
 
             var item = new WorkLogItem

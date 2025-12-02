@@ -44,6 +44,7 @@
     <Compile Include="Models\Templates\TemplateCategory.cs" />
     <Compile Include="Models\Templates\CategoryTemplate.cs" />
     <Compile Include="Enums\StatusEnum.cs" />
+    <Compile Include="Helpers\StatusHelper.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

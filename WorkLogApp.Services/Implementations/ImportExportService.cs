@@ -8,6 +8,7 @@ using NPOI.SS.UserModel;
 using NPOI.SS.Util;
 using NPOI.XSSF.UserModel;
 using WorkLogApp.Core.Enums;
+using WorkLogApp.Core.Helpers;
 using WorkLogApp.Core.Models;
 using WorkLogApp.Services.Interfaces;
 
@@ -247,7 +248,7 @@ namespace WorkLogApp.Services.Implementations
                         ? nm
                         : (!string.IsNullOrWhiteSpace(item.Tags) && idToName.ContainsValue(item.Tags) ? item.Tags : item.CategoryId);
                     row.GetCell(3).SetCellValue(catName);
-                    row.GetCell(4).SetCellValue(ToChineseStatus(item.Status));
+                    row.GetCell(4).SetCellValue(item.Status.ToChinese());
                     row.GetCell(5).SetCellValue(item.StartTime.HasValue ? item.StartTime.Value.ToString("yyyy-MM-dd HH:mm") : string.Empty);
                     row.GetCell(6).SetCellValue(item.EndTime.HasValue ? item.EndTime.Value.ToString("yyyy-MM-dd HH:mm") : string.Empty);
                     row.GetCell(7).SetCellValue(item.Tags ?? string.Empty);
@@ -388,7 +389,7 @@ namespace WorkLogApp.Services.Implementations
                             }
                             
                             var statusStr = GetValue(row, indexes, "Status");
-                            item.Status = !string.IsNullOrEmpty(statusStr) ? ParseStatus(statusStr) : StatusEnum.Todo;
+                            item.Status = !string.IsNullOrEmpty(statusStr) ? StatusHelper.Parse(statusStr) : StatusEnum.Todo;
 
                             item.StartTime = ParseNullableDateTime(GetValue(row, indexes, "StartTime"));
                             item.EndTime = ParseNullableDateTime(GetValue(row, indexes, "EndTime"));
@@ -492,7 +493,7 @@ namespace WorkLogApp.Services.Implementations
                             }
                             
                             var statusStr = GetValue(row, indexes, "Status");
-                            item.Status = !string.IsNullOrEmpty(statusStr) ? ParseStatus(statusStr) : StatusEnum.Todo;
+                            item.Status = !string.IsNullOrEmpty(statusStr) ? StatusHelper.Parse(statusStr) : StatusEnum.Todo;
 
                             item.StartTime = ParseNullableDateTime(GetValue(row, indexes, "StartTime"));
                             item.EndTime = ParseNullableDateTime(GetValue(row, indexes, "EndTime"));
@@ -588,41 +589,6 @@ namespace WorkLogApp.Services.Implementations
         private static DateTime? ParseNullableDateTime(string s)
         {
             DateTime dt; return DateTime.TryParse(s, out dt) ? (DateTime?)dt : null;
-        }
-
-        private static string ToChineseStatus(StatusEnum status)
-        {
-            switch (status)
-            {
-                case StatusEnum.Todo: return "待办";
-                case StatusEnum.Doing: return "进行中";
-                case StatusEnum.Done: return "已完成";
-                case StatusEnum.Blocked: return "阻塞";
-                case StatusEnum.Cancelled: return "已取消";
-                default: return "待办";
-            }
-        }
-
-        private static StatusEnum ParseStatus(string s)
-        {
-            var text = (s ?? string.Empty).Trim();
-            if (int.TryParse(text, out var iv))
-            {
-                if (Enum.IsDefined(typeof(StatusEnum), iv))
-                    return (StatusEnum)iv;
-            }
-            if (Enum.TryParse<StatusEnum>(text, out var status)) return status;
-            switch (text)
-            {
-                case "待办": return StatusEnum.Todo;
-                case "进行中": return StatusEnum.Doing;
-                case "已完成": return StatusEnum.Done;
-                case "阻塞":
-                case "受阻": return StatusEnum.Blocked;
-                case "已取消":
-                case "取消": return StatusEnum.Cancelled;
-                default: return StatusEnum.Todo;
-            }
         }
 
         private static Dictionary<string, int> GetHeaderIndexes(ISheet sheet)

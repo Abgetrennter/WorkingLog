@@ -50,6 +50,7 @@ namespace WorkLogApp.UI.Forms
 
             UIStyleManager.ApplyVisualEnhancements(this);
             UIStyleManager.ApplyLightTheme(this);
+            InitToolTips();
         }
 
         public DailySummaryForm(System.Collections.Generic.IEnumerable<WorkLogItem> items, string existingText)
@@ -93,6 +94,14 @@ namespace WorkLogApp.UI.Forms
 
             UIStyleManager.ApplyVisualEnhancements(this);
             UIStyleManager.ApplyLightTheme(this);
+            InitToolTips();
+        }
+
+        private void InitToolTips()
+        {
+            var toolTip = new ToolTip();
+            if (_btnClose != null) toolTip.SetToolTip(_btnClose, "关闭窗口并保存更改");
+            if (_btnReset != null) toolTip.SetToolTip(_btnReset, "根据今日事项自动重新生成总结");
         }
 
         public string SummaryText => _textBox.Text;
