@@ -111,8 +111,8 @@
   <!-- 复制 SDK 样式 Services 项目的输出到 UI 输出目录，解决混合项目引用不自动复制的问题 -->
   <Target Name="CopyServicesOutput" AfterTargets="Build">
     <ItemGroup>
-      <ServicesCopy Include="..\WorkLogApp.Services\bin\$(Configuration)\net472\WorkLogApp.Services.dll" />
-      <ServicesCopy Include="..\WorkLogApp.Services\bin\$(Configuration)\net472\WorkLogApp.Services.pdb" />
+      <ServicesCopy Include="..\WorkLogApp.Services\bin\$(Configuration)\net472\*.dll" />
+      <ServicesCopy Include="..\WorkLogApp.Services\bin\$(Configuration)\net472\*.pdb" />
     </ItemGroup>
     <Copy SourceFiles="@(ServicesCopy)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
   </Target>

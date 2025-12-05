@@ -38,6 +38,7 @@
     <Compile Include="Models\WorkLog.cs" />
     <Compile Include="Models\WorkLogItem.cs" />
     <Compile Include="Models\Category.cs" />
+    <Compile Include="Models\ImportResult.cs" />
     <Compile Include="Models\WorkTemplate.cs" />
     <Compile Include="Models\TemplateStore.cs" />
     <Compile Include="Models\Templates\TemplateRoot.cs" />

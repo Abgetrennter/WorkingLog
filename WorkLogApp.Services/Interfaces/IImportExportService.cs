@@ -10,5 +10,8 @@ namespace WorkLogApp.Services.Interfaces
         bool RewriteMonth(DateTime month, IEnumerable<WorkLog> days, string outputDirectory);
         IEnumerable<WorkLog> ImportMonth(DateTime month, string inputDirectory);
         IEnumerable<WorkLog> ImportFromFile(string filePath);
+        ImportResult ImportFromFileWithDiagnostics(string filePath);
+        ImportResult ImportFromTxt(string filePath);
+        ImportResult CompareAndVerify(IEnumerable<WorkLog> source, IEnumerable<WorkLog> target);
     }
 }

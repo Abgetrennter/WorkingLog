@@ -7,6 +7,7 @@ using System.Text.RegularExpressions;
 using NPOI.SS.UserModel;
 using NPOI.SS.Util;
 using NPOI.XSSF.UserModel;
+using System.Web.Script.Serialization;
 using WorkLogApp.Core.Enums;
 using WorkLogApp.Core.Helpers;
 using WorkLogApp.Core.Models;
@@ -224,7 +225,7 @@ namespace WorkLogApp.Services.Implementations
                     var cell = markerRow.CreateCell(c);
                     cell.CellStyle = markerStyle;
                     var week = GetChineseWeekday(day.LogDate.Date);
-                    cell.SetCellValue(c == 0 ? $"===== {day.LogDate:yyyy年MM月dd日} {week} =====" : string.Empty);
+                    cell.SetCellValue(c == 0 ? $"—— {day.LogDate:yyyy年MM月dd日} {week} ——" : string.Empty);
                 }
                 sheet.AddMergedRegion(new CellRangeAddress(rowIndex, rowIndex, 0, HeaderZh.Length - 1));
 
@@ -306,88 +307,222 @@ namespace WorkLogApp.Services.Implementations
 
         public IEnumerable<WorkLog> ImportMonth(DateTime month, string inputDirectory)
         {
-            var list = new List<WorkLog>();
-            if (string.IsNullOrWhiteSpace(inputDirectory)) return list;
+            if (string.IsNullOrWhiteSpace(inputDirectory)) return new List<WorkLog>();
             var monthStart = new DateTime(month.Year, month.Month, 1);
             var fileName = FilePrefix + monthStart.ToString("yyyyMM") + ".xlsx";
             var filePath = Path.Combine(inputDirectory, fileName);
-            if (!File.Exists(filePath)) return list;
+            return ImportFromFile(filePath);
+        }
+
+        public IEnumerable<WorkLog> ImportFromFile(string filePath)
+        {
+            return ImportFromFileWithDiagnostics(filePath).Data;
+        }
+
+        public ImportResult ImportFromFileWithDiagnostics(string filePath)
+        {
+            var result = new ImportResult();
+            
+            // DEBUG LOGGING
+            var logPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "worklog_import_debug.txt");
+            void Log(string msg) 
+            { 
+                try { File.AppendAllText(logPath, $"[{DateTime.Now:HH:mm:ss}] {msg}\r\n"); } catch {} 
+            }
+            
+            Log("================ START IMPORT ================");
+            Log($"File: {filePath}");
+
+            if (string.IsNullOrWhiteSpace(filePath) || !File.Exists(filePath)) 
+            {
+                var msg = $"File not found: {filePath}";
+                result.Errors.Add(msg);
+                Log(msg);
+                return result;
+            }
+
+            // Use a temp file to avoid locking issues with WPS/Excel
+            string tempPath = Path.Combine(Path.GetTempPath(), $"worklog_import_{Guid.NewGuid()}{Path.GetExtension(filePath)}");
+            Log($"Temp Path: {tempPath}");
+
+            try 
+            {
+                // Try to copy the file first. This often resolves "file in use" errors better than just FileShare.ReadWrite
+                File.Copy(filePath, tempPath, true);
+            }
+            catch (Exception ex)
+            {
+                var msg = $"Failed to copy to temp file (File might be locked): {ex.Message}";
+                result.Errors.Add(msg);
+                Log(msg);
+                return result;
+            }
 
             try
             {
-                using (var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                using (var fs = new FileStream(tempPath, FileMode.Open, FileAccess.Read, FileShare.Read))
                 {
-                    // Use WorkbookFactory to support both xls and xlsx
                     IWorkbook wb;
                     try
                     {
                         wb = WorkbookFactory.Create(fs);
                     }
-                    catch (Exception)
+                    catch (Exception ex)
                     {
-                        // Fallback or retry? If it fails here, maybe not an Excel file.
-                        return list;
+                        result.Errors.Add($"Failed to open Excel file: {ex.Message}");
+                        Log($"Open Error (Full): {ex}");
+                        return result;
                     }
 
                     var sheet = wb.GetSheet(SheetName) ?? (wb.NumberOfSheets > 0 ? wb.GetSheetAt(0) : null);
-                    if (sheet == null) return list;
+                    if (sheet == null) 
+                    {
+                        result.Errors.Add("No valid sheet found.");
+                        Log("No sheet found.");
+                        return result;
+                    }
+                    Log($"Sheet: {sheet.SheetName}, LastRowNum: {sheet.LastRowNum}");
 
-                    var indexes = GetHeaderIndexes(sheet);
+                    var headerRow = FindHeaderRow(sheet);
+                    Log($"Header Row Index: {headerRow?.RowNum ?? -1}");
+                    
+                    var indexes = GetHeaderIndexes(headerRow);
+                    Log($"Indexes Found: {string.Join(", ", indexes.Select(kv => $"{kv.Key}={kv.Value}"))}");
+                    
+                    // Safety check: if indexes found are too few, fallback to default 0..N
+                    int foundKnownHeaders = 0;
+                    foreach(var k in Header) { if (indexes.ContainsKey(k)) foundKnownHeaders++; }
+                    if (foundKnownHeaders < 2) 
+                    {
+                        Log("Too few headers found. Falling back to default mapping.");
+                        // Fallback: assume standard order
+                        for(int i=0; i<Header.Length; i++) indexes[Header[i]] = i;
+                        // Also assume data starts from row 1 if headerRow was 0
+                        if (headerRow == null || headerRow.RowNum == 0) headerRow = sheet.GetRow(0);
+                    }
+
+                    int startRow = headerRow != null ? headerRow.RowNum + 1 : 1;
+                    Log($"Start Row: {startRow}");
+
                     DateTime currentDate = DateTime.MinValue;
                     var dayMap = new Dictionary<DateTime, WorkLog>();
+                    
+                    // Try to guess month from filename if possible, for fallback
+                    var match = Regex.Match(Path.GetFileName(filePath), @"(\d{6})");
+                    var monthStart = DateTime.MinValue;
+                    if (match.Success && DateTime.TryParseExact(match.Groups[1].Value, "yyyyMM", null, DateTimeStyles.None, out var parsedDate))
+                    {
+                        monthStart = parsedDate;
+                        Log($"Month from filename: {monthStart:yyyy-MM}");
+                    }
 
-                    for (int r = 1; r <= sheet.LastRowNum; r++)
+                    for (int r = startRow; r <= sheet.LastRowNum; r++)
                     {
                         try
                         {
                             var row = sheet.GetRow(r);
                             if (row == null) continue;
                             var firstCellText = GetString(row, 0);
-                            if (!string.IsNullOrWhiteSpace(firstCellText) && firstCellText.StartsWith("====="))
+                            
+                            // Move retrieval early to help distinguish row types
+                            var title = GetValue(row, indexes, "ItemTitle");
+                            var contentVal = GetValue(row, indexes, "ItemContent");
+
+                            // Log first few chars of row for context
+                            // Log($"Row {r} FirstCell: {firstCellText}");
+
+                            if (!string.IsNullOrWhiteSpace(firstCellText))
                             {
-                                var m = Regex.Match(firstCellText, "=+\\s*(\\d{4}年\\d{2}月\\d{2}日)(?:\\s+星期[一二三四五六日天])?\\s*=+");
-                                if (m.Success && DateTime.TryParseExact(m.Groups[1].Value, "yyyy年MM月dd日", CultureInfo.InvariantCulture, DateTimeStyles.None, out var dt))
+                                // Loose check for date row: contains "Year" "Month" "Day" or starts with "——"
+                                // FIX: Work items also have date in first cell. Must check if Title/Content is empty to confirm it is a Section Header.
+                                bool isExplicitMarker = firstCellText.StartsWith("——");
+                                bool looksLikeDate = firstCellText.Contains("年") && firstCellText.Contains("月") && firstCellText.Contains("日");
+                                
+                                bool isDateRow = isExplicitMarker || (looksLikeDate && string.IsNullOrWhiteSpace(title) && string.IsNullOrWhiteSpace(contentVal));
+                                
+                                if (isDateRow)
                                 {
-                                    currentDate = dt.Date;
-                                    if (!dayMap.ContainsKey(currentDate))
+                                    var m = Regex.Match(firstCellText, @"(\d{4})年(\d{1,2})月(\d{1,2})日");
+                                    if (m.Success)
                                     {
-                                        dayMap[currentDate] = new WorkLog { LogDate = currentDate, Items = new List<WorkLogItem>() };
+                                        if (DateTime.TryParseExact(m.Value, "yyyy年M月d日", CultureInfo.InvariantCulture, DateTimeStyles.None, out var dt))
+                                        {
+                                            currentDate = dt.Date;
+                                            Log($"[Row {r}] Found Date Row: {currentDate:yyyy-MM-dd}");
+                                            if (!dayMap.ContainsKey(currentDate))
+                                            {
+                                                dayMap[currentDate] = new WorkLog { LogDate = currentDate, Items = new List<WorkLogItem>() };
+                                            }
+                                        }
+                                        continue;
                                     }
                                 }
-                                continue;
                             }
 
                             // 识别总结行（标题=当日总结）
-                            var title = GetValue(row, indexes, "ItemTitle");
+                            // var title = GetValue(row, indexes, "ItemTitle"); // Moved up
                             if (string.Equals(title, "当日总结", StringComparison.OrdinalIgnoreCase))
                             {
                                 var dt = currentDate != DateTime.MinValue
                                     ? currentDate
                                     : ParseNullableDateTime(GetValue(row, indexes, "LogDate"))?.Date ?? monthStart;
+                                if (dt == DateTime.MinValue) { Log($"[Row {r}] Skip Summary: No Date"); continue; }
+
                                 if (!dayMap.ContainsKey(dt))
                                 {
                                     dayMap[dt] = new WorkLog { LogDate = dt, Items = new List<WorkLogItem>() };
                                 }
-                                dayMap[dt].DailySummary = GetValue(row, indexes, "ItemContent");
+                                dayMap[dt].DailySummary = contentVal;
+                                Log($"[Row {r}] Read Summary for {dt:yyyy-MM-dd}");
                                 continue;
                             }
 
-                            var dtItem = currentDate != DateTime.MinValue
-                                ? currentDate
-                                : ParseNullableDateTime(GetValue(row, indexes, "LogDate"))?.Date ?? monthStart;
+                            // 尝试解析当前行的日期（备用方案）
+                            DateTime itemDate = DateTime.MinValue;
+                            var dateCellStr = GetValue(row, indexes, "LogDate");
+                            if (!string.IsNullOrWhiteSpace(dateCellStr))
+                            {
+                                if (DateTime.TryParse(dateCellStr, out var d)) itemDate = d.Date;
+                                else if (DateTime.TryParseExact(dateCellStr, "yyyyMMdd", null, DateTimeStyles.None, out d)) itemDate = d.Date;
+                                // Add more formats if needed
+                            }
+
+                            // IMPORTANT FIX: If itemDate is found, it MUST take precedence.
+                            // If no itemDate found, fallback to currentDate (from date row above).
+                            // If currentDate is also missing, fallback to monthStart (from filename).
+                            var dtItem = itemDate != DateTime.MinValue ? itemDate : (currentDate != DateTime.MinValue ? currentDate : monthStart);
+                            
+                            if (dtItem == DateTime.MinValue) 
+                            {
+                                // Skip rows that we can't determine date for, unless it's empty
+                                if (string.IsNullOrWhiteSpace(title)) 
+                                {
+                                    // Empty row, skip silently
+                                    continue;
+                                }
+                                Log($"[Row {r}] Skip Item: No Date. Title={title}, DateCell={dateCellStr}");
+                                continue;
+                            }
+
                             if (!dayMap.ContainsKey(dtItem))
                             {
                                 dayMap[dtItem] = new WorkLog { LogDate = dtItem, Items = new List<WorkLogItem>() };
                             }
                             var item = new WorkLogItem();
                             item.LogDate = dtItem;
-                            item.ItemTitle = GetValue(row, indexes, "ItemTitle");
-                            item.ItemContent = GetValue(row, indexes, "ItemContent");
-                            // 分类ID：支持文字名称（模板名）或数字ID，若为名称则生成稳定数值ID
-                            {
-                                item.CategoryId = GetValue(row, indexes, "CategoryId");
-                            }
+                            item.ItemTitle = title;
+                            item.ItemContent = contentVal;
+                            item.CategoryId = GetValue(row, indexes, "CategoryId");
                             
+                            // Log item details for debugging
+                            Log($"[Row {r}] Reading Item: Title='{item.ItemTitle}', Content='{item.ItemContent}', Status='{GetValue(row, indexes, "Status")}'");
+
+                            // Skip completely empty items (no title, no content) to avoid clutter
+                            if (string.IsNullOrWhiteSpace(item.ItemTitle) && string.IsNullOrWhiteSpace(item.ItemContent))
+                            {
+                                 continue;
+                            }
+
                             var statusStr = GetValue(row, indexes, "Status");
                             item.Status = !string.IsNullOrEmpty(statusStr) ? StatusHelper.Parse(statusStr) : StatusEnum.Todo;
 
@@ -396,124 +531,98 @@ namespace WorkLogApp.Services.Implementations
                             item.Tags = GetValue(row, indexes, "Tags");
                             item.SortOrder = ParseNullableInt(GetValue(row, indexes, "SortOrder"));
                             dayMap[dtItem].Items.Add(item);
+                            // Log($"[Row {r}] Added Item: {item.ItemTitle} ({dtItem:yyyy-MM-dd})");
                         }
-                        catch (Exception)
+                        catch (Exception ex)
                         {
-                            // Skip bad row
-                            continue;
+                            var msg = $"Row {r} parse error: {ex.Message}";
+                            result.Errors.Add(msg);
+                            Log(msg);
                         }
                     }
-                    list = dayMap.Values.OrderBy(d => d.LogDate.Date).ToList();
+                    result.Data = dayMap.Values.OrderBy(d => d.LogDate.Date).ToList();
+                    Log($"Import Finished. Total Days: {result.Data.Count}, Total Items: {result.Data.Sum(d => d.Items.Count)}");
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                // File access error
+                var msg = $"File access error: {ex.Message}";
+                result.Errors.Add(msg);
+                Log(msg);
             }
-            return list;
+            finally
+            {
+                try { if (File.Exists(tempPath)) File.Delete(tempPath); } catch {}
+            }
+            return result;
         }
 
-        public IEnumerable<WorkLog> ImportFromFile(string filePath)
+        public ImportResult ImportFromTxt(string filePath)
         {
-            var list = new List<WorkLog>();
-            if (string.IsNullOrWhiteSpace(filePath)) return list;
-            if (!File.Exists(filePath)) return list;
-
+            var result = new ImportResult();
+            if (!File.Exists(filePath))
+            {
+                result.Errors.Add("File not found");
+                return result;
+            }
             try
             {
-                using (var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                var json = File.ReadAllText(filePath);
+                var serializer = new JavaScriptSerializer();
+                var data = serializer.Deserialize<List<WorkLog>>(json);
+                if (data != null)
                 {
-                    IWorkbook wb;
-                    try
-                    {
-                        wb = WorkbookFactory.Create(fs);
-                    }
-                    catch
-                    {
-                        return list;
-                    }
-
-                    var sheet = wb.GetSheet(SheetName) ?? (wb.NumberOfSheets > 0 ? wb.GetSheetAt(0) : null);
-                    if (sheet == null) return list;
-
-                    var indexes = GetHeaderIndexes(sheet);
-                    DateTime currentDate = DateTime.MinValue;
-                    var dayMap = new Dictionary<DateTime, WorkLog>();
-
-                    for (int r = 1; r <= sheet.LastRowNum; r++)
-                    {
-                        try
-                        {
-                            var row = sheet.GetRow(r);
-                            if (row == null) continue;
-                            var firstCellText = GetString(row, 0);
-                            if (!string.IsNullOrWhiteSpace(firstCellText) && firstCellText.StartsWith("====="))
-                            {
-                                var m = Regex.Match(firstCellText, "=+\\s*(\\d{4}年\\d{2}月\\d{2}日)(?:\\s+星期[一二三四五六日天])?\\s*=+");
-                                if (m.Success && DateTime.TryParseExact(m.Groups[1].Value, "yyyy年MM月dd日", CultureInfo.InvariantCulture, DateTimeStyles.None, out var dt))
-                                {
-                                    currentDate = dt.Date;
-                                    if (!dayMap.ContainsKey(currentDate))
-                                    {
-                                        dayMap[currentDate] = new WorkLog { LogDate = currentDate, Items = new List<WorkLogItem>() };
-                                    }
-                                }
-                                continue;
-                            }
-
-                            // 识别总结行（标题=当日总结）
-                            var title = GetValue(row, indexes, "ItemTitle");
-                            if (string.Equals(title, "当日总结", StringComparison.OrdinalIgnoreCase))
-                            {
-                                var dt = currentDate != DateTime.MinValue
-                                    ? currentDate
-                                    : ParseNullableDateTime(GetValue(row, indexes, "LogDate"))?.Date ?? DateTime.MinValue;
-                                if (!dayMap.ContainsKey(dt))
-                                {
-                                    dayMap[dt] = new WorkLog { LogDate = dt, Items = new List<WorkLogItem>() };
-                                }
-                                dayMap[dt].DailySummary = GetValue(row, indexes, "ItemContent");
-                                continue;
-                            }
-
-                            var dtItem = currentDate != DateTime.MinValue
-                                ? currentDate
-                                : ParseNullableDateTime(GetValue(row, indexes, "LogDate"))?.Date ?? DateTime.MinValue;
-                            if (!dayMap.ContainsKey(dtItem))
-                            {
-                                dayMap[dtItem] = new WorkLog { LogDate = dtItem, Items = new List<WorkLogItem>() };
-                            }
-                            var item = new WorkLogItem();
-                            item.LogDate = dtItem;
-                            item.ItemTitle = GetValue(row, indexes, "ItemTitle");
-                            item.ItemContent = GetValue(row, indexes, "ItemContent");
-                            // 分类ID：支持文字名称（模板名）或数字ID，若为名称则生成稳定数值ID
-                            {
-                                item.CategoryId = GetValue(row, indexes, "CategoryId");
-                            }
-                            
-                            var statusStr = GetValue(row, indexes, "Status");
-                            item.Status = !string.IsNullOrEmpty(statusStr) ? StatusHelper.Parse(statusStr) : StatusEnum.Todo;
-
-                            item.StartTime = ParseNullableDateTime(GetValue(row, indexes, "StartTime"));
-                            item.EndTime = ParseNullableDateTime(GetValue(row, indexes, "EndTime"));
-                            item.Tags = GetValue(row, indexes, "Tags");
-                            item.SortOrder = ParseNullableInt(GetValue(row, indexes, "SortOrder"));
-                            dayMap[dtItem].Items.Add(item);
-                        }
-                        catch
-                        {
-                            continue;
-                        }
-                    }
-                    list = dayMap.Values.OrderBy(d => d.LogDate.Date).ToList();
+                    result.Data = data;
                 }
             }
-            catch
+            catch (Exception ex)
             {
-                // File access error
+                 result.Errors.Add("JSON Parse Error: " + ex.Message);
             }
-            return list;
+            return result;
+        }
+
+        public ImportResult CompareAndVerify(IEnumerable<WorkLog> source, IEnumerable<WorkLog> target)
+        {
+            var result = new ImportResult();
+            var srcList = source?.OrderBy(x => x.LogDate).ToList() ?? new List<WorkLog>();
+            var tgtList = target?.OrderBy(x => x.LogDate).ToList() ?? new List<WorkLog>();
+
+            if (srcList.Count != tgtList.Count)
+            {
+                 result.Errors.Add($"Day count mismatch: Source={srcList.Count}, Target={tgtList.Count}");
+            }
+
+            var srcDict = srcList.ToDictionary(x => x.LogDate.Date);
+            var tgtDict = tgtList.ToDictionary(x => x.LogDate.Date);
+
+            foreach (var kvp in srcDict)
+            {
+                if (!tgtDict.ContainsKey(kvp.Key))
+                {
+                    result.Errors.Add($"Date {kvp.Key:yyyy-MM-dd} missing in target.");
+                    continue;
+                }
+                var sDay = kvp.Value;
+                var tDay = tgtDict[kvp.Key];
+                
+                if (sDay.Items.Count != tDay.Items.Count)
+                {
+                     result.Errors.Add($"Date {kvp.Key:yyyy-MM-dd} item count mismatch: Source={sDay.Items.Count}, Target={tDay.Items.Count}");
+                }
+                // Can add deeper comparison if needed
+            }
+
+            foreach (var k in tgtDict.Keys)
+            {
+                if (!srcDict.ContainsKey(k))
+                {
+                    result.Errors.Add($"Date {k:yyyy-MM-dd} extra in target.");
+                }
+            }
+
+            result.Success = result.Errors.Count == 0;
+            return result;
         }
 
         private static string GetValue(IRow row, Dictionary<string, int> indexes, string key)
@@ -532,43 +641,52 @@ namespace WorkLogApp.Services.Implementations
             
             try 
             {
+                string val;
                 // Handle different cell types safely
                 switch (cell.CellType)
                 {
                     case CellType.String:
-                        return cell.StringCellValue ?? string.Empty;
+                        val = cell.StringCellValue;
+                        break;
                     case CellType.Numeric:
                         if (DateUtil.IsCellDateFormatted(cell))
                         {
-                            return cell.DateCellValue.ToString("yyyy-MM-dd HH:mm:ss");
+                            val = cell.DateCellValue.ToString("yyyy-MM-dd HH:mm:ss");
                         }
-                        return cell.NumericCellValue.ToString(CultureInfo.CurrentCulture);
+                        else
+                        {
+                            val = cell.NumericCellValue.ToString(CultureInfo.CurrentCulture);
+                        }
+                        break;
                     case CellType.Boolean:
-                        return cell.BooleanCellValue.ToString();
+                        val = cell.BooleanCellValue.ToString();
+                        break;
                     case CellType.Formula:
                         // Try to get the calculated value
                         try 
                         {
                              switch(cell.CachedFormulaResultType) 
                              {
-                                 case CellType.String: return cell.StringCellValue;
-                                 case CellType.Numeric: return cell.NumericCellValue.ToString(CultureInfo.CurrentCulture);
-                                 case CellType.Boolean: return cell.BooleanCellValue.ToString();
-                                 default: return cell.CellFormula;
+                                 case CellType.String: val = cell.StringCellValue; break;
+                                 case CellType.Numeric: val = cell.NumericCellValue.ToString(CultureInfo.CurrentCulture); break;
+                                 case CellType.Boolean: val = cell.BooleanCellValue.ToString(); break;
+                                 default: val = cell.CellFormula; break;
                              }
                         }
                         catch 
                         {
-                            return cell.CellFormula;
+                            val = cell.CellFormula;
                         }
+                        break;
                     case CellType.Blank:
-                        return string.Empty;
+                        val = string.Empty;
+                        break;
                     default:
                         // Try to force string conversion as a fallback, but non-destructively if possible
-                        // Old method was: cell.SetCellType(CellType.String); return cell.StringCellValue;
-                        // We'll try ToString() first which is safer
-                        return cell.ToString();
+                        val = cell.ToString();
+                        break;
                 }
+                return val?.Trim() ?? string.Empty;
             }
             catch
             {
@@ -591,10 +709,39 @@ namespace WorkLogApp.Services.Implementations
             DateTime dt; return DateTime.TryParse(s, out dt) ? (DateTime?)dt : null;
         }
 
-        private static Dictionary<string, int> GetHeaderIndexes(ISheet sheet)
+        private static IRow FindHeaderRow(ISheet sheet)
+        {
+            for (int i = 0; i <= Math.Min(20, sheet.LastRowNum); i++)
+            {
+                var row = sheet.GetRow(i);
+                if (row == null) continue;
+                int matchCount = 0;
+                for (int c = 0; c < row.LastCellNum; c++)
+                {
+                    var val = GetString(row, c);
+                    // Loose matching: remove spaces, ignore case
+                    if (!string.IsNullOrWhiteSpace(val)) 
+                    {
+                        // Check if val "looks like" a header
+                        foreach(var h in Header) 
+                        {
+                            if (string.Equals(val, h, StringComparison.OrdinalIgnoreCase)) { matchCount++; break; }
+                        }
+                        foreach(var kvp in HeaderNameMap)
+                        {
+                            if (val.IndexOf(kvp.Key, StringComparison.OrdinalIgnoreCase) >= 0) { matchCount++; break; }
+                        }
+                    }
+                }
+                // If we find at least 2 known columns, assume this is the header
+                if (matchCount >= 2) return row;
+            }
+            return sheet.GetRow(0);
+        }
+
+        private static Dictionary<string, int> GetHeaderIndexes(IRow headerRow)
         {
             var dict = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
-            var headerRow = sheet.GetRow(0);
             if (headerRow == null || headerRow.PhysicalNumberOfCells == 0)
             {
                 for (int i = 0; i < Header.Length; i++) dict[Header[i]] = i;
@@ -605,13 +752,27 @@ namespace WorkLogApp.Services.Implementations
                 var name = GetString(headerRow, c);
                 if (!string.IsNullOrWhiteSpace(name))
                 {
-                    if (HeaderNameMap.TryGetValue(name, out var key))
+                    bool found = false;
+                    foreach(var kvp in HeaderNameMap)
                     {
-                        dict[key] = c;
+                        if (name.IndexOf(kvp.Key, StringComparison.OrdinalIgnoreCase) >= 0)
+                        {
+                            dict[kvp.Value] = c;
+                            found = true;
+                            break;
+                        }
                     }
-                    else
+                    if (!found) 
                     {
-                        dict[name] = c;
+                        // Try English headers
+                         if (Header.Contains(name, StringComparer.OrdinalIgnoreCase))
+                         {
+                             dict[name] = c;
+                         }
+                         else
+                         {
+                            dict[name] = c;
+                         }
                     }
                 }
             }
