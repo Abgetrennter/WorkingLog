@@ -275,12 +275,25 @@ namespace WorkLogApp.UI.Forms
         private void CheckAndInheritItems(IImportExportService svc, string dataDir)
         {
             var targetDate = _dayPicker.Value.Date;
+
+            // 1. 不自动继承到未来日期
+            if (targetDate > DateTime.Today) return;
+
+            // 2. 周六周日不自动继承
+            //if (targetDate.DayOfWeek == DayOfWeek.Saturday || targetDate.DayOfWeek == DayOfWeek.Sunday) return;
+
             var targetLog = _allMonthItems.FirstOrDefault(x => x.LogDate.Date == targetDate);
             
             // If today already has items, do nothing
             if (targetLog != null && targetLog.Items.Any()) return;
             
+            // 3. 寻找上一工作日（跳过周末）
             var prevDate = targetDate.AddDays(-1);
+            while (prevDate.DayOfWeek == DayOfWeek.Saturday || prevDate.DayOfWeek == DayOfWeek.Sunday)
+            {
+                prevDate = prevDate.AddDays(-1);
+            }
+
             List<WorkLogItem> prevItems = null;
 
             // Check if prevDate is in current loaded month

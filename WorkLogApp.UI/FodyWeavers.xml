@@ -1,0 +1,10 @@
+﻿<Weavers xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="FodyWeavers.xsd">
+  <Costura>
+    <!-- 禁用程序集压缩，加快启动速度（可选） -->
+    <DisableCompression>false</DisableCompression>
+    <!-- 将 PDB 调试符号也嵌入进去 -->
+    <IncludeDebugSymbols>false</IncludeDebugSymbols>
+    <!-- 禁用清理临时文件，确保构建后输出目录不包含被嵌入的 DLL -->
+    <DisableCleanup>false</DisableCleanup>
+  </Costura>
+</Weavers>
