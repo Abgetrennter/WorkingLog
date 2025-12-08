@@ -324,9 +324,11 @@ namespace WorkLogApp.Services.Implementations
             var result = new ImportResult();
             
             // DEBUG LOGGING
+            bool debugMode = false;
             var logPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "worklog_import_debug.txt");
             void Log(string msg) 
             { 
+                if (!debugMode) return;
                 try { File.AppendAllText(logPath, $"[{DateTime.Now:HH:mm:ss}] {msg}\r\n"); } catch {} 
             }
             
