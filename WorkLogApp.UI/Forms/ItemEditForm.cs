@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
 using WorkLogApp.Core.Enums;
@@ -25,6 +26,123 @@ namespace WorkLogApp.UI.Forms
             UIStyleManager.ApplyVisualEnhancements(this);
             UIStyleManager.ApplyLightTheme(this);
             InitToolTips();
+            
+            // 绑定事件
+            // 先解绑以防重复（虽然构造函数只调一次，但为了保险）
+            _btnAddProgress.Click -= OnAddProgressClick;
+            _btnAddProgress.Click += OnAddProgressClick;
+            
+            _btnComplete.Click -= OnCompleteClick;
+            _btnComplete.Click += OnCompleteClick;
+
+            _statusComboBox.SelectedIndexChanged -= OnStatusChanged;
+            _statusComboBox.SelectedIndexChanged += OnStatusChanged;
+
+            // 确保窗口加载时刷新布局可见性
+            this.Load += (s, e) => UpdateVisibility(_item.Status);
+        }
+
+        private void OnAddProgressClick(object sender, EventArgs e)
+        {
+            var text = _txtDailyProgress.Text?.Trim();
+            if (string.IsNullOrWhiteSpace(text))
+            {
+                // 如果为空，视为仅执行保存逻辑（如果有其他修改）
+                OnSaveClick(sender, e);
+                return;
+            }
+
+            var today = DateTime.Now.ToString("yyyy-MM-dd");
+            var formatted = $"\n\n<!-- DAILY_PROGRESS {today} -->\n【{today} 进展】\n{text}\n<!-- END_DAILY_PROGRESS -->\n";
+            _contentBox.AppendText(formatted);
+            _txtDailyProgress.Clear();
+            
+            // 自动触发保存
+            OnSaveClick(sender, e);
+        }
+
+        private void OnCompleteClick(object sender, EventArgs e)
+        {
+            // 1. 追加当日进展（如果有）
+            var text = _txtDailyProgress.Text?.Trim();
+            if (!string.IsNullOrWhiteSpace(text))
+            {
+                var today = DateTime.Now.ToString("yyyy-MM-dd");
+                var formatted = $"\n\n<!-- DAILY_PROGRESS {today} -->\n【{today} 进展】\n{text}\n<!-- END_DAILY_PROGRESS -->\n";
+                _contentBox.AppendText(formatted);
+                _txtDailyProgress.Clear();
+            }
+
+            // 2. 更改状态为已完成
+            _item.Status = StatusEnum.Done;
+            // 同步 UI
+            _statusComboBox.SelectedValue = StatusEnum.Done;
+            // 更新可见性（此时会显示时间选择器，但我们将立即保存关闭，所以用户可能看不到变化，这没关系）
+            // UpdateVisibility(StatusEnum.Done); 
+
+            // 3. 执行追溯汇总逻辑 (Unique to this button)
+            // 需要构造服务
+            var baseDir = AppDomain.CurrentDomain.BaseDirectory;
+            var dataDir = Path.Combine(baseDir, "Data");
+            Directory.CreateDirectory(dataDir);
+            IImportExportService exportService = new ImportExportService();
+
+            TraceBackAndMergeProgress(exportService, dataDir);
+            
+            // 更新内容框以反映汇总结果
+            _contentBox.Text = _item.ItemContent;
+
+            // 4. 保存
+            OnSaveClick(sender, e);
+        }
+
+        private void OnStatusChanged(object sender, EventArgs e)
+        {
+            if (_statusComboBox.SelectedValue is StatusEnum s)
+            {
+                UpdateVisibility(s);
+            }
+        }
+
+        private void UpdateVisibility(StatusEnum status)
+        {
+            var isDone = status == StatusEnum.Done;
+            // 如果不是 Done，隐藏时间选择器
+            // 需求：未完成（Todo, Doing）显示“当日进展”，隐藏“开始/结束时间”
+            // 已完成（Done）显示“开始/结束时间”，隐藏“当日进展”
+            // 其他（Blocked, Cancelled）暂按已完成处理（显示时间，隐藏进展）或按需调整
+
+            var isUnfinished = status == StatusEnum.Todo || status == StatusEnum.Doing;
+
+            var showTime = !isUnfinished; // Done, Blocked, Cancelled 显示时间
+            var showDailyProgress = isUnfinished; // Todo, Doing 显示当日进展
+
+            _startPicker.Visible = showTime;
+            _endPicker.Visible = showTime;
+            lblStart.Visible = showTime;
+            lblEnd.Visible = showTime;
+
+            lblDailyProgress.Visible = showDailyProgress;
+            _txtDailyProgress.Visible = showDailyProgress;
+            // 隐藏整个按钮面板
+            progressButtonPanel.Visible = showDailyProgress;
+
+            // 确保底部按钮栏始终可见
+            // 需求调整：进行中/未完成状态（显示当日进展UI时）不显示底部的保存/取消按钮
+            // 只有已完成/其他状态（显示经典UI时）才显示底部按钮
+            var showBottomBar = !isUnfinished;
+
+            bottomBar.Visible = showBottomBar;
+            if (showBottomBar)
+            {
+                bottomBar.BringToFront();
+            }
+            _btnSave.Visible = showBottomBar;
+            _btnCancel.Visible = showBottomBar;
+            
+            // 强制重新布局
+            rootLayout.PerformLayout();
+            this.PerformLayout();
         }
 
         
@@ -43,6 +161,20 @@ namespace WorkLogApp.UI.Forms
             UIStyleManager.ApplyVisualEnhancements(this);
             UIStyleManager.ApplyLightTheme(this);
             InitToolTips();
+            
+            // 绑定事件
+            // 先解绑以防重复
+            _btnAddProgress.Click -= OnAddProgressClick;
+            _btnAddProgress.Click += OnAddProgressClick;
+            
+            _btnComplete.Click -= OnCompleteClick;
+            _btnComplete.Click += OnCompleteClick;
+
+            _statusComboBox.SelectedIndexChanged -= OnStatusChanged;
+            _statusComboBox.SelectedIndexChanged += OnStatusChanged;
+
+            // 确保窗口加载时刷新布局可见性
+            this.Load += (s, e) => UpdateVisibility(_item.Status);
         }
 
         private void InitToolTips()
@@ -60,6 +192,8 @@ namespace WorkLogApp.UI.Forms
             _statusComboBox.ValueMember = "Key";
             _statusComboBox.DataSource = StatusHelper.GetList();
             _statusComboBox.SelectedValue = _item.Status;
+            
+            UpdateVisibility(_item.Status);
 
             // 日期
             _datePicker.Value = _item.LogDate == default(DateTime) ? DateTime.Now.Date : _item.LogDate;
@@ -89,7 +223,7 @@ namespace WorkLogApp.UI.Forms
             _sortUpDown.Value = _item.SortOrder.HasValue ? _item.SortOrder.Value : 0;
         }
 
-        private void OnSaveClickNew(object sender, EventArgs e)
+        private void OnSaveClick(object sender, EventArgs e)
         {
             try
             {
@@ -132,6 +266,11 @@ namespace WorkLogApp.UI.Forms
                 Directory.CreateDirectory(dataDir);
 
                 IImportExportService exportService = new ImportExportService();
+
+                // (移除) 如果状态为已完成，执行追溯汇总逻辑
+                // if (_item.Status == StatusEnum.Done) ...
+                // 现已移至 OnCompleteClick 单独触发
+
                 var day = new WorkLog { LogDate = _item.LogDate.Date, Items = new System.Collections.Generic.List<WorkLogItem> { _item } };
                 var ok = exportService.ExportMonth(_item.LogDate, new[] { day }, dataDir);
                 if (!ok)
@@ -168,52 +307,108 @@ namespace WorkLogApp.UI.Forms
             }
         }
 
-        private void OnSaveClick(object sender, EventArgs e)
-        {
-            try
-            {
-                _item.ItemTitle = _titleBox.Text?.Trim();
-                _item.ItemContent = _contentBox.Text ?? string.Empty;
-
-                var baseDir = AppDomain.CurrentDomain.BaseDirectory;
-                var dataDir = Path.Combine(baseDir, "Data");
-                if (!Directory.Exists(dataDir)) Directory.CreateDirectory(dataDir);
-
-                // Excel 导出（按月文件、按日 Sheet）
-                IImportExportService exportService = new ImportExportService();
-                var day = new WorkLog { LogDate = _item.LogDate.Date, Items = new System.Collections.Generic.List<WorkLogItem> { _item } };
-                exportService.ExportMonth(_item.LogDate, new[] { day }, dataDir);
-
-                // 可选：文本备份，便于直接查看
-                var safeTitle = string.IsNullOrWhiteSpace(_item.ItemTitle) ? "untitled" : SanitizeFileName(_item.ItemTitle);
-                var fileName = $"{_item.LogDate:yyyy-MM-dd}_{safeTitle}.txt";
-                
-                // 按照 yyyy/MM/dd 结构存储
-                var year = _item.LogDate.ToString("yyyy");
-                var month = _item.LogDate.ToString("MM");
-                var dayStr = _item.LogDate.ToString("dd");
-                var txtDir = Path.Combine(dataDir, year, month, dayStr);
-                if (!Directory.Exists(txtDir)) Directory.CreateDirectory(txtDir);
-
-                var filePath = Path.Combine(txtDir, fileName);
-                File.WriteAllText(filePath, _item.ItemContent);
-
-                MessageBox.Show(this, $"已保存到 Excel 与文本备份:\n{Path.Combine(dataDir, "worklog_" + _item.LogDate.ToString("yyyyMM") + ".xlsx")}\n{filePath}", "保存成功", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                DialogResult = DialogResult.OK;
-                Close();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(this, "保存失败：" + ex.Message, "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-        }
-
         private static string SanitizeFileName(string name)
         {
             // 移除 Windows 非法文件名字符
             var invalid = new string(Path.GetInvalidFileNameChars());
             var pattern = "[" + Regex.Escape(invalid) + "]";
             return Regex.Replace(name, pattern, "_");
+        }
+
+        private void TraceBackAndMergeProgress(IImportExportService svc, string dataDir)
+        {
+            var currentTitle = _item.ItemTitle;
+            var collectedProgress = new System.Collections.Generic.List<string>();
+            
+            // 检查当日是否也有进展（尚未保存到 Content 中，但如果在 txtDailyProgress 中有内容，也应该包含？）
+            // 用户逻辑是：点击“确认添加”后进入 Content。所以此时 Content 应该已经包含了当日进展。
+            // 我们还需要提取当日 Content 中的进展吗？
+            // 需求：汇总所有的追溯的日志的每日进度。
+            // 包括当日的吗？通常包括。
+            // 提取当日内容中的进展
+            var todayProgress = ExtractProgress(_item.ItemContent);
+            if (!string.IsNullOrWhiteSpace(todayProgress))
+            {
+                collectedProgress.Add(todayProgress);
+            }
+
+            var checkDate = _item.LogDate.AddDays(-1);
+            var notFoundCount = 0;
+            
+            // 简单的内存缓存，避免重复加载同一月文件
+            var loadedMonths = new System.Collections.Generic.Dictionary<string, System.Collections.Generic.List<WorkLog>>();
+
+            while (notFoundCount <= 3)
+            {
+                var monthKey = checkDate.ToString("yyyyMM");
+                System.Collections.Generic.List<WorkLog> monthLogs = null;
+
+                if (loadedMonths.ContainsKey(monthKey))
+                {
+                    monthLogs = loadedMonths[monthKey];
+                }
+                else
+                {
+                    var monthRef = new DateTime(checkDate.Year, checkDate.Month, 1);
+                    var logs = svc.ImportMonth(monthRef, dataDir);
+                    monthLogs = logs != null ? new System.Collections.Generic.List<WorkLog>(logs) : new System.Collections.Generic.List<WorkLog>();
+                    loadedMonths[monthKey] = monthLogs;
+                }
+
+                var dayLog = monthLogs.FirstOrDefault(x => x.LogDate.Date == checkDate.Date);
+                var foundItem = dayLog?.Items?.FirstOrDefault(x => x.ItemTitle == currentTitle);
+
+                if (foundItem != null)
+                {
+                    notFoundCount = 0;
+                    var p = ExtractProgress(foundItem.ItemContent);
+                    if (!string.IsNullOrWhiteSpace(p))
+                    {
+                        collectedProgress.Add(p);
+                    }
+                }
+                else
+                {
+                    notFoundCount++;
+                }
+
+                checkDate = checkDate.AddDays(-1);
+                if ((_item.LogDate - checkDate).TotalDays > 365) break; // 防死循环
+            }
+
+            collectedProgress.Reverse(); // 时间正序
+
+            if (collectedProgress.Count > 0)
+            {
+                // 移除原有的 Daily Progress 标记块，生成纯净的汇总？
+                // 或者保留？
+                // 需求：汇总...合并到已完成的日志条目中
+                
+                var summary = string.Join("\n", collectedProgress);
+                
+                // 清理掉原有的分散的进展块（如果希望最终结果整洁）
+                // _item.ItemContent = RemoveAllProgressBlocks(_item.ItemContent);
+                // 加上汇总
+                
+                if (!_item.ItemContent.Contains("【项目全周期进展汇总】"))
+                {
+                    _item.ItemContent += "\n\n【项目全周期进展汇总】\n" + summary;
+                }
+            }
+        }
+
+        private string ExtractProgress(string content)
+        {
+            if (string.IsNullOrEmpty(content)) return null;
+            // 匹配 <!-- DAILY_PROGRESS ... --> ... <!-- END_DAILY_PROGRESS -->
+            var regex = new Regex(@"<!-- DAILY_PROGRESS .*? -->([\s\S]*?)<!-- END_DAILY_PROGRESS -->");
+            var match = regex.Match(content);
+            if (match.Success)
+            {
+                return match.Groups[1].Value.Trim();
+            }
+            // 兼容可能的手动格式？暂时只支持自动格式
+            return null;
         }
 
         private void OnCancelClick(object sender, EventArgs e)

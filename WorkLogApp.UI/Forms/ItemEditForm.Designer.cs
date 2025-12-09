@@ -28,6 +28,12 @@ namespace WorkLogApp.UI.Forms
         private System.Windows.Forms.TableLayoutPanel rootLayout;
         private System.Windows.Forms.FlowLayoutPanel bottomBar;
 
+        private Label lblDailyProgress;
+        private TextBox _txtDailyProgress;
+        private System.Windows.Forms.FlowLayoutPanel progressButtonPanel;
+        private Button _btnAddProgress;
+        private Button _btnComplete;
+
         protected override void Dispose(bool disposing)
         {
             if (disposing && (components != null))
@@ -57,10 +63,16 @@ namespace WorkLogApp.UI.Forms
             this._contentBox = new System.Windows.Forms.RichTextBox();
             this._btnSave = new System.Windows.Forms.Button();
             this._btnCancel = new System.Windows.Forms.Button();
+            this.lblDailyProgress = new System.Windows.Forms.Label();
+            this._txtDailyProgress = new System.Windows.Forms.TextBox();
+            this.progressButtonPanel = new System.Windows.Forms.FlowLayoutPanel();
+            this._btnAddProgress = new System.Windows.Forms.Button();
+            this._btnComplete = new System.Windows.Forms.Button();
             this.rootLayout = new System.Windows.Forms.TableLayoutPanel();
             this.bottomBar = new System.Windows.Forms.FlowLayoutPanel();
             ((System.ComponentModel.ISupportInitialize)(this._sortUpDown)).BeginInit();
             this.rootLayout.SuspendLayout();
+            this.progressButtonPanel.SuspendLayout();
             this.bottomBar.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -223,6 +235,53 @@ namespace WorkLogApp.UI.Forms
             this._contentBox.TabIndex = 15;
             this._contentBox.Text = "";
             // 
+            // lblDailyProgress
+            // 
+            this.lblDailyProgress.AutoSize = true;
+            this.lblDailyProgress.Location = new System.Drawing.Point(11, 600);
+            this.lblDailyProgress.Name = "lblDailyProgress";
+            this.lblDailyProgress.Size = new System.Drawing.Size(98, 18);
+            this.lblDailyProgress.TabIndex = 16;
+            this.lblDailyProgress.Text = "当日进展：";
+            // 
+            // _txtDailyProgress
+            // 
+            this._txtDailyProgress.Dock = System.Windows.Forms.DockStyle.Fill;
+            this._txtDailyProgress.Location = new System.Drawing.Point(295, 603);
+            this._txtDailyProgress.Multiline = true;
+            this._txtDailyProgress.Name = "_txtDailyProgress";
+            this._txtDailyProgress.Size = new System.Drawing.Size(594, 60);
+            this._txtDailyProgress.TabIndex = 17;
+            // 
+            // progressButtonPanel
+            // 
+            this.progressButtonPanel.AutoSize = true;
+            this.progressButtonPanel.Controls.Add(this._btnAddProgress);
+            this.progressButtonPanel.Controls.Add(this._btnComplete);
+            this.progressButtonPanel.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.progressButtonPanel.Location = new System.Drawing.Point(295, 669);
+            this.progressButtonPanel.Name = "progressButtonPanel";
+            this.progressButtonPanel.Size = new System.Drawing.Size(594, 40);
+            this.progressButtonPanel.TabIndex = 18;
+            // 
+            // _btnAddProgress
+            // 
+            this._btnAddProgress.Location = new System.Drawing.Point(3, 3);
+            this._btnAddProgress.Name = "_btnAddProgress";
+            this._btnAddProgress.Size = new System.Drawing.Size(120, 32);
+            this._btnAddProgress.TabIndex = 0;
+            this._btnAddProgress.Text = "确认添加";
+            this._btnAddProgress.UseVisualStyleBackColor = true;
+            // 
+            // _btnComplete
+            // 
+            this._btnComplete.Location = new System.Drawing.Point(129, 3);
+            this._btnComplete.Name = "_btnComplete";
+            this._btnComplete.Size = new System.Drawing.Size(120, 32);
+            this._btnComplete.TabIndex = 1;
+            this._btnComplete.Text = "确认完成";
+            this._btnComplete.UseVisualStyleBackColor = true;
+            // 
             // _btnSave
             // 
             this._btnSave.Location = new System.Drawing.Point(505, 3);
@@ -230,7 +289,7 @@ namespace WorkLogApp.UI.Forms
             this._btnSave.Size = new System.Drawing.Size(182, 42);
             this._btnSave.TabIndex = 0;
             this._btnSave.Text = "保存";
-            this._btnSave.Click += new System.EventHandler(this.OnSaveClickNew);
+            this._btnSave.Click += new System.EventHandler(this.OnSaveClick);
             // 
             // _btnCancel
             // 
@@ -261,13 +320,16 @@ namespace WorkLogApp.UI.Forms
             this.rootLayout.Controls.Add(this._endPicker, 1, 5);
             this.rootLayout.Controls.Add(this.lblContent, 0, 6);
             this.rootLayout.Controls.Add(this._contentBox, 1, 6);
-            this.rootLayout.Controls.Add(this.bottomBar, 1, 7);
+            this.rootLayout.Controls.Add(this.lblDailyProgress, 0, 7);
+            this.rootLayout.Controls.Add(this._txtDailyProgress, 1, 7);
+            this.rootLayout.Controls.Add(this.progressButtonPanel, 1, 8);
+            this.rootLayout.Controls.Add(this.bottomBar, 0, 9);
             this.rootLayout.Dock = System.Windows.Forms.DockStyle.Fill;
             this.rootLayout.Location = new System.Drawing.Point(0, 0);
             this.rootLayout.Margin = new System.Windows.Forms.Padding(0);
             this.rootLayout.Name = "rootLayout";
             this.rootLayout.Padding = new System.Windows.Forms.Padding(8);
-            this.rootLayout.RowCount = 8;
+            this.rootLayout.RowCount = 10;
             this.rootLayout.RowStyles.Add(new System.Windows.Forms.RowStyle());
             this.rootLayout.RowStyles.Add(new System.Windows.Forms.RowStyle());
             this.rootLayout.RowStyles.Add(new System.Windows.Forms.RowStyle());
@@ -308,6 +370,7 @@ namespace WorkLogApp.UI.Forms
             ((System.ComponentModel.ISupportInitialize)(this._sortUpDown)).EndInit();
             this.rootLayout.ResumeLayout(false);
             this.rootLayout.PerformLayout();
+            this.progressButtonPanel.ResumeLayout(false);
             this.bottomBar.ResumeLayout(false);
             this.ResumeLayout(false);
 

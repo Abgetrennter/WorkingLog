@@ -277,7 +277,7 @@ namespace WorkLogApp.UI.Forms
             var targetDate = _dayPicker.Value.Date;
 
             // 1. 不自动继承到未来日期
-            if (targetDate > DateTime.Today) return;
+            if (targetDate >= DateTime.Today.AddDays(1)) return;
 
             // 2. 周六周日不自动继承
             //if (targetDate.DayOfWeek == DayOfWeek.Saturday || targetDate.DayOfWeek == DayOfWeek.Sunday) return;
@@ -328,11 +328,16 @@ namespace WorkLogApp.UI.Forms
 
                     foreach (var item in inherited)
                     {
+                        var cleanContent = System.Text.RegularExpressions.Regex.Replace(
+                            item.ItemContent ?? "", 
+                            @"<!-- DAILY_PROGRESS .*? -->[\s\S]*?<!-- END_DAILY_PROGRESS -->\s*", 
+                            "");
+
                         targetLog.Items.Add(new WorkLogItem
                         {
                             LogDate = targetDate,
                             ItemTitle = item.ItemTitle,
-                            ItemContent = item.ItemContent,
+                            ItemContent = cleanContent,
                             CategoryId = item.CategoryId,
                             Status = StatusEnum.Doing,
                             Tags = item.Tags,
