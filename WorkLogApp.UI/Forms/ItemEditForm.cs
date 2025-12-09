@@ -52,8 +52,8 @@ namespace WorkLogApp.UI.Forms
                 return;
             }
 
-            var today = DateTime.Now.ToString("yyyy-MM-dd");
-            var formatted = $"\n\n<!-- DAILY_PROGRESS {today} -->\n【{today} 进展】\n{text}\n<!-- END_DAILY_PROGRESS -->\n";
+            var dateStr = _item.LogDate.ToString("yyyy-MM-dd");
+            var formatted = $"\n\n——————————\n【{dateStr} 进展】\n{text}\n——————————\n";
             _contentBox.AppendText(formatted);
             _txtDailyProgress.Clear();
             
@@ -67,8 +67,8 @@ namespace WorkLogApp.UI.Forms
             var text = _txtDailyProgress.Text?.Trim();
             if (!string.IsNullOrWhiteSpace(text))
             {
-                var today = DateTime.Now.ToString("yyyy-MM-dd");
-                var formatted = $"\n\n<!-- DAILY_PROGRESS {today} -->\n【{today} 进展】\n{text}\n<!-- END_DAILY_PROGRESS -->\n";
+                var dateStr = _item.LogDate.ToString("yyyy-MM-dd");
+                var formatted = $"\n\n——————————\n【{dateStr} 进展】\n{text}\n——————————\n";
                 _contentBox.AppendText(formatted);
                 _txtDailyProgress.Clear();
             }
@@ -400,14 +400,31 @@ namespace WorkLogApp.UI.Forms
         private string ExtractProgress(string content)
         {
             if (string.IsNullOrEmpty(content)) return null;
-            // 匹配 <!-- DAILY_PROGRESS ... --> ... <!-- END_DAILY_PROGRESS -->
-            var regex = new Regex(@"<!-- DAILY_PROGRESS .*? -->([\s\S]*?)<!-- END_DAILY_PROGRESS -->");
+            
+            // 新格式：——————————\n【yyyy-MM-dd 进展】\n...\n——————————
+            var regex = new Regex(@"——————————\s*\n【\d{4}-\d{2}-\d{2} 进展】\s*\n([\s\S]*?)\n——————————");
             var match = regex.Match(content);
             if (match.Success)
             {
                 return match.Groups[1].Value.Trim();
             }
-            // 兼容可能的手动格式？暂时只支持自动格式
+            
+            // 兼容旧格式1：—— yyyy-MM-dd 进展 —— ... —— 结束 ——
+            var regexV2 = new Regex(@"—— \d{4}-\d{2}-\d{2} 进展 ——([\s\S]*?)—— 结束 ——");
+            var matchV2 = regexV2.Match(content);
+            if (matchV2.Success)
+            {
+                return matchV2.Groups[1].Value.Trim();
+            }
+
+            // 兼容旧格式2
+            var oldRegex = new Regex(@"<!-- DAILY_PROGRESS .*? -->([\s\S]*?)<!-- END_DAILY_PROGRESS -->");
+            var oldMatch = oldRegex.Match(content);
+            if (oldMatch.Success)
+            {
+                return oldMatch.Groups[1].Value.Trim();
+            }
+
             return null;
         }
 

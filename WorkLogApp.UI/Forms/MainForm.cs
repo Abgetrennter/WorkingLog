@@ -328,9 +328,10 @@ namespace WorkLogApp.UI.Forms
 
                     foreach (var item in inherited)
                     {
+                        // 支持新旧多种格式的清理
                         var cleanContent = System.Text.RegularExpressions.Regex.Replace(
                             item.ItemContent ?? "", 
-                            @"<!-- DAILY_PROGRESS .*? -->[\s\S]*?<!-- END_DAILY_PROGRESS -->\s*", 
+                            @"(?:<!-- DAILY_PROGRESS .*? -->[\s\S]*?<!-- END_DAILY_PROGRESS -->|—— \d{4}-\d{2}-\d{2} 进展 ——[\s\S]*?—— 结束 ——|——————————\s*\n【\d{4}-\d{2}-\d{2} 进展】[\s\S]*?——————————)\s*", 
                             "");
 
                         targetLog.Items.Add(new WorkLogItem
