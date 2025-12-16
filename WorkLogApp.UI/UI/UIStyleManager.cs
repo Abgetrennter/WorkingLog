@@ -216,10 +216,11 @@ namespace WorkLogApp.UI.UI
                     ApplyHeadingIfTagged(lbl);
                 }
 
-                // 文本控件统一字体
+                // 文本控件统一字体和边框
                 if (c is TextBoxBase tbb)
                 {
                     tbb.Font = BodyFont;
+                    tbb.BorderStyle = BorderStyle.FixedSingle;
                 }
 
                 // 列表、按钮、下拉框等统一字体（支持紧凑模式：Tag == "compact"）
@@ -233,6 +234,11 @@ namespace WorkLogApp.UI.UI
                     else
                     {
                         c.Font = BodyFont;
+                    }
+
+                    if (c is ComboBox cb)
+                    {
+                        cb.FlatStyle = FlatStyle.Flat;
                     }
                 }
 

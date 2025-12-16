@@ -8,10 +8,11 @@ namespace WorkLogApp.UI.Forms
         private IContainer components = null;
 
         private Panel topPanel;
+        private TableLayoutPanel topLayout;
         private Label _lblFile;
         private Button _btnChoose;
         private ListView _previewList;
-        private Panel bottomPanel;
+        private FlowLayoutPanel bottomPanel;
         private Button _btnImport;
         private ColumnHeader _colDate;
         private ColumnHeader _colTitle;
@@ -40,7 +41,7 @@ namespace WorkLogApp.UI.Forms
             this._colTags = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this._colStatus = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this._colTime = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
-            this.bottomPanel = new System.Windows.Forms.Panel();
+            this.bottomPanel = new System.Windows.Forms.FlowLayoutPanel();
             this._btnImport = new System.Windows.Forms.Button();
             this.topPanel.SuspendLayout();
             this.bottomPanel.SuspendLayout();
@@ -48,8 +49,21 @@ namespace WorkLogApp.UI.Forms
             // 
             // topPanel
             // 
-            this.topPanel.Controls.Add(this._lblFile);
-            this.topPanel.Controls.Add(this._btnChoose);
+            this.topLayout = new System.Windows.Forms.TableLayoutPanel();
+            this.topLayout.ColumnCount = 2;
+            this.topLayout.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
+            this.topLayout.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle());
+            this.topLayout.Controls.Add(this._lblFile, 0, 0);
+            this.topLayout.Controls.Add(this._btnChoose, 1, 0);
+            this.topLayout.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.topLayout.Location = new System.Drawing.Point(8, 8);
+            this.topLayout.Name = "topLayout";
+            this.topLayout.RowCount = 1;
+            this.topLayout.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
+            this.topLayout.Size = new System.Drawing.Size(784, 32);
+            this.topLayout.TabIndex = 0;
+
+            this.topPanel.Controls.Add(this.topLayout);
             this.topPanel.Dock = System.Windows.Forms.DockStyle.Fill;
             this.topPanel.Location = new System.Drawing.Point(0, 0);
             this.topPanel.Name = "topPanel";
@@ -60,18 +74,22 @@ namespace WorkLogApp.UI.Forms
             // 
             // _lblFile
             // 
-            this._lblFile.AutoSize = true;
-            this._lblFile.Location = new System.Drawing.Point(8, 16);
+            this._lblFile.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right)));
+            this._lblFile.AutoEllipsis = true;
+            this._lblFile.Location = new System.Drawing.Point(3, 7);
             this._lblFile.Name = "_lblFile";
-            this._lblFile.Size = new System.Drawing.Size(98, 18);
+            this._lblFile.Size = new System.Drawing.Size(672, 18);
             this._lblFile.TabIndex = 0;
             this._lblFile.Text = "未选择文件";
+            this._lblFile.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
             // _btnChoose
             // 
-            this._btnChoose.Location = new System.Drawing.Point(620, 10);
+            this._btnChoose.Anchor = System.Windows.Forms.AnchorStyles.Right;
+            this._btnChoose.AutoSize = true;
+            this._btnChoose.Location = new System.Drawing.Point(681, 3);
             this._btnChoose.Name = "_btnChoose";
-            this._btnChoose.Size = new System.Drawing.Size(100, 30);
+            this._btnChoose.Size = new System.Drawing.Size(100, 26);
             this._btnChoose.TabIndex = 1;
             this._btnChoose.Text = "选择";
             this._btnChoose.Click += new System.EventHandler(this.OnChooseFile);
@@ -124,6 +142,7 @@ namespace WorkLogApp.UI.Forms
             // 
             this.bottomPanel.Controls.Add(this._btnImport);
             this.bottomPanel.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.bottomPanel.FlowDirection = System.Windows.Forms.FlowDirection.RightToLeft;
             this.bottomPanel.Location = new System.Drawing.Point(0, 548);
             this.bottomPanel.Name = "bottomPanel";
             this.bottomPanel.Padding = new System.Windows.Forms.Padding(8);

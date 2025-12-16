@@ -21,7 +21,20 @@ namespace WorkLogApp.UI.Controls
             Controls.Clear();
             _controls.Clear();
 
-            var y = 10;
+            var layout = new TableLayoutPanel
+            {
+                Dock = DockStyle.Top,
+                AutoSize = true,
+                AutoSizeMode = AutoSizeMode.GrowAndShrink,
+                ColumnCount = 2,
+                RowCount = placeholders.Count,
+                Padding = new Padding(10),
+            };
+
+            layout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 120F));
+            layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
+
+            int rowIndex = 0;
             foreach (var kv in placeholders)
             {
                 var name = kv.Key;
@@ -30,19 +43,21 @@ namespace WorkLogApp.UI.Controls
                 var label = new Label
                 {
                     Text = name + "：",
-                    Location = new Point(10, y + 4),
                     AutoSize = true,
-                    MaximumSize = new Size(105, 0)
+                    Anchor = AnchorStyles.Right | AnchorStyles.Top,
+                    Margin = new Padding(0, 8, 5, 0), // Align with input text
+                    MaximumSize = new Size(115, 0),
+                    TextAlign = ContentAlignment.TopRight
                 };
                 label.UseCompatibleTextRendering = true;
                 label.Font = UIStyleManager.BodyFont;
-                Controls.Add(label);
+                layout.Controls.Add(label, 0, rowIndex);
 
                 Control input;
                 switch (type)
                 {
                     case "textarea":
-                        var rtb = new RichTextBox { Width = 500, Height = 80, ScrollBars = RichTextBoxScrollBars.Vertical, BorderStyle = BorderStyle.FixedSingle };
+                        var rtb = new RichTextBox { Height = 80, ScrollBars = RichTextBoxScrollBars.Vertical, BorderStyle = BorderStyle.FixedSingle };
                         UIStyleManager.SetLineSpacing(rtb, 1.5f);
                         input = rtb;
                         break;
@@ -50,7 +65,7 @@ namespace WorkLogApp.UI.Controls
                         input = new DateTimePicker { Format = DateTimePickerFormat.Custom, CustomFormat = "yyyy-MM-dd HH:mm" };
                         break;
                     case "select":
-                        var combo = new ComboBox { Width = 500, DropDownStyle = ComboBoxStyle.DropDownList };
+                        var combo = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList };
                         if (options != null && options.TryGetValue(name, out var list) && list != null)
                         {
                             foreach (var opt in list) combo.Items.Add(opt);
@@ -59,7 +74,7 @@ namespace WorkLogApp.UI.Controls
                         input = combo;
                         break;
                     case "checkbox":
-                        var clb = new CheckedListBox { Width = 500, Height = 80 };
+                        var clb = new CheckedListBox { Height = 80, CheckOnClick = true };
                         if (options != null && options.TryGetValue(name, out var olist) && olist != null)
                         {
                             foreach (var opt in olist) clb.Items.Add(opt, false);
@@ -67,18 +82,21 @@ namespace WorkLogApp.UI.Controls
                         input = clb;
                         break;
                     default:
-                        input = new TextBox { Width = 500 };
+                        input = new TextBox { };
                         break;
                 }
-                input.Location = new Point(120, y);
+                
+                input.Dock = DockStyle.Fill;
                 input.Font = UIStyleManager.BodyFont;
-                Controls.Add(input);
+                input.Margin = new Padding(0, 0, 0, 15); // Spacing between rows
+
+                layout.Controls.Add(input, 1, rowIndex);
                 _controls[name] = input;
 
-                // 确保下一行的Y坐标考虑了标签和输入框中较高者的高度，避免重叠
-                var rowHeight = Math.Max(label.Height + 4, input.Height);
-                y += rowHeight + 15;
+                rowIndex++;
             }
+            
+            Controls.Add(layout);
             AutoScroll = true;
         }
 
