@@ -1,7 +1,7 @@
 {
   "Environment": "prod",
   "DataDirectory": "Data",
-  "ExcelFilePrefix": "worklog_",
+  "ExcelFilePrefix": "工作日志_",
   "TemplatesPath": "Templates/templates.json",
   "Notes": "生产环境配置"
 }

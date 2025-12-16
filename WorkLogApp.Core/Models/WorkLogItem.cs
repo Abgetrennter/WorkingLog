@@ -5,10 +5,11 @@ namespace WorkLogApp.Core.Models
 {
     public class WorkLogItem
     {
+        public string Id { get; set; } = Guid.NewGuid().ToString();
         public DateTime LogDate { get; set; }
         public string ItemTitle { get; set; }
         public string ItemContent { get; set; }
-        public string CategoryId { get; set; }
+        public string CategoryName { get; set; }
         public StatusEnum Status { get; set; }
         public DateTime? StartTime { get; set; }
         public DateTime? EndTime { get; set; }

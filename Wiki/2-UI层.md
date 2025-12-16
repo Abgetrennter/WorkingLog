@@ -103,7 +103,7 @@ private void OnOpenFileLocationClick(object sender, EventArgs e)
     var dataDir = Path.Combine(baseDir, "Data");
     Directory.CreateDirectory(dataDir);
     var month = _monthPicker.Value;
-    var fileName = "worklog_" + new DateTime(month.Year, month.Month, 1).ToString("yyyyMM") + ".xlsx";
+    var fileName = "工作日志_" + new DateTime(month.Year, month.Month, 1).ToString("yyyyMM") + ".xlsx";
     var filePath = Path.Combine(dataDir, fileName);
     if (File.Exists(filePath))
     {

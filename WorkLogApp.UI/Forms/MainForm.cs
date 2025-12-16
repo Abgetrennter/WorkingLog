@@ -182,6 +182,30 @@ namespace WorkLogApp.UI.Forms
             }
         }
 
+        private void FixUpCategoryNames(List<WorkLog> logs)
+        {
+            try
+            {
+                var categories = _templateService.GetAllCategories();
+                if (categories == null) return;
+                
+                var idToName = categories.ToDictionary(c => c.Id, c => c.Name, StringComparer.OrdinalIgnoreCase);
+                
+                foreach (var log in logs)
+                {
+                    if (log.Items == null) continue;
+                    foreach (var item in log.Items)
+                    {
+                        if (!string.IsNullOrEmpty(item.CategoryName) && idToName.ContainsKey(item.CategoryName))
+                        {
+                            item.CategoryName = idToName[item.CategoryName];
+                        }
+                    }
+                }
+            }
+            catch { /* Ignore errors during fixup */ }
+        }
+
         private void RefreshMonthItems()
         {
             RefreshItems();
@@ -206,6 +230,9 @@ namespace WorkLogApp.UI.Forms
                 IImportExportService svc = new ImportExportService();
                 var monthDays = svc.ImportMonth(monthRef, dataDir) ?? Enumerable.Empty<WorkLog>();
                 _allMonthItems = monthDays.ToList();
+
+                // 兼容性处理：如果加载的数据中 CategoryName 是 ID，则转换为名称
+                FixUpCategoryNames(_allMonthItems);
 
                 if (!_chkShowByMonth.Checked)
                 {
@@ -339,7 +366,7 @@ namespace WorkLogApp.UI.Forms
                             LogDate = targetDate,
                             ItemTitle = item.ItemTitle,
                             ItemContent = cleanContent,
-                            CategoryId = item.CategoryId,
+                            CategoryName = item.CategoryName,
                             Status = StatusEnum.Doing,
                             Tags = item.Tags,
                             SortOrder = item.SortOrder
@@ -411,6 +438,7 @@ namespace WorkLogApp.UI.Forms
             {
                 var items = _currentItems; // 当前显示的列表引用
                 var srcLog = draggedItem.Tag as WorkLogItem;
+
                 var dstLog = targetItem.Tag as WorkLogItem;
 
                 if (srcLog != null && dstLog != null)
@@ -437,6 +465,10 @@ namespace WorkLogApp.UI.Forms
             {
                 var lv = _listView.Items[i];
                 var item = lv.Tag as WorkLogItem;
+                if (item is WorkLogItem workLogItem)
+                {
+                    workLogItem.SortOrder = i;
+                }
                 if (item != null)
                 {
                     item.SortOrder = i;

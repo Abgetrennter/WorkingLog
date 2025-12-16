@@ -98,6 +98,13 @@ namespace WorkLogApp.Services.Implementations
             lock (_lock)
             {
                 if (_store == null) _store = new TemplateStore();
+
+                // Check for duplicate name
+                if (_store.Categories.Any(c => string.Equals(c.Name, name, StringComparison.OrdinalIgnoreCase)))
+                {
+                    throw new InvalidOperationException($"分类名称 '{name}' 已存在。");
+                }
+
                 var category = new Category
                 {
                     Id = Guid.NewGuid().ToString(),
@@ -117,6 +124,15 @@ namespace WorkLogApp.Services.Implementations
             {
                 var existing = _store?.Categories.FirstOrDefault(c => c.Id == category.Id);
                 if (existing == null) return false;
+
+                // Check for duplicate name if name changed
+                if (!string.Equals(existing.Name, category.Name, StringComparison.OrdinalIgnoreCase))
+                {
+                    if (_store.Categories.Any(c => c.Id != category.Id && string.Equals(c.Name, category.Name, StringComparison.OrdinalIgnoreCase)))
+                    {
+                        throw new InvalidOperationException($"分类名称 '{category.Name}' 已存在。");
+                    }
+                }
 
                 existing.Name = category.Name;
                 existing.SortOrder = category.SortOrder;

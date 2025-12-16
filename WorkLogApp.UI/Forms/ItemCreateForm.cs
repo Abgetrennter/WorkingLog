@@ -135,7 +135,7 @@ namespace WorkLogApp.UI.Forms
                 Tags = _tagsBox.Text?.Trim(),
                 StartTime = _startPicker.Checked ? (DateTime?)_startPicker.Value : null,
                 EndTime = _endPicker.Checked ? (DateTime?)_endPicker.Value : null,
-                CategoryId = _categoryCombo.SelectedCategory.Id
+                CategoryName = _categoryCombo.SelectedCategory.Name
             };
 
             // Generate Content

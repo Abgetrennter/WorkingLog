@@ -17,27 +17,30 @@ namespace WorkLogApp.Services.Implementations
 {
     public class ImportExportService : IImportExportService
     {
-        private const string FilePrefix = "worklog_";
+        public const string FilePrefix = "工作日志_";
+        private const string LegacyFilePrefix = "worklog_";
         private const string SheetName = "工作日志";
         private static readonly string[] Header = new[]
         {
-            "LogDate","ItemTitle","ItemContent","CategoryId","Status","StartTime","EndTime","Tags","SortOrder"
+            "LogDate","ItemTitle","ItemContent","CategoryName","Status","StartTime","EndTime","Tags","SortOrder","Id"
         };
         private static readonly string[] HeaderZh = new[]
         {
-            "日期","标题","内容","分类ID","状态","开始时间","结束时间","标签","排序"
+            "日期","标题","内容","分类","状态","开始时间","结束时间","标签","排序","日志ID"
         };
         private static readonly Dictionary<string, string> HeaderNameMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         {
             {"日期","LogDate"},
             {"标题","ItemTitle"},
             {"内容","ItemContent"},
-            {"分类ID","CategoryId"},
+            {"分类","CategoryName"},
+            {"分类ID","CategoryName"}, // 兼容旧文件
             {"状态","Status"},
             {"开始时间","StartTime"},
             {"结束时间","EndTime"},
             {"标签","Tags"},
-            {"排序","SortOrder"}
+            {"排序","SortOrder"},
+            {"日志ID","Id"}
         };
 
         public bool ExportMonth(DateTime month, IEnumerable<WorkLog> days, string outputDirectory)
@@ -244,16 +247,16 @@ namespace WorkLogApp.Services.Implementations
                     row.GetCell(0).SetCellValue(day.LogDate.ToString("yyyy年MM月dd日"));
                     row.GetCell(1).SetCellValue(item.ItemTitle ?? string.Empty);
                     row.GetCell(2).SetCellValue(item.ItemContent ?? string.Empty);
-                    // 分类ID列写模板名称；若无法解析则回退数值ID
-                    var catName = idToName.TryGetValue(item.CategoryId ?? "", out var nm)
-                        ? nm
-                        : (!string.IsNullOrWhiteSpace(item.Tags) && idToName.ContainsValue(item.Tags) ? item.Tags : item.CategoryId);
-                    row.GetCell(3).SetCellValue(catName);
+                    // 分类列直接写名称
+                    var catVal = item.CategoryName ?? string.Empty;
+                    if (idToName.ContainsKey(catVal)) catVal = idToName[catVal];
+                    row.GetCell(3).SetCellValue(catVal);
                     row.GetCell(4).SetCellValue(item.Status.ToChinese());
                     row.GetCell(5).SetCellValue(item.StartTime.HasValue ? item.StartTime.Value.ToString("yyyy-MM-dd HH:mm") : string.Empty);
                     row.GetCell(6).SetCellValue(item.EndTime.HasValue ? item.EndTime.Value.ToString("yyyy-MM-dd HH:mm") : string.Empty);
                     row.GetCell(7).SetCellValue(item.Tags ?? string.Empty);
                     row.GetCell(8).SetCellValue(item.SortOrder ?? 0);
+                    row.GetCell(9).SetCellValue(item.Id ?? string.Empty);
                     row.GetCell(0).CellStyle = blockStyle;
                     row.GetCell(1).CellStyle = titleStyle;
                     row.GetCell(2).CellStyle = blockStyle;
@@ -263,6 +266,7 @@ namespace WorkLogApp.Services.Implementations
                     row.GetCell(6).CellStyle = timeStyle;
                     row.GetCell(7).CellStyle = blockStyle;
                     row.GetCell(8).CellStyle = numberStyle;
+                    row.GetCell(9).CellStyle = blockStyle;
                 }
                 // 每个日期块的最后一行写入当日总结（标题=当日总结，内容=总结文本）
                 rowIndex++;
@@ -289,6 +293,8 @@ namespace WorkLogApp.Services.Implementations
             sheet.SetColumnWidth(6, 12 * 256);
             sheet.SetColumnWidth(7, 10 * 256);
             sheet.SetColumnWidth(8, 8 * 256);
+            sheet.SetColumnWidth(9, 36 * 256);
+            sheet.SetColumnHidden(9, true);
         }
 
         private static string GetChineseWeekday(DateTime dt)
@@ -309,8 +315,22 @@ namespace WorkLogApp.Services.Implementations
         {
             if (string.IsNullOrWhiteSpace(inputDirectory)) return new List<WorkLog>();
             var monthStart = new DateTime(month.Year, month.Month, 1);
+            
+            // Try new name first
             var fileName = FilePrefix + monthStart.ToString("yyyyMM") + ".xlsx";
             var filePath = Path.Combine(inputDirectory, fileName);
+
+            // If not found, try legacy name
+            if (!File.Exists(filePath))
+            {
+                var legacyName = LegacyFilePrefix + monthStart.ToString("yyyyMM") + ".xlsx";
+                var legacyPath = Path.Combine(inputDirectory, legacyName);
+                if (File.Exists(legacyPath))
+                {
+                    filePath = legacyPath;
+                }
+            }
+
             return ImportFromFile(filePath);
         }
 
@@ -514,7 +534,12 @@ namespace WorkLogApp.Services.Implementations
                             item.LogDate = dtItem;
                             item.ItemTitle = title;
                             item.ItemContent = contentVal;
-                            item.CategoryId = GetValue(row, indexes, "CategoryId");
+                            
+                            // 读取分类名称
+                            var catName = GetValue(row, indexes, "CategoryName");
+                            // 兼容旧版本列名
+                            if (string.IsNullOrWhiteSpace(catName)) catName = GetValue(row, indexes, "CategoryId");
+                            item.CategoryName = catName;
                             
                             // Log item details for debugging
                             Log($"[Row {r}] Reading Item: Title='{item.ItemTitle}', Content='{item.ItemContent}', Status='{GetValue(row, indexes, "Status")}'");
@@ -532,6 +557,13 @@ namespace WorkLogApp.Services.Implementations
                             item.EndTime = ParseNullableDateTime(GetValue(row, indexes, "EndTime"));
                             item.Tags = GetValue(row, indexes, "Tags");
                             item.SortOrder = ParseNullableInt(GetValue(row, indexes, "SortOrder"));
+                            
+                            var idStr = GetValue(row, indexes, "Id");
+                            if (!string.IsNullOrWhiteSpace(idStr))
+                            {
+                                item.Id = idStr;
+                            }
+                            
                             dayMap[dtItem].Items.Add(item);
                             // Log($"[Row {r}] Added Item: {item.ItemTitle} ({dtItem:yyyy-MM-dd})");
                         }

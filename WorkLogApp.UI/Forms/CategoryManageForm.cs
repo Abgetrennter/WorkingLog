@@ -214,17 +214,24 @@ namespace WorkLogApp.UI.Forms
             var name = Prompt("请输入分类名称：", "新建分类");
             if (string.IsNullOrWhiteSpace(name)) return;
 
-            var newCat = _templateService.CreateCategory(name, parent?.Id);
+            try
+            {
+                var newCat = _templateService.CreateCategory(name, parent?.Id);
             
-            var node = new TreeNode(newCat.Name) { Tag = newCat };
-            if (_treeView.SelectedNode != null)
-            {
-                _treeView.SelectedNode.Nodes.Add(node);
-                _treeView.SelectedNode.Expand();
+                var node = new TreeNode(newCat.Name) { Tag = newCat };
+                if (_treeView.SelectedNode != null)
+                {
+                    _treeView.SelectedNode.Nodes.Add(node);
+                    _treeView.SelectedNode.Expand();
+                }
+                else
+                {
+                    _treeView.Nodes.Add(node);
+                }
             }
-            else
+            catch (Exception ex)
             {
-                _treeView.Nodes.Add(node);
+                MessageBox.Show(this, ex.Message, "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
@@ -234,35 +241,42 @@ namespace WorkLogApp.UI.Forms
             var name = Prompt("请输入模板名称：", "新建模板");
             if (string.IsNullOrWhiteSpace(name)) return;
 
-            // 1. Create Category (Leaf)
-            var newCat = _templateService.CreateCategory(name, parent?.Id);
-            
-            // 2. Create Template
-            var newTpl = new WorkTemplate
+            try
             {
-                Name = name,
-                CategoryId = newCat.Id,
-                Content = "",
-                Tags = new List<string>(),
-                Placeholders = new Dictionary<string, string>(),
-                Options = new Dictionary<string, List<string>>()
-            };
-            _templateService.CreateTemplate(newTpl);
+                // 1. Create Category (Leaf)
+                var newCat = _templateService.CreateCategory(name, parent?.Id);
+            
+                // 2. Create Template
+                var newTpl = new WorkTemplate
+                {
+                    Name = name,
+                    CategoryId = newCat.Id,
+                    Content = "",
+                    Tags = new List<string>(),
+                    Placeholders = new Dictionary<string, string>(),
+                    Options = new Dictionary<string, List<string>>()
+                };
+                _templateService.CreateTemplate(newTpl);
 
-            // 3. Add Node
-            var node = new TreeNode(newCat.Name) { Tag = newCat };
-            if (_treeView.SelectedNode != null)
-            {
-                _treeView.SelectedNode.Nodes.Add(node);
-                _treeView.SelectedNode.Expand();
-            }
-            else
-            {
-                _treeView.Nodes.Add(node);
-            }
+                // 3. Add Node
+                var node = new TreeNode(newCat.Name) { Tag = newCat };
+                if (_treeView.SelectedNode != null)
+                {
+                    _treeView.SelectedNode.Nodes.Add(node);
+                    _treeView.SelectedNode.Expand();
+                }
+                else
+                {
+                    _treeView.Nodes.Add(node);
+                }
             
-            // 4. Select it to show editor
-            _treeView.SelectedNode = node;
+                // 4. Select it to show editor
+                _treeView.SelectedNode = node;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(this, ex.Message, "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
 
         private void OnRenameCategory(object sender, EventArgs e)
@@ -273,10 +287,31 @@ namespace WorkLogApp.UI.Forms
             var newName = Prompt("请输入新名称：", "重命名", cat.Name);
             if (string.IsNullOrWhiteSpace(newName)) return;
 
-            cat.Name = newName;
-            if (_templateService.UpdateCategory(cat))
+            // Preserve old name in case of failure (though we modify the object in place if successful? 
+            // Actually _templateService.UpdateCategory modifies the object in store, but the 'cat' object here is reference.
+            // If UpdateCategory throws, 'cat.Name' is not updated in store, but we set it here.
+            // So we should set it ONLY if update succeeds, OR catch and revert.
+            // Better: don't set it on object until confirmed.
+            // But UpdateCategory expects the object to have the NEW name.
+            
+            var oldName = cat.Name;
+            try
             {
-                _treeView.SelectedNode.Text = newName;
+                cat.Name = newName;
+                if (_templateService.UpdateCategory(cat))
+                {
+                    _treeView.SelectedNode.Text = newName;
+                }
+                else
+                {
+                     // Update failed (not exception, just false?)
+                     cat.Name = oldName; 
+                }
+            }
+            catch (Exception ex)
+            {
+                cat.Name = oldName; // Revert
+                MessageBox.Show(this, ex.Message, "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 

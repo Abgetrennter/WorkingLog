@@ -4,7 +4,7 @@
 
 - 双击运行 `WorkLogApp.UI.exe`（首次运行自动创建 `Data` 目录）。
 - 程序会加载 `Templates/templates.json` 中的模板；可在“分类管理”中编辑并保存到该文件。
-- 每月数据写入 `Data` 目录下的 `worklog_yyyyMM.xlsx`（例如：`worklog_202511.xlsx`）。
+- 每月数据写入 `Data` 目录下的 `工作日志_yyyyMM.xlsx`（例如：`工作日志_202511.xlsx`）。
 
 ## 主界面概览
 
@@ -38,14 +38,14 @@
 ## 导入数据
 
 - 打开 `导入向导`，选择外部 Excel 文件；预览通过后点击导入。
-- 系统按月份分组并写入 `Data` 目录下对应的 `worklog_yyyyMM.xlsx`。
+- 系统按月份分组并写入 `Data` 目录下对应的 `工作日志_yyyyMM.xlsx`。
 - 识别中文表头（`日期/标题/内容/分类ID/开始时间/结束时间/标签/排序`），并自动解析“当日总结”行（标题为“当日总结”）。
 - 分类名称会自动转换为稳定数值ID；无法解析时回退为数值列内容。
 
 ## 文件位置与命名
 
 - 数据目录：`Data`（程序同级）
-- 月度文件：`worklog_yyyyMM.xlsx`（如：`worklog_202511.xlsx`）
+- 月度文件：`工作日志_yyyyMM.xlsx`（如：`工作日志_202511.xlsx`）
 - 模板配置：`Templates/templates.json`
 - 打开方式：点击主界面 `打开EXCEL` 按钮自动定位到文件或目录。
 

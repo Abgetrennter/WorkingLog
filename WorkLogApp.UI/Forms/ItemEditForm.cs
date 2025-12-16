@@ -260,7 +260,7 @@ namespace WorkLogApp.UI.Forms
                 _item.EndTime = _endPicker.Checked ? (DateTime?)_endPicker.Value : null;
                 _item.SortOrder = (int)_sortUpDown.Value;
 
-                // 持久化到 Data\worklog_yyyyMM.xlsx
+                // 持久化到 Data\工作日志_yyyyMM.xlsx
                 var baseDir = AppDomain.CurrentDomain.BaseDirectory;
                 var dataDir = Path.Combine(baseDir, "Data");
                 Directory.CreateDirectory(dataDir);
@@ -294,7 +294,7 @@ namespace WorkLogApp.UI.Forms
                 File.WriteAllText(filePath, _item.ItemContent);
 
                 MessageBox.Show(this,
-                    $"已保存到 Excel 与文本备份:\n{Path.Combine(dataDir, "worklog_" + _item.LogDate.ToString("yyyyMM") + ".xlsx")}\n{filePath}",
+                    $"已保存到 Excel 与文本备份:\n{Path.Combine(dataDir, ImportExportService.FilePrefix + _item.LogDate.ToString("yyyyMM") + ".xlsx")}\n{filePath}",
                     "保存成功", MessageBoxButtons.OK, MessageBoxIcon.Information);
 
                 DialogResult = DialogResult.OK;
