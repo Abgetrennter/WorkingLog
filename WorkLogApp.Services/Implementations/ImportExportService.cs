@@ -69,7 +69,7 @@ namespace WorkLogApp.Services.Implementations
             return RewriteMonth(month, combined, outputDirectory);
         }
 
-        // 覆盖写入整月数据：生成单个工作表并写入传入的所有当月记录（按日期分块）
+        // 覆盖写入整月数据：生成按周分组的多个工作表
         public bool RewriteMonth(DateTime month, IEnumerable<WorkLog> days, string outputDirectory)
         {
             if (days == null) return false;
@@ -81,7 +81,51 @@ namespace WorkLogApp.Services.Implementations
             var filePath = Path.Combine(outputDirectory, fileName);
 
             IWorkbook wb = new XSSFWorkbook();
-            WriteMonthSheet(wb, month, days);
+            
+            var validDays = (days ?? Enumerable.Empty<WorkLog>())
+                .Where(d => d != null && d.LogDate.Year == month.Year && d.LogDate.Month == month.Month)
+                .OrderBy(d => d.LogDate)
+                .ToList();
+
+            if (validDays.Any())
+            {
+                // 按周分组（周一为一周开始）
+                var weeks = validDays.GroupBy(d =>
+                {
+                    // Calculate Monday of the week
+                    var diff = (7 + (d.LogDate.DayOfWeek - DayOfWeek.Monday)) % 7;
+                    return d.LogDate.Date.AddDays(-1 * diff);
+                }).OrderBy(g => g.Key);
+
+                foreach (var weekGroup in weeks)
+                {
+                    var weekDays = weekGroup.OrderBy(d => d.LogDate).ToList();
+                    if (!weekDays.Any()) continue;
+
+                    var firstDay = weekDays.First().LogDate;
+                    var lastDay = weekDays.Last().LogDate;
+                    
+                    // Sheet naming: "d日-d日" (Actual data range)
+                    string sheetName = $"{firstDay.Day}日-{lastDay.Day}日";
+                    
+                    // Ensure unique sheet name (just in case)
+                    int suffix = 1;
+                    string tempName = sheetName;
+                    while (wb.GetSheet(tempName) != null)
+                    {
+                        tempName = $"{sheetName}_{suffix++}";
+                    }
+                    sheetName = tempName;
+
+                    WriteSheet(wb, sheetName, weekDays, month);
+                }
+            }
+            else
+            {
+                // No data, create a default empty sheet
+                WriteSheet(wb, SheetName, new List<WorkLog>(), month);
+            }
+
             using (var outFs = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.None))
             {
                 wb.Write(outFs);
@@ -89,9 +133,9 @@ namespace WorkLogApp.Services.Implementations
             return true;
         }
 
-        private static void WriteMonthSheet(IWorkbook wb, DateTime month, IEnumerable<WorkLog> days)
+        private static void WriteSheet(IWorkbook wb, string sheetName, IEnumerable<WorkLog> days, DateTime monthContext)
         {
-            var sheet = wb.CreateSheet(SheetName);
+            var sheet = wb.CreateSheet(sheetName);
 
             // 准备模板名称映射：CategoryId(GUID) → 模板名称
             var idToName = new Dictionary<string, string>();
@@ -205,7 +249,7 @@ namespace WorkLogApp.Services.Implementations
             titleStyleB.SetFont(boldFont);
 
             var orderedDays = (days ?? Enumerable.Empty<WorkLog>())
-                .Where(d => d != null && d.LogDate.Year == month.Year && d.LogDate.Month == month.Month)
+                .Where(d => d != null && d.LogDate.Year == monthContext.Year && d.LogDate.Month == monthContext.Month)
                 .OrderBy(d => d.LogDate.Date)
                 .ToList();
 
@@ -396,37 +440,6 @@ namespace WorkLogApp.Services.Implementations
                         return result;
                     }
 
-                    var sheet = wb.GetSheet(SheetName) ?? (wb.NumberOfSheets > 0 ? wb.GetSheetAt(0) : null);
-                    if (sheet == null) 
-                    {
-                        result.Errors.Add("No valid sheet found.");
-                        Log("No sheet found.");
-                        return result;
-                    }
-                    Log($"Sheet: {sheet.SheetName}, LastRowNum: {sheet.LastRowNum}");
-
-                    var headerRow = FindHeaderRow(sheet);
-                    Log($"Header Row Index: {headerRow?.RowNum ?? -1}");
-                    
-                    var indexes = GetHeaderIndexes(headerRow);
-                    Log($"Indexes Found: {string.Join(", ", indexes.Select(kv => $"{kv.Key}={kv.Value}"))}");
-                    
-                    // Safety check: if indexes found are too few, fallback to default 0..N
-                    int foundKnownHeaders = 0;
-                    foreach(var k in Header) { if (indexes.ContainsKey(k)) foundKnownHeaders++; }
-                    if (foundKnownHeaders < 2) 
-                    {
-                        Log("Too few headers found. Falling back to default mapping.");
-                        // Fallback: assume standard order
-                        for(int i=0; i<Header.Length; i++) indexes[Header[i]] = i;
-                        // Also assume data starts from row 1 if headerRow was 0
-                        if (headerRow == null || headerRow.RowNum == 0) headerRow = sheet.GetRow(0);
-                    }
-
-                    int startRow = headerRow != null ? headerRow.RowNum + 1 : 1;
-                    Log($"Start Row: {startRow}");
-
-                    DateTime currentDate = DateTime.MinValue;
                     var dayMap = new Dictionary<DateTime, WorkLog>();
                     
                     // Try to guess month from filename if possible, for fallback
@@ -437,6 +450,23 @@ namespace WorkLogApp.Services.Implementations
                         monthStart = parsedDate;
                         Log($"Month from filename: {monthStart:yyyy-MM}");
                     }
+
+                    for (int sIdx = 0; sIdx < wb.NumberOfSheets; sIdx++)
+                    {
+                        var sheet = wb.GetSheetAt(sIdx);
+                        if (sheet == null) continue;
+                        if (wb.IsSheetHidden(sIdx)) continue;
+                        
+                        Log($"Processing Sheet [{sIdx}]: {sheet.SheetName}, LastRowNum: {sheet.LastRowNum}");
+                        ParseSheet(sheet, dayMap, result.Errors, Log, monthStart);
+                    }
+                    
+                    result.Data = dayMap.Values.OrderBy(d => d.LogDate.Date).ToList();
+                    Log($"Import Finished. Total Days: {result.Data.Count}, Total Items: {result.Data.Sum(d => d.Items.Count)}");
+                    
+                    /*
+
+
 
                     for (int r = startRow; r <= sheet.LastRowNum; r++)
                     {
@@ -575,7 +605,7 @@ namespace WorkLogApp.Services.Implementations
                         }
                     }
                     result.Data = dayMap.Values.OrderBy(d => d.LogDate.Date).ToList();
-                    Log($"Import Finished. Total Days: {result.Data.Count}, Total Items: {result.Data.Sum(d => d.Items.Count)}");
+                    */
                 }
             }
             catch (Exception ex)
@@ -741,6 +771,149 @@ namespace WorkLogApp.Services.Implementations
         private static DateTime? ParseNullableDateTime(string s)
         {
             DateTime dt; return DateTime.TryParse(s, out dt) ? (DateTime?)dt : null;
+        }
+
+        private void ParseSheet(ISheet sheet, Dictionary<DateTime, WorkLog> dayMap, List<string> errors, Action<string> Log, DateTime monthStart)
+        {
+             var headerRow = FindHeaderRow(sheet);
+             Log($"Header Row Index: {headerRow?.RowNum ?? -1}");
+             
+             var indexes = GetHeaderIndexes(headerRow);
+             Log($"Indexes Found: {string.Join(", ", indexes.Select(kv => $"{kv.Key}={kv.Value}"))}");
+             
+             // Safety check: if indexes found are too few, fallback to default 0..N
+             int foundKnownHeaders = 0;
+             foreach(var k in Header) { if (indexes.ContainsKey(k)) foundKnownHeaders++; }
+             if (foundKnownHeaders < 2) 
+             {
+                 Log("Too few headers found. Falling back to default mapping.");
+                 // Fallback: assume standard order
+                 for(int i=0; i<Header.Length; i++) indexes[Header[i]] = i;
+                 // Also assume data starts from row 1 if headerRow was 0
+                 if (headerRow == null || headerRow.RowNum == 0) headerRow = sheet.GetRow(0);
+             }
+
+             int startRow = headerRow != null ? headerRow.RowNum + 1 : 1;
+             Log($"Start Row: {startRow}");
+
+             DateTime currentDate = DateTime.MinValue;
+
+             for (int r = startRow; r <= sheet.LastRowNum; r++)
+             {
+                 try
+                 {
+                     var row = sheet.GetRow(r);
+                     if (row == null) continue;
+                     var firstCellText = GetString(row, 0);
+                     
+                     var title = GetValue(row, indexes, "ItemTitle");
+                     var contentVal = GetValue(row, indexes, "ItemContent");
+
+                     if (!string.IsNullOrWhiteSpace(firstCellText))
+                     {
+                         bool isExplicitMarker = firstCellText.StartsWith("——");
+                         bool looksLikeDate = firstCellText.Contains("年") && firstCellText.Contains("月") && firstCellText.Contains("日");
+                         
+                         bool isDateRow = isExplicitMarker || (looksLikeDate && string.IsNullOrWhiteSpace(title) && string.IsNullOrWhiteSpace(contentVal));
+                         
+                         if (isDateRow)
+                         {
+                             var m = Regex.Match(firstCellText, @"(\d{4})年(\d{1,2})月(\d{1,2})日");
+                             if (m.Success)
+                             {
+                                 if (DateTime.TryParseExact(m.Value, "yyyy年M月d日", CultureInfo.InvariantCulture, DateTimeStyles.None, out var dt))
+                                 {
+                                     currentDate = dt.Date;
+                                     Log($"[Row {r}] Found Date Row: {currentDate:yyyy-MM-dd}");
+                                     if (!dayMap.ContainsKey(currentDate))
+                                     {
+                                         dayMap[currentDate] = new WorkLog { LogDate = currentDate, Items = new List<WorkLogItem>() };
+                                     }
+                                 }
+                                 continue;
+                             }
+                         }
+                     }
+
+                     if (string.Equals(title, "当日总结", StringComparison.OrdinalIgnoreCase))
+                     {
+                         var dt = currentDate != DateTime.MinValue
+                             ? currentDate
+                             : ParseNullableDateTime(GetValue(row, indexes, "LogDate"))?.Date ?? monthStart;
+                         if (dt == DateTime.MinValue) { Log($"[Row {r}] Skip Summary: No Date"); continue; }
+
+                         if (!dayMap.ContainsKey(dt))
+                         {
+                             dayMap[dt] = new WorkLog { LogDate = dt, Items = new List<WorkLogItem>() };
+                         }
+                         dayMap[dt].DailySummary = contentVal;
+                         Log($"[Row {r}] Read Summary for {dt:yyyy-MM-dd}");
+                         continue;
+                     }
+
+                     DateTime itemDate = DateTime.MinValue;
+                     var dateCellStr = GetValue(row, indexes, "LogDate");
+                     if (!string.IsNullOrWhiteSpace(dateCellStr))
+                     {
+                         if (DateTime.TryParse(dateCellStr, out var d)) itemDate = d.Date;
+                         else if (DateTime.TryParseExact(dateCellStr, "yyyyMMdd", null, DateTimeStyles.None, out d)) itemDate = d.Date;
+                     }
+
+                     var dtItem = itemDate != DateTime.MinValue ? itemDate : (currentDate != DateTime.MinValue ? currentDate : monthStart);
+                     
+                     if (dtItem == DateTime.MinValue) 
+                     {
+                         if (string.IsNullOrWhiteSpace(title)) 
+                         {
+                             continue;
+                         }
+                         Log($"[Row {r}] Skip Item: No Date. Title={title}, DateCell={dateCellStr}");
+                         continue;
+                     }
+
+                     if (!dayMap.ContainsKey(dtItem))
+                     {
+                         dayMap[dtItem] = new WorkLog { LogDate = dtItem, Items = new List<WorkLogItem>() };
+                     }
+                     var item = new WorkLogItem();
+                     item.LogDate = dtItem;
+                     item.ItemTitle = title;
+                     item.ItemContent = contentVal;
+                     
+                     var catName = GetValue(row, indexes, "CategoryName");
+                     if (string.IsNullOrWhiteSpace(catName)) catName = GetValue(row, indexes, "CategoryId");
+                     item.CategoryName = catName;
+                     
+                     Log($"[Row {r}] Reading Item: Title='{item.ItemTitle}', Content='{item.ItemContent}', Status='{GetValue(row, indexes, "Status")}'");
+
+                     if (string.IsNullOrWhiteSpace(item.ItemTitle) && string.IsNullOrWhiteSpace(item.ItemContent))
+                     {
+                          continue;
+                     }
+
+                     var statusStr = GetValue(row, indexes, "Status");
+                     item.Status = !string.IsNullOrEmpty(statusStr) ? StatusHelper.Parse(statusStr) : StatusEnum.Todo;
+
+                     item.StartTime = ParseNullableDateTime(GetValue(row, indexes, "StartTime"));
+                     item.EndTime = ParseNullableDateTime(GetValue(row, indexes, "EndTime"));
+                     item.Tags = GetValue(row, indexes, "Tags");
+                     item.SortOrder = ParseNullableInt(GetValue(row, indexes, "SortOrder"));
+                     
+                     var idStr = GetValue(row, indexes, "Id");
+                     if (!string.IsNullOrWhiteSpace(idStr))
+                     {
+                         item.Id = idStr;
+                     }
+                     
+                     dayMap[dtItem].Items.Add(item);
+                 }
+                 catch (Exception ex)
+                 {
+                     var msg = $"Row {r} parse error: {ex.Message}";
+                     errors.Add(msg);
+                     Log(msg);
+                 }
+             }
         }
 
         private static IRow FindHeaderRow(ISheet sheet)
