@@ -114,6 +114,14 @@ namespace WorkLogApp.UI.Forms
             }
         }
 
+        private void OnTodoClick(object sender, EventArgs e)
+        {
+            using (var form = new TodoForm())
+            {
+                form.ShowDialog(this);
+            }
+        }
+
         private void OnImportMonthClick(object sender, EventArgs e)
         {
             RefreshItems();
@@ -508,6 +516,7 @@ namespace WorkLogApp.UI.Forms
         {
             var toolTip = new ToolTip();
             toolTip.SetToolTip(_btnCreate, "创建新的日志事项");
+            toolTip.SetToolTip(_btnTodo, "待办事项 (自动保存)");
             toolTip.SetToolTip(_btnCategoryManage, "管理分类和模板");
             toolTip.SetToolTip(_btnImportWizard, "导入外部日志数据");
             toolTip.SetToolTip(_btnImport, "刷新当前数据显示");

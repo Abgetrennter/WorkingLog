@@ -14,6 +14,7 @@ namespace WorkLogApp.UI.Forms
         private ListView _listView;
         private DateTimePicker _monthPicker;
         private Button _btnCreate;
+        private Button _btnTodo;
         private Button _btnImport;
         private Button _btnCategoryManage;
         private Button _btnImportWizard;
@@ -52,6 +53,7 @@ namespace WorkLogApp.UI.Forms
         {
             this.topPanel = new System.Windows.Forms.FlowLayoutPanel();
             this._btnCreate = new System.Windows.Forms.Button();
+            this._btnTodo = new System.Windows.Forms.Button();
             this._dayPicker = new System.Windows.Forms.DateTimePicker();
             this._chkShowByMonth = new System.Windows.Forms.CheckBox();
             this._monthPicker = new System.Windows.Forms.DateTimePicker();
@@ -81,6 +83,7 @@ namespace WorkLogApp.UI.Forms
             this.topPanel.AutoSize = true;
             this.topPanel.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
             this.topPanel.Controls.Add(this._btnCreate);
+            this.topPanel.Controls.Add(this._btnTodo);
             this.topPanel.Controls.Add(this._chkShowByMonth);
             this.topPanel.Controls.Add(this._dayPicker);
             this.topPanel.Controls.Add(this._monthPicker);
@@ -108,6 +111,17 @@ namespace WorkLogApp.UI.Forms
             this._btnCreate.Tag = "compact";
             this._btnCreate.Text = "创建事项";
             this._btnCreate.Click += new System.EventHandler(this.OnCreateItemClick);
+            // 
+            // _btnTodo
+            // 
+            this._btnTodo.Location = new System.Drawing.Point(148, 12);
+            this._btnTodo.Margin = new System.Windows.Forms.Padding(4, 6, 4, 6);
+            this._btnTodo.Name = "_btnTodo";
+            this._btnTodo.Size = new System.Drawing.Size(130, 36);
+            this._btnTodo.TabIndex = 1;
+            this._btnTodo.Tag = "compact";
+            this._btnTodo.Text = "待办事项";
+            this._btnTodo.Click += new System.EventHandler(this.OnTodoClick);
             // 
             // _dayPicker
             // 
