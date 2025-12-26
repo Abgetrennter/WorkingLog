@@ -4,6 +4,7 @@ using System.IO;
 using System.Windows.Forms;
 using WorkLogApp.Services.Implementations;
 using WorkLogApp.UI.UI;
+using WorkLogApp.UI.Helpers;
 
 namespace WorkLogApp.UI
 {
@@ -47,8 +48,14 @@ namespace WorkLogApp.UI
 
             try
             {
-                var env = ConfigurationManager.AppSettings["ConfigEnvironment"] ?? "dev";
                 var baseDir = AppDomain.CurrentDomain.BaseDirectory;
+                // 释放嵌入式资源
+                ResourceManager.ExtractAppConfig(baseDir);
+                ResourceManager.ExtractConfigs(baseDir);
+                ResourceManager.ExtractTemplates(baseDir);
+                ResourceManager.EnsureDataDirectory(baseDir);
+
+                var env = ConfigurationManager.AppSettings["ConfigEnvironment"] ?? "dev";
                 var configPath = Path.Combine(baseDir, "Configs", $"{env}.config.json");
                 
                 var relativeTplPath = ConfigurationManager.AppSettings["TemplatesPath"] ?? "Templates\\templates.json";

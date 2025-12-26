@@ -32,6 +32,20 @@
     </Content>
     <Content Include="app.ico" />
   </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="..\Configs\dev.config.json">
+      <Link>Configs\dev.config.json</Link>
+    </EmbeddedResource>
+    <EmbeddedResource Include="..\Configs\prod.config.json">
+      <Link>Configs\prod.config.json</Link>
+    </EmbeddedResource>
+    <EmbeddedResource Include="..\Templates\templates.json">
+      <Link>Templates\templates.json</Link>
+    </EmbeddedResource>
+    <EmbeddedResource Include="App.config">
+      <Link>App.config</Link>
+    </EmbeddedResource>
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Costura.Fody" Version="5.7.0">
