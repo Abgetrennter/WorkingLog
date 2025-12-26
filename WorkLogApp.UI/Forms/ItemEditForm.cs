@@ -356,7 +356,7 @@ namespace WorkLogApp.UI.Forms
                 }
 
                 var dayLog = monthLogs.FirstOrDefault(x => x.LogDate.Date == checkDate.Date);
-                var foundItem = dayLog?.Items?.FirstOrDefault(x => x.ItemTitle == currentTitle);
+                var foundItem = dayLog?.Items?.FirstOrDefault(x => x.TrackingId == _item.TrackingId);
 
                 if (foundItem != null)
                 {

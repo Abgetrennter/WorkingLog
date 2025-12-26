@@ -63,5 +63,13 @@ namespace WorkLogApp.Core.Helpers
                 new KeyValuePair<StatusEnum, string>(StatusEnum.Cancelled, StatusEnum.Cancelled.ToChinese())
             };
         }
+
+        /// <summary>
+        /// 判断状态是否为未完成（Todo, Doing, Blocked）
+        /// </summary>
+        public static bool IsIncomplete(StatusEnum status)
+        {
+            return status == StatusEnum.Todo || status == StatusEnum.Doing || status == StatusEnum.Blocked;
+        }
     }
 }

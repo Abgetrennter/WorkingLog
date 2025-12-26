@@ -22,11 +22,11 @@ namespace WorkLogApp.Services.Implementations
         private const string SheetName = "工作日志";
         private static readonly string[] Header = new[]
         {
-            "LogDate","ItemTitle","ItemContent","CategoryName","Status","StartTime","EndTime","Tags","SortOrder","Id"
+            "LogDate","ItemTitle","ItemContent","CategoryName","Status","StartTime","EndTime","Tags","SortOrder","Id","TrackingId"
         };
         private static readonly string[] HeaderZh = new[]
         {
-            "日期","标题","内容","分类","状态","开始时间","结束时间","标签","排序","日志ID"
+            "日期","标题","内容","分类","状态","开始时间","结束时间","标签","排序","日志ID","追踪ID"
         };
         private static readonly Dictionary<string, string> HeaderNameMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         {
@@ -40,7 +40,9 @@ namespace WorkLogApp.Services.Implementations
             {"结束时间","EndTime"},
             {"标签","Tags"},
             {"排序","SortOrder"},
-            {"日志ID","Id"}
+            {"日志ID","Id"},
+            {"追踪ID","TrackingId"},
+            {"TrackingId","TrackingId"}
         };
 
         public bool ExportMonth(DateTime month, IEnumerable<WorkLog> days, string outputDirectory)
@@ -301,6 +303,7 @@ namespace WorkLogApp.Services.Implementations
                     row.GetCell(7).SetCellValue(item.Tags ?? string.Empty);
                     row.GetCell(8).SetCellValue(item.SortOrder ?? 0);
                     row.GetCell(9).SetCellValue(item.Id ?? string.Empty);
+                    row.GetCell(10).SetCellValue(item.TrackingId ?? string.Empty);
                     row.GetCell(0).CellStyle = blockStyle;
                     row.GetCell(1).CellStyle = titleStyle;
                     row.GetCell(2).CellStyle = blockStyle;
@@ -311,6 +314,7 @@ namespace WorkLogApp.Services.Implementations
                     row.GetCell(7).CellStyle = blockStyle;
                     row.GetCell(8).CellStyle = numberStyle;
                     row.GetCell(9).CellStyle = blockStyle;
+                    row.GetCell(10).CellStyle = blockStyle;
                 }
                 // 每个日期块的最后一行写入当日总结（标题=当日总结，内容=总结文本）
                 rowIndex++;
@@ -338,7 +342,9 @@ namespace WorkLogApp.Services.Implementations
             sheet.SetColumnWidth(7, 10 * 256);
             sheet.SetColumnWidth(8, 8 * 256);
             sheet.SetColumnWidth(9, 36 * 256);
+            sheet.SetColumnWidth(10, 30 * 256);
             sheet.SetColumnHidden(9, true);
+            sheet.SetColumnHidden(10, true);
         }
 
         private static string GetChineseWeekday(DateTime dt)
@@ -593,7 +599,19 @@ namespace WorkLogApp.Services.Implementations
                             {
                                 item.Id = idStr;
                             }
-                            
+      
+                            // 读取追踪ID
+                            var trackingIdStr = GetValue(row, indexes, "TrackingId");
+                            if (!string.IsNullOrWhiteSpace(trackingIdStr))
+                            {
+                                item.TrackingId = trackingIdStr;
+                            }
+                            else if (StatusHelper.IsIncomplete(item.Status))
+                            {
+                                // 迁移：为未完成条目自动生成追踪ID
+                                item.TrackingId = Guid.NewGuid().ToString();
+                            }
+      
                             dayMap[dtItem].Items.Add(item);
                             // Log($"[Row {r}] Added Item: {item.ItemTitle} ({dtItem:yyyy-MM-dd})");
                         }

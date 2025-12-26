@@ -16,3 +16,4 @@ Data/
 *.jpg
 dist/
 tools/node_modules/
+.roo/

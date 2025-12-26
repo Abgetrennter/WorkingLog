@@ -369,6 +369,14 @@ namespace WorkLogApp.UI.Forms
                             @"(?:<!-- DAILY_PROGRESS .*? -->[\s\S]*?<!-- END_DAILY_PROGRESS -->|—— \d{4}-\d{2}-\d{2} 进展 ——[\s\S]*?—— 结束 ——|——————————\s*\n【\d{4}-\d{2}-\d{2} 进展】[\s\S]*?——————————)\s*", 
                             "");
 
+                        // 继承原条目的追踪ID，若原条目没有则生成新的
+                        var trackingId = item.TrackingId;
+                        if (string.IsNullOrEmpty(trackingId))
+                        {
+                            trackingId = Guid.NewGuid().ToString();
+                            // 可选：更新原条目的TrackingId（需要持久化）
+                            // 暂不实现，因为迁移机制会处理
+                        }
                         targetLog.Items.Add(new WorkLogItem
                         {
                             LogDate = targetDate,
@@ -377,7 +385,8 @@ namespace WorkLogApp.UI.Forms
                             CategoryName = item.CategoryName,
                             Status = StatusEnum.Doing,
                             Tags = item.Tags,
-                            SortOrder = item.SortOrder
+                            SortOrder = item.SortOrder,
+                            TrackingId = trackingId
                         });
                     }
 
