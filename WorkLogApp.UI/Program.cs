@@ -2,14 +2,19 @@ using System;
 using System.Configuration;
 using System.IO;
 using System.Windows.Forms;
+using SimpleInjector;
 using WorkLogApp.Services.Implementations;
+using WorkLogApp.Services.Interfaces;
 using WorkLogApp.UI.UI;
 using WorkLogApp.UI.Helpers;
+using WorkLogApp.UI.Forms;
 
 namespace WorkLogApp.UI
 {
     static class Program
     {
+        private static Container _container;
+
         [STAThread]
         static void Main()
         {
@@ -61,11 +66,14 @@ namespace WorkLogApp.UI
                 var relativeTplPath = ConfigurationManager.AppSettings["TemplatesPath"] ?? "Templates\\templates.json";
                 var templatesPath = Path.Combine(baseDir, relativeTplPath);
 
-                var templateService = new TemplateService();
-                templateService.LoadTemplates(templatesPath);
+                // 设置依赖注入容器
+                _container = new Container();
+                ConfigureServices(_container, templatesPath);
+                // 禁用验证以避免可释放瞬态组件警告
+                // _container.Verify();
 
-                var importExportService = new ImportExportService();
-                var main = new Forms.MainForm(templateService, importExportService);
+                // 解析主窗体
+                var main = _container.GetInstance<MainForm>();
                 UIStyleManager.ApplyVisualEnhancements(main);
                 Application.Run(main);
             }
@@ -81,6 +89,32 @@ namespace WorkLogApp.UI
                 catch { }
                 MessageBox.Show($"启动失败:\n{ex}", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
+        }
+
+        private static void ConfigureServices(Container container, string templatesPath)
+        {
+            // 禁用自动验证，避免可释放瞬态组件警告
+            container.Options.EnableAutoVerification = false;
+
+            // 注册服务为单例（共享实例）
+            container.Register<ITemplateService, TemplateService>(Lifestyle.Singleton);
+            container.Register<IImportExportService, ImportExportService>(Lifestyle.Singleton);
+
+            // 注册 MainForm 为每次解析时新建（瞬态），指定使用带依赖的构造函数
+            container.Register<MainForm>(() => new MainForm(
+                container.GetInstance<ITemplateService>(),
+                container.GetInstance<IImportExportService>()));
+
+            // 注册其他可能需要注入的窗体
+            container.Register<ItemCreateForm>(() => new ItemCreateForm(
+                container.GetInstance<ITemplateService>()));
+            container.Register<CategoryManageForm>(() => new CategoryManageForm(
+                container.GetInstance<ITemplateService>()));
+            // 注意：其他窗体可能也需要注册，但暂时先处理这两个
+
+            // 获取 TemplateService 实例并加载模板
+            var templateService = container.GetInstance<ITemplateService>();
+            templateService.LoadTemplates(templatesPath);
         }
     }
 }

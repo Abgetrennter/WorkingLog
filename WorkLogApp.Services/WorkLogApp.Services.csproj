@@ -6,6 +6,7 @@
     <AssemblyName>WorkLogApp.Services</AssemblyName>
   </PropertyGroup>
   <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
     <PackageReference Include="NPOI" Version="2.6.1" />
   </ItemGroup>
   <ItemGroup>

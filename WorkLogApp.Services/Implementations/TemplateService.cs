@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
-using System.Web.Script.Serialization;
+using Newtonsoft.Json;
 using WorkLogApp.Core.Models;
 using WorkLogApp.Services.Interfaces;
 
@@ -30,8 +30,7 @@ namespace WorkLogApp.Services.Implementations
                 try
                 {
                     var json = File.ReadAllText(templatesJsonPath);
-                    var serializer = new JavaScriptSerializer();
-                    _store = serializer.Deserialize<TemplateStore>(json);
+                    _store = JsonConvert.DeserializeObject<TemplateStore>(json);
                     
                     // Fallback if deserialization returns null (e.g. empty file)
                     if (_store == null) _store = new TemplateStore();
@@ -58,8 +57,7 @@ namespace WorkLogApp.Services.Implementations
                 if (_store == null || string.IsNullOrWhiteSpace(_templatesPath)) return false;
                 try
                 {
-                    var serializer = new JavaScriptSerializer();
-                    var json = serializer.Serialize(_store);
+                    var json = JsonConvert.SerializeObject(_store);
                     var dir = Path.GetDirectoryName(_templatesPath);
                     if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
                     File.WriteAllText(_templatesPath, json);

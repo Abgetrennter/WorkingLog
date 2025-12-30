@@ -235,8 +235,7 @@ namespace WorkLogApp.UI.Forms
                     monthRef = new DateTime(_monthPicker.Value.Year, _monthPicker.Value.Month, 1);
                 }
 
-                IImportExportService svc = new ImportExportService();
-                var monthDays = svc.ImportMonth(monthRef, dataDir) ?? Enumerable.Empty<WorkLog>();
+                var monthDays = _importExportService.ImportMonth(monthRef, dataDir) ?? Enumerable.Empty<WorkLog>();
                 _allMonthItems = monthDays.ToList();
 
                 // 兼容性处理：如果加载的数据中 CategoryName 是 ID，则转换为名称
@@ -245,7 +244,7 @@ namespace WorkLogApp.UI.Forms
                 if (!_chkShowByMonth.Checked)
                 {
                     // Auto-inherit logic
-                    CheckAndInheritItems(svc, dataDir);
+                    CheckAndInheritItems(_importExportService, dataDir);
 
                     // 显示当天
                     _currentItems = _allMonthItems
