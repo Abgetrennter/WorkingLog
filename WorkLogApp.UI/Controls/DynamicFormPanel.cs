@@ -47,10 +47,12 @@ namespace WorkLogApp.UI.Controls
                     Anchor = AnchorStyles.Right | AnchorStyles.Top,
                     Margin = new Padding(0, 8, 5, 0), // Align with input text
                     MaximumSize = new Size(115, 0),
-                    TextAlign = ContentAlignment.TopRight
+                    TextAlign = ContentAlignment.TopRight,
+                    Font = UIStyleManager.BodyFont,
+                    UseCompatibleTextRendering = false
                 };
-                label.UseCompatibleTextRendering = true;
-                label.Font = UIStyleManager.BodyFont;
+                //label.UseCompatibleTextRendering = true;
+                //label.Font = UIStyleManager.BodyFont;
                 layout.Controls.Add(label, 0, rowIndex);
 
                 Control input;

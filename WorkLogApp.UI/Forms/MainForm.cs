@@ -105,7 +105,8 @@ namespace WorkLogApp.UI.Forms
 
         private void OnCreateItemClick(object sender, EventArgs e)
         {
-            using (var form = new ItemCreateForm(_templateService))
+            var initialDate = _dayPicker.Value;
+            using (var form = new ItemCreateForm(_templateService, initialDate))
             {
                 form.StartPosition = FormStartPosition.CenterParent;
                 form.ShowDialog(this);

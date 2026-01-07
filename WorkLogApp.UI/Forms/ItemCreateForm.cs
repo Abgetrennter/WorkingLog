@@ -25,10 +25,16 @@ namespace WorkLogApp.UI.Forms
         {
         }
 
-        public ItemCreateForm(ITemplateService templateService)
+        public ItemCreateForm(ITemplateService templateService, DateTime? initialDate = null)
         {
             _templateService = templateService;
             InitializeComponent();
+
+            if (initialDate.HasValue)
+            {
+                _datePicker.Value = initialDate.Value;
+            }
+
             IconHelper.ApplyIcon(this);
             
             // 应用统一样式（字体、缩放、抗锯齿）
