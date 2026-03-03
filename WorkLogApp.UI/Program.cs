@@ -110,7 +110,9 @@ namespace WorkLogApp.UI
             // 注册 MainForm 为每次解析时新建（瞬态），指定使用带依赖的构造函数
             container.Register<MainForm>(() => new MainForm(
                 container.GetInstance<ITemplateService>(),
-                container.GetInstance<IImportExportService>()));
+                container.GetInstance<IImportExportService>(),
+                container.GetInstance<IPdfExportService>(),
+                container.GetInstance<IWordExportService>()));
 
             // 注册其他窗体为瞬态，使用带依赖的构造函数
             container.Register<ItemCreateForm>(() => new ItemCreateForm(

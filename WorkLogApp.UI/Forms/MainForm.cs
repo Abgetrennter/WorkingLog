@@ -18,6 +18,8 @@ namespace WorkLogApp.UI.Forms
     {
         private readonly ITemplateService _templateService;
         private readonly IImportExportService _importExportService;
+        private readonly IPdfExportService _pdfExportService;
+        private readonly IWordExportService _wordExportService;
         private System.Collections.Generic.List<WorkLogItem> _currentItems = new System.Collections.Generic.List<WorkLogItem>();
         private System.Collections.Generic.List<WorkLog> _allMonthItems = new System.Collections.Generic.List<WorkLog>();
 
@@ -29,6 +31,8 @@ namespace WorkLogApp.UI.Forms
             {
                 _templateService = null;
                 _importExportService = null;
+                _pdfExportService = null;
+                _wordExportService = null;
             }
             else
             {
@@ -37,10 +41,16 @@ namespace WorkLogApp.UI.Forms
             }
         }
 
-        public MainForm(ITemplateService templateService, IImportExportService importExportService)
+        public MainForm(
+            ITemplateService templateService,
+            IImportExportService importExportService,
+            IPdfExportService pdfExportService,
+            IWordExportService wordExportService)
         {
             _templateService = templateService;
             _importExportService = importExportService;
+            _pdfExportService = pdfExportService;
+            _wordExportService = wordExportService;
             
             InitializeComponent();
             InitToolTips();
@@ -186,6 +196,38 @@ namespace WorkLogApp.UI.Forms
             var btnOpenExcel = _toolBar.CreateGhostButton("Excel");
             btnOpenExcel.Click += OnOpenFileLocationClick;
             _toolBar.AddToRight(btnOpenExcel);
+
+            _toolBar.AddSeparator(_toolBar.RightGroup);
+
+            var btnExport = _toolBar.CreatePrimaryButton("导出");
+            btnExport.Click += OnExportClick;
+            _toolBar.AddToRight(btnExport);
+        }
+
+        private void OnExportClick(object sender, EventArgs e)
+        {
+            try
+            {
+                var baseDir = AppDomain.CurrentDomain.BaseDirectory;
+                var relativePath = System.Configuration.ConfigurationManager.AppSettings["DataPath"] ?? "Data";
+                var dataDir = System.IO.Path.Combine(baseDir, relativePath);
+                System.IO.Directory.CreateDirectory(dataDir);
+
+                using (var dialog = new ExportDialog(
+                    _importExportService,
+                    _pdfExportService,
+                    _wordExportService,
+                    _allMonthItems,
+                    dataDir))
+                {
+                    dialog.ShowDialog(this);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(this, $"导出功能初始化失败：{ex.Message}", "错误",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
 
         private void OnCreateItemClick(object sender, EventArgs e)
