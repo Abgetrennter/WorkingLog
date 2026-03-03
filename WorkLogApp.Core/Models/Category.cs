@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using System.Web.Script.Serialization;
+using Newtonsoft.Json;
 
 namespace WorkLogApp.Core.Models
 {
@@ -12,7 +12,7 @@ namespace WorkLogApp.Core.Models
         public int SortOrder { get; set; }      // 同级排序权重
 
         // 运行时属性
-        [ScriptIgnore]
+        [JsonIgnore]
         public List<Category> Children { get; set; } = new List<Category>();
     }
 }

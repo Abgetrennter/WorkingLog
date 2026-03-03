@@ -1,51 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <Configuration Condition="'$(Configuration)' == ''">Debug</Configuration>
-    <Platform Condition="'$(Platform)' == ''">AnyCPU</Platform>
-    <ProjectGuid>{91288E47-3D54-48BE-9FB7-DBBE61AC6362}</ProjectGuid>
-    <OutputType>Library</OutputType>
+    <TargetFramework>net472</TargetFramework>
     <RootNamespace>WorkLogApp.Core</RootNamespace>
     <AssemblyName>WorkLogApp.Core</AssemblyName>
-    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
-    <FileAlignment>512</FileAlignment>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="System" />
-    <Reference Include="System.Core" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Web.Extensions" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
   </ItemGroup>
-  <ItemGroup>
-    <Compile Include="Models\WorkLog.cs" />
-    <Compile Include="Models\WorkLogItem.cs" />
-    <Compile Include="Models\Category.cs" />
-    <Compile Include="Models\ImportResult.cs" />
-    <Compile Include="Models\WorkTemplate.cs" />
-    <Compile Include="Models\TemplateStore.cs" />
-    <Compile Include="Models\Templates\TemplateRoot.cs" />
-    <Compile Include="Models\Templates\TemplateCategory.cs" />
-    <Compile Include="Models\Templates\CategoryTemplate.cs" />
-    <Compile Include="Enums\StatusEnum.cs" />
-    <Compile Include="Helpers\StatusHelper.cs" />
-  </ItemGroup>
-  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
