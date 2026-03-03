@@ -15,6 +15,11 @@ namespace WorkLogApp.UI
     {
         private static Container _container;
 
+        /// <summary>
+        /// 获取 DI 容器实例（供设计时支持使用）
+        /// </summary>
+        public static Container Container => _container;
+
         [STAThread]
         static void Main()
         {
@@ -98,6 +103,8 @@ namespace WorkLogApp.UI
 
             // 注册服务为单例（共享实例）
             container.Register<ITemplateService, TemplateService>(Lifestyle.Singleton);
+            container.Register<IPdfExportService, PdfExportService>(Lifestyle.Singleton);
+            container.Register<IWordExportService, WordExportService>(Lifestyle.Singleton);
             container.Register<IImportExportService, ImportExportService>(Lifestyle.Singleton);
 
             // 注册 MainForm 为每次解析时新建（瞬态），指定使用带依赖的构造函数

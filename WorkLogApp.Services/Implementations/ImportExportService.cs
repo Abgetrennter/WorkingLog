@@ -17,6 +17,18 @@ namespace WorkLogApp.Services.Implementations
 {
     public class ImportExportService : IImportExportService
     {
+        private readonly IPdfExportService _pdfExportService;
+        private readonly IWordExportService _wordExportService;
+
+        /// <summary>
+        /// 默认构造函数（用于依赖注入）
+        /// </summary>
+        public ImportExportService(IPdfExportService pdfExportService, IWordExportService wordExportService)
+        {
+            _pdfExportService = pdfExportService ?? throw new ArgumentNullException(nameof(pdfExportService));
+            _wordExportService = wordExportService ?? throw new ArgumentNullException(nameof(wordExportService));
+        }
+
         public const string FilePrefix = "工作日志_";
         private const string LegacyFilePrefix = "worklog_";
         private const string SheetName = "工作日志";
@@ -1045,6 +1057,22 @@ namespace WorkLogApp.Services.Implementations
                 }
             }
             return dict;
+        }
+
+        /// <summary>
+        /// 导出整月工作日志为 PDF
+        /// </summary>
+        public bool ExportMonthToPdf(DateTime month, IEnumerable<WorkLog> days, string outputPath, PdfExportOptions options = null)
+        {
+            return _pdfExportService.ExportMonthToPdf(month, days, outputPath, options);
+        }
+
+        /// <summary>
+        /// 导出整月工作日志为 Word
+        /// </summary>
+        public bool ExportMonthToWord(DateTime month, IEnumerable<WorkLog> days, string outputPath, WordExportOptions options = null)
+        {
+            return _wordExportService.ExportMonthToWord(month, days, outputPath, options);
         }
     }
 }
