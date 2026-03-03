@@ -50,12 +50,15 @@ namespace WorkLogApp.UI.Forms
         private void InitializeComponent()
         {
             this.Text = "导出工作日志";
-            this.Size = new Size(480, 380);
+            this.Size = new Size(520, 420);
+            this.MinimumSize = new Size(480, 380);
             this.StartPosition = FormStartPosition.CenterParent;
-            this.FormBorderStyle = FormBorderStyle.FixedDialog;
+            this.FormBorderStyle = FormBorderStyle.Sizable;
             this.MaximizeBox = false;
             this.MinimizeBox = false;
             this.Padding = new Padding(24);
+            this.AutoSize = true;
+            this.AutoSizeMode = AutoSizeMode.GrowAndShrink;
 
             // 主布局
             var rootLayout = new TableLayoutPanel
@@ -400,21 +403,13 @@ namespace WorkLogApp.UI.Forms
 
         private string PerformExport(DateTime startDate, DateTime endDate, ExportFormat format)
         {
-            // 筛选指定日期范围内的日志
+            // 筛选指定日期范围内的日志 - 使用 LogDate 而不是 StartTime
             var filteredLogs = _allLogs
-                .SelectMany(l => l.Items.Select(i => new { Log = l, Item = i }))
-                .Where(x => x.Item.StartTime.HasValue &&
-                            x.Item.StartTime.Value.Date >= startDate.Date &&
-                            x.Item.StartTime.Value.Date <= endDate.Date)
-                .GroupBy(x => x.Log.LogDate)
-                .Select(g =>
+                .Where(l => l.LogDate.Date >= startDate.Date && l.LogDate.Date <= endDate.Date)
+                .Select(l => new WorkLog
                 {
-                    var log = new WorkLog
-                    {
-                        LogDate = g.Key,
-                        Items = g.Select(x => x.Item).ToList()
-                    };
-                    return log;
+                    LogDate = l.LogDate,
+                    Items = l.Items.ToList()
                 })
                 .Where(l => l.Items.Count > 0)
                 .ToList();

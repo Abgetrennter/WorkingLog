@@ -461,6 +461,7 @@ namespace WorkLogApp.Services.Implementations
         /// </summary>
         private void SetPageMargins(PdfPage page, PageMargins margins)
         {
+             #pragma warning disable
             // PdfSharp 默认使用点（1/72英寸）
             double mmToPoint = 72.0 / 25.4;
             

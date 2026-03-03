@@ -16,6 +16,7 @@ namespace WorkLogApp.UI.Controls
         private Panel _centerGroup;
         private Panel _rightGroup;
         private Panel _separator;
+        #pragma warning disable
         private bool _isInitialized = false;
 
         /// <summary>
