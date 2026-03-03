@@ -46,8 +46,11 @@ namespace WorkLogApp.UI.Forms
             InitToolTips();
             IconHelper.ApplyIcon(this);
 
-            UIStyleManager.ApplyVisualEnhancements(this);
-            UIStyleManager.ApplyLightTheme(this);
+            // 应用 Fluent Design 主题
+            FluentStyleManager.ApplyFluentTheme(this);
+            
+            // 配置 Fluent ToolBar
+            SetupFluentToolBar();
 
             // 运行时：为列表添加双击编辑事件
             if (!UIStyleManager.IsDesignMode)
@@ -111,6 +114,78 @@ namespace WorkLogApp.UI.Forms
                 catch { }
                 return;
             }
+        }
+
+        /// <summary>
+        /// 配置 Fluent 风格的工具栏
+        /// </summary>
+        private void SetupFluentToolBar()
+        {
+            if (UIStyleManager.IsDesignMode) return;
+
+            // 清空现有控件
+            _toolBar.LeftGroup.Controls.Clear();
+            _toolBar.CenterGroup.Controls.Clear();
+            _toolBar.RightGroup.Controls.Clear();
+
+            // 左侧：主要操作按钮
+            var btnCreate = _toolBar.CreatePrimaryButton("+ 创建事项");
+            btnCreate.Click += OnCreateItemClick;
+            _toolBar.AddToLeft(btnCreate);
+
+            var btnTodo = _toolBar.CreateSecondaryButton("待办事项");
+            btnTodo.Click += OnTodoClick;
+            _toolBar.AddToLeft(btnTodo);
+
+            _toolBar.AddSeparator(_toolBar.LeftGroup);
+
+            // 中间：日期选择区域
+            _chkShowByMonth.Text = "按月";
+            _chkShowByMonth.AutoSize = true;
+            _chkShowByMonth.Dock = DockStyle.Left;
+            _chkShowByMonth.Margin = new Padding(8, 8, 4, 0);
+            _toolBar.AddToCenter(_chkShowByMonth);
+
+            _dayPicker.Width = 140;
+            _dayPicker.Dock = DockStyle.Left;
+            _dayPicker.Margin = new Padding(4, 4, 4, 0);
+            FluentStyleManager.ApplyFluentStyle(_dayPicker);
+            _toolBar.AddToCenter(_dayPicker);
+
+            _monthPicker.Width = 100;
+            _monthPicker.Dock = DockStyle.Left;
+            _monthPicker.Margin = new Padding(4, 4, 4, 0);
+            FluentStyleManager.ApplyFluentStyle(_monthPicker);
+            _toolBar.AddToCenter(_monthPicker);
+
+            _toolBar.AddSeparator(_toolBar.CenterGroup);
+
+            var btnDailySummary = _toolBar.CreateGhostButton("每日总结");
+            btnDailySummary.Click += OnDailySummaryClick;
+            _toolBar.AddToCenter(btnDailySummary);
+
+            // 右侧：工具按钮
+            var btnCategory = _toolBar.CreateGhostButton("分类");
+            btnCategory.Click += OnCategoryManageClick;
+            _toolBar.AddToRight(btnCategory);
+
+            var btnImport = _toolBar.CreateGhostButton("导入");
+            btnImport.Click += OnImportWizardClick;
+            _toolBar.AddToRight(btnImport);
+
+            var btnRefresh = _toolBar.CreateGhostButton("刷新");
+            btnRefresh.Click += OnImportMonthClick;
+            _toolBar.AddToRight(btnRefresh);
+
+            _toolBar.AddSeparator(_toolBar.RightGroup);
+
+            var btnSave = _toolBar.CreateSecondaryButton("保存");
+            btnSave.Click += OnSaveClick;
+            _toolBar.AddToRight(btnSave);
+
+            var btnOpenExcel = _toolBar.CreateGhostButton("Excel");
+            btnOpenExcel.Click += OnOpenFileLocationClick;
+            _toolBar.AddToRight(btnOpenExcel);
         }
 
         private void OnCreateItemClick(object sender, EventArgs e)

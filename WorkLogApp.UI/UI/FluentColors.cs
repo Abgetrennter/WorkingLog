@@ -16,6 +16,12 @@ namespace WorkLogApp.UI.UI
         /// <summary>主色亮色 - Hover状态</summary>
         public static readonly Color PrimaryLight = Color.FromArgb(79, 161, 228);
         
+        /// <summary>主色悬停状态</summary>
+        public static readonly Color PrimaryHover = Color.FromArgb(16, 110, 190);
+        
+        /// <summary>主色按下状态</summary>
+        public static readonly Color PrimaryPressed = Color.FromArgb(0, 90, 158);
+        
         /// <summary>主色暗色 - Pressed状态</summary>
         public static readonly Color PrimaryDark = Color.FromArgb(0, 90, 158);
         
@@ -35,6 +41,9 @@ namespace WorkLogApp.UI.UI
         /// <summary>Gray160 - 次要文本</summary>
         public static readonly Color Gray160 = Color.FromArgb(50, 49, 48);
         
+        /// <summary>Gray150 - 辅助文本</summary>
+        public static readonly Color Gray150 = Color.FromArgb(66, 65, 64);
+        
         /// <summary>Gray130 - 第三级文本</summary>
         public static readonly Color Gray130 = Color.FromArgb(96, 94, 92);
         
@@ -49,6 +58,9 @@ namespace WorkLogApp.UI.UI
         
         /// <summary>Gray40 - 分割线</summary>
         public static readonly Color Gray40 = Color.FromArgb(225, 223, 221);
+        
+        /// <summary>Gray30 - 悬停背景</summary>
+        public static readonly Color Gray30 = Color.FromArgb(237, 235, 233);
         
         /// <summary>Gray20 - 交替背景</summary>
         public static readonly Color Gray20 = Color.FromArgb(243, 242, 241);

@@ -56,6 +56,9 @@ namespace WorkLogApp.UI.UI
         
         /// <summary>Overline - 标签 (10px, SemiBold)</summary>
         public static Font Overline => CreateFont(7.5f, FontStyle.Bold);
+        
+        /// <summary>Button - 按钮文字 (14px, SemiBold)</summary>
+        public static Font Button => CreateFont(10.5f, FontStyle.Regular);
 
         #endregion
 

@@ -51,7 +51,7 @@ namespace WorkLogApp.UI.UI
         /// <summary>
         /// 应用 Fluent 样式到单个控件
         /// </summary>
-        private static void ApplyFluentStyle(Control ctrl)
+        public static void ApplyFluentStyle(Control ctrl)
         {
             try
             {
