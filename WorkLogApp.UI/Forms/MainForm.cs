@@ -10,7 +10,6 @@ using WorkLogApp.Core.Models;
 using WorkLogApp.Core.Enums;
 using WorkLogApp.Core.Helpers;
 using WorkLogApp.Services.Interfaces;
-using WorkLogApp.Services.Implementations;
 using WorkLogApp.UI.UI;
 
 namespace WorkLogApp.UI.Forms
@@ -117,8 +116,9 @@ namespace WorkLogApp.UI.Forms
         private void OnCreateItemClick(object sender, EventArgs e)
         {
             var initialDate = _dayPicker.Value;
-            using (var form = new ItemCreateForm(_templateService, initialDate))
+            using (var form = Program.Container.GetInstance<ItemCreateForm>())
             {
+                form.SetInitialDate(initialDate);
                 form.StartPosition = FormStartPosition.CenterParent;
                 form.ShowDialog(this);
                 // 保存后刷新当前月份数据
@@ -128,7 +128,7 @@ namespace WorkLogApp.UI.Forms
 
         private void OnTodoClick(object sender, EventArgs e)
         {
-            using (var form = new TodoForm())
+            using (var form = Program.Container.GetInstance<TodoForm>())
             {
                 form.ShowDialog(this);
             }
@@ -185,7 +185,7 @@ namespace WorkLogApp.UI.Forms
 
         private void OnCategoryManageClick(object sender, EventArgs e)
         {
-            using (var form = new CategoryManageForm(_templateService))
+            using (var form = Program.Container.GetInstance<CategoryManageForm>())
             {
                 form.StartPosition = FormStartPosition.CenterParent;
                 form.ShowDialog(this);
@@ -194,7 +194,7 @@ namespace WorkLogApp.UI.Forms
 
         private void OnImportWizardClick(object sender, EventArgs e)
         {
-            using (var form = new ImportWizardForm())
+            using (var form = Program.Container.GetInstance<ImportWizardForm>())
             {
                 form.StartPosition = FormStartPosition.CenterParent;
                 form.ShowDialog(this);

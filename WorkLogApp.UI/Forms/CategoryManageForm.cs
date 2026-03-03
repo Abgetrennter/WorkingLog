@@ -5,7 +5,6 @@ using System.Linq;
 using System.Windows.Forms;
 using WorkLogApp.Core.Models;
 using WorkLogApp.Services.Interfaces;
-using WorkLogApp.Services.Implementations;
 using WorkLogApp.UI.UI;
 
 namespace WorkLogApp.UI.Forms
@@ -33,8 +32,18 @@ namespace WorkLogApp.UI.Forms
         // private ListBox _lstTemplates;
         // private ContextMenuStrip _templateMenu;
 
-        public CategoryManageForm() : this(new TemplateService())
+        public CategoryManageForm()
         {
+            // 设计时：使用空服务实例
+            if (UIStyleManager.IsDesignMode)
+            {
+                _templateService = null;
+            }
+            else
+            {
+                // 运行时：通过 DI 容器获取
+                throw new InvalidOperationException("请使用带参数的构造函数进行依赖注入");
+            }
         }
 
         public CategoryManageForm(ITemplateService templateService)

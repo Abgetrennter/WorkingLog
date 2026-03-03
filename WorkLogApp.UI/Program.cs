@@ -112,12 +112,16 @@ namespace WorkLogApp.UI
                 container.GetInstance<ITemplateService>(),
                 container.GetInstance<IImportExportService>()));
 
-            // 注册其他可能需要注入的窗体
+            // 注册其他窗体为瞬态，使用带依赖的构造函数
             container.Register<ItemCreateForm>(() => new ItemCreateForm(
                 container.GetInstance<ITemplateService>()));
+            container.Register<ItemEditForm>(() => new ItemEditForm());
             container.Register<CategoryManageForm>(() => new CategoryManageForm(
                 container.GetInstance<ITemplateService>()));
-            // 注意：其他窗体可能也需要注册，但暂时先处理这两个
+            container.Register<ImportWizardForm>(() => new ImportWizardForm(
+                container.GetInstance<IImportExportService>()));
+            container.Register<TodoForm>(() => new TodoForm());
+            // Note: DailySummaryForm has constructor parameters and is created directly in MainForm
 
             // 获取 TemplateService 实例并加载模板
             var templateService = container.GetInstance<ITemplateService>();

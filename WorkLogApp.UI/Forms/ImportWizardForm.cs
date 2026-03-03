@@ -13,11 +13,24 @@ namespace WorkLogApp.UI.Forms
 {
     public partial class ImportWizardForm : Form
     {
+        private readonly IImportExportService _importExportService;
         private string _sourcePath;
         private List<WorkLog> _imported;
 
+        // 设计期支持：提供无参构造，便于设计器实例化
         public ImportWizardForm()
         {
+            // 设计时：使用空服务实例
+            if (UIStyleManager.IsDesignMode)
+            {
+                _importExportService = null;
+            }
+            else
+            {
+                // 运行时：通过 DI 容器获取
+                throw new InvalidOperationException("请使用带参数的构造函数进行依赖注入");
+            }
+
             InitializeComponent();
             IconHelper.ApplyIcon(this);
             // 应用统一样式（字体、缩放、抗锯齿）
@@ -40,8 +53,18 @@ namespace WorkLogApp.UI.Forms
                     _btnImport.Enabled = false;
                 }
                 catch { }
-                return;
             }
+        }
+
+        public ImportWizardForm(IImportExportService importExportService)
+        {
+            _importExportService = importExportService;
+            InitializeComponent();
+            IconHelper.ApplyIcon(this);
+            // 应用统一样式（字体、缩放、抗锯齿）
+            UIStyleManager.ApplyVisualEnhancements(this);
+            UIStyleManager.ApplyLightTheme(this);
+            InitToolTips();
         }
 
         private void InitToolTips()
@@ -68,7 +91,7 @@ namespace WorkLogApp.UI.Forms
         {
             try
             {
-                IImportExportService svc = Program.Container?.GetInstance<IImportExportService>();
+                IImportExportService svc = _importExportService ?? Program.Container?.GetInstance<IImportExportService>();
                 if (svc == null)
                 {
                     // 如果容器不可用，尝试创建（设计时支持）
@@ -115,7 +138,7 @@ namespace WorkLogApp.UI.Forms
                 var baseDir = AppDomain.CurrentDomain.BaseDirectory;
                 var dataDir = Path.Combine(baseDir, "Data");
                 Directory.CreateDirectory(dataDir);
-                IImportExportService svc = Program.Container?.GetInstance<IImportExportService>();
+                IImportExportService svc = _importExportService ?? Program.Container?.GetInstance<IImportExportService>();
                 if (svc == null)
                 {
                     // 如果容器不可用，尝试创建（设计时支持）

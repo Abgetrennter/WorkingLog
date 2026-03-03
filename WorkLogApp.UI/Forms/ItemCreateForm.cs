@@ -21,19 +21,24 @@ namespace WorkLogApp.UI.Forms
         private WorkTemplate _currentTemplate;
         
         // 设计期支持：提供无参构造，便于设计器实例化
-        public ItemCreateForm() : this(new TemplateService())
+        public ItemCreateForm()
         {
+            // 设计时：使用空服务实例
+            if (UIStyleManager.IsDesignMode)
+            {
+                _templateService = null;
+            }
+            else
+            {
+                // 运行时：通过 DI 容器获取
+                throw new InvalidOperationException("请使用带参数的构造函数进行依赖注入");
+            }
         }
 
-        public ItemCreateForm(ITemplateService templateService, DateTime? initialDate = null)
+        public ItemCreateForm(ITemplateService templateService)
         {
             _templateService = templateService;
             InitializeComponent();
-
-            if (initialDate.HasValue)
-            {
-                _datePicker.Value = initialDate.Value;
-            }
 
             IconHelper.ApplyIcon(this);
             
@@ -56,6 +61,17 @@ namespace WorkLogApp.UI.Forms
             _statusCombo.SelectedValue = StatusEnum.Done; // Default to "已完成"
             
             InitToolTips();
+        }
+
+        /// <summary>
+        /// 设置初始日期（在显示前调用）
+        /// </summary>
+        public void SetInitialDate(DateTime date)
+        {
+            if (_datePicker != null)
+            {
+                _datePicker.Value = date;
+            }
         }
         
         private void InitToolTips()
