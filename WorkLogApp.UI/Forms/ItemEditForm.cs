@@ -85,7 +85,14 @@ namespace WorkLogApp.UI.Forms
             var baseDir = AppDomain.CurrentDomain.BaseDirectory;
             var dataDir = Path.Combine(baseDir, "Data");
             Directory.CreateDirectory(dataDir);
-            IImportExportService exportService = new ImportExportService();
+            IImportExportService exportService = Program.Container?.GetInstance<IImportExportService>();
+            if (exportService == null)
+            {
+                // 如果容器不可用，尝试创建（设计时支持）
+                var pdfService = new PdfExportService();
+                var wordService = new WordExportService();
+                exportService = new ImportExportService(pdfService, wordService);
+            }
 
             TraceBackAndMergeProgress(exportService, dataDir);
             
@@ -265,7 +272,14 @@ namespace WorkLogApp.UI.Forms
                 var dataDir = Path.Combine(baseDir, "Data");
                 Directory.CreateDirectory(dataDir);
 
-                IImportExportService exportService = new ImportExportService();
+                IImportExportService exportService = Program.Container?.GetInstance<IImportExportService>();
+                if (exportService == null)
+                {
+                    // 如果容器不可用，尝试创建（设计时支持）
+                    var pdfService = new PdfExportService();
+                    var wordService = new WordExportService();
+                    exportService = new ImportExportService(pdfService, wordService);
+                }
 
                 // (移除) 如果状态为已完成，执行追溯汇总逻辑
                 // if (_item.Status == StatusEnum.Done) ...

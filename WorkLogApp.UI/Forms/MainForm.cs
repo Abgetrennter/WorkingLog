@@ -23,8 +23,19 @@ namespace WorkLogApp.UI.Forms
         private System.Collections.Generic.List<WorkLog> _allMonthItems = new System.Collections.Generic.List<WorkLog>();
 
         // 设计期支持：提供无参构造，方便设计器实例化
-        public MainForm() : this(new TemplateService(), new ImportExportService())
+        public MainForm()
         {
+            // 设计时：使用空服务实例
+            if (UIStyleManager.IsDesignMode)
+            {
+                _templateService = null;
+                _importExportService = null;
+            }
+            else
+            {
+                // 运行时：通过 DI 容器获取（由 Program 创建）
+                throw new InvalidOperationException("请使用带参数的构造函数进行依赖注入");
+            }
         }
 
         public MainForm(ITemplateService templateService, IImportExportService importExportService)

@@ -68,7 +68,14 @@ namespace WorkLogApp.UI.Forms
         {
             try
             {
-                IImportExportService svc = new ImportExportService();
+                IImportExportService svc = Program.Container?.GetInstance<IImportExportService>();
+                if (svc == null)
+                {
+                    // 如果容器不可用，尝试创建（设计时支持）
+                    var pdfService = new PdfExportService();
+                    var wordService = new WordExportService();
+                    svc = new ImportExportService(pdfService, wordService);
+                }
                 var days = svc.ImportFromFile(_sourcePath) ?? Enumerable.Empty<WorkLog>();
                 _imported = days.ToList();
                 _previewList.BeginUpdate();
@@ -108,7 +115,14 @@ namespace WorkLogApp.UI.Forms
                 var baseDir = AppDomain.CurrentDomain.BaseDirectory;
                 var dataDir = Path.Combine(baseDir, "Data");
                 Directory.CreateDirectory(dataDir);
-                IImportExportService svc = new ImportExportService();
+                IImportExportService svc = Program.Container?.GetInstance<IImportExportService>();
+                if (svc == null)
+                {
+                    // 如果容器不可用，尝试创建（设计时支持）
+                    var pdfService = new PdfExportService();
+                    var wordService = new WordExportService();
+                    svc = new ImportExportService(pdfService, wordService);
+                }
 
                 // 按月份分组写入（按天聚合）
                 var groups = _imported.GroupBy(d => new { d.LogDate.Year, d.LogDate.Month });

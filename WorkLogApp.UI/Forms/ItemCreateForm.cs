@@ -79,6 +79,12 @@ namespace WorkLogApp.UI.Forms
                 _currentTemplate = tpl;
                 BuildFormForTemplate(tpl);
                 
+                // Auto-fill title with template name (only if title is empty)
+                if (string.IsNullOrWhiteSpace(_titleBox.Text))
+                {
+                    _titleBox.Text = tpl.Name;
+                }
+                
                 // Auto-fill tags
                 if (tpl.Tags != null && tpl.Tags.Any())
                 {
@@ -164,7 +170,14 @@ namespace WorkLogApp.UI.Forms
                 var dataDir = Path.Combine(baseDir, "Data");
                 if (!Directory.Exists(dataDir)) Directory.CreateDirectory(dataDir);
 
-                IImportExportService exportService = new ImportExportService();
+                IImportExportService exportService = Program.Container?.GetInstance<IImportExportService>();
+                if (exportService == null)
+                {
+                    // 如果容器不可用，尝试创建（设计时支持）
+                    var pdfService = new PdfExportService();
+                    var wordService = new WordExportService();
+                    exportService = new ImportExportService(pdfService, wordService);
+                }
                 var day = new WorkLog { LogDate = item.LogDate.Date, Items = new System.Collections.Generic.List<WorkLogItem> { item } };
                 var success = exportService.ExportMonth(item.LogDate, new[] { day }, dataDir);
 
