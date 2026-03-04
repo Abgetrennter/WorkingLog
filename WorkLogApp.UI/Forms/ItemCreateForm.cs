@@ -83,7 +83,7 @@ namespace WorkLogApp.UI.Forms
         private void LoadTemplateForCategory(Category category)
         {
             _currentTemplate = null;
-            _formPanel.BuildForm(new Dictionary<string, string>()); // Clear form
+            _formPanel.BuildForm(new List<TemplateField>()); // Clear form
             
             if (category == null) return;
             
@@ -117,7 +117,9 @@ namespace WorkLogApp.UI.Forms
         private void BuildFormForTemplate(WorkTemplate tpl)
         {
             if (tpl == null) return;
-            _formPanel.BuildForm(tpl.Placeholders, tpl.Options);
+            // 使用新的 GetEffectiveFields() 方法，优先使用 Fields，否则转换 Placeholders
+            var fields = tpl.GetEffectiveFields();
+            _formPanel.BuildForm(fields);
         }
 
         private void OnGenerateAndSave(object sender, EventArgs e)
@@ -138,6 +140,15 @@ namespace WorkLogApp.UI.Forms
             if (string.IsNullOrWhiteSpace(_titleBox.Text))
             {
                 MessageBox.Show(this, "请填写标题", "提示", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            // 验证表单字段
+            var validationResult = _formPanel.ValidateForm();
+            if (!validationResult.IsValid)
+            {
+                var errorMsg = string.Join("\n", validationResult.Errors);
+                MessageBox.Show(this, "表单验证失败：\n" + errorMsg, "提示", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 

@@ -51,6 +51,8 @@ namespace WorkLogApp.UI.Forms
             this.colName = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.colType = new System.Windows.Forms.DataGridViewComboBoxColumn();
             this.colOptions = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.colDisplayName = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.colIsRequired = new System.Windows.Forms.DataGridViewCheckBoxColumn();
             this.lblQuick = new System.Windows.Forms.Label();
             this._btnSave = new System.Windows.Forms.Button();
             this.rootLayout = new System.Windows.Forms.TableLayoutPanel();
@@ -147,7 +149,7 @@ namespace WorkLogApp.UI.Forms
             this._layoutRight.RowStyles.Add(new System.Windows.Forms.RowStyle());
             this._layoutRight.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 50F));
             this._layoutRight.RowStyles.Add(new System.Windows.Forms.RowStyle());
-            this._layoutRight.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 50F));
+            this._layoutRight.RowStyles.Add(new System.Windows.Forms.RowStyle());
             this._layoutRight.RowStyles.Add(new System.Windows.Forms.RowStyle());
             this._layoutRight.Size = new System.Drawing.Size(749, 648);
             this._layoutRight.TabIndex = 0;
@@ -205,7 +207,9 @@ namespace WorkLogApp.UI.Forms
             this._gridPlaceholders.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] {
             this.colName,
             this.colType,
-            this.colOptions});
+            this.colOptions,
+            this.colDisplayName,
+            this.colIsRequired});
             this._layoutRight.SetColumnSpan(this._gridPlaceholders, 3);
             this._gridPlaceholders.Dock = System.Windows.Forms.DockStyle.Fill;
             this._gridPlaceholders.Location = new System.Drawing.Point(0, 350);
@@ -233,7 +237,17 @@ namespace WorkLogApp.UI.Forms
             this.colOptions.HeaderText = "选项（|分隔）";
             this.colOptions.MinimumWidth = 8;
             this.colOptions.Name = "colOptions";
-            // 
+
+            // colDisplayName
+            this.colDisplayName.HeaderText = "显示名称";
+            this.colDisplayName.MinimumWidth = 8;
+            this.colDisplayName.Name = "colDisplayName";
+
+            // colIsRequired
+            this.colIsRequired.HeaderText = "必填";
+            this.colIsRequired.MinimumWidth = 8;
+            this.colIsRequired.Name = "colIsRequired";
+
             // lblQuick
             // 
             this.lblQuick.AutoSize = true;
@@ -286,15 +300,15 @@ namespace WorkLogApp.UI.Forms
             this.leftPanel.ResumeLayout(false);
             this.rightPanel.ResumeLayout(false);
             this._layoutRight.ResumeLayout(false);
-            this._layoutRight.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this._gridPlaceholders)).EndInit();
             this.rootLayout.ResumeLayout(false);
             this.ResumeLayout(false);
-
         }
 
         private DataGridViewTextBoxColumn colName;
         private DataGridViewComboBoxColumn colType;
         private DataGridViewTextBoxColumn colOptions;
+        private DataGridViewTextBoxColumn colDisplayName;
+        private DataGridViewCheckBoxColumn colIsRequired;
     }
 }

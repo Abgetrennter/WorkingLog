@@ -17,9 +17,17 @@ namespace WorkLogApp.UI.Forms
         {
             { "text", "文本框" },
             { "textarea", "多行文本" },
+            { "datetime", "日期时间" },
+            { "date", "日期" },
+            { "time", "时间" },
             { "select", "下拉选择" },
+            { "multiselect", "多选下拉" },
             { "checkbox", "复选框" },
-            { "datetime", "日期时间" }
+            { "radio", "单选框" },
+            { "number", "数字" },
+            { "duration", "时长" },
+            { "rangedatetime", "时间范围" },
+            { "autocomplete", "自动补全" }
         };
         private Category _selectedCategory;
         private WorkTemplate _selectedTemplate;
@@ -27,7 +35,7 @@ namespace WorkLogApp.UI.Forms
         // TreeView Controls
         private TreeView _treeView;
         private ContextMenuStrip _treeMenu;
-        
+
         // Template List Controls (Removed)
         // private ListBox _lstTemplates;
         // private ContextMenuStrip _templateMenu;
@@ -50,7 +58,7 @@ namespace WorkLogApp.UI.Forms
         {
             _templateService = templateService;
             InitializeComponent();
-            
+
             // Initialize placeholder types
             if (colType != null)
             {
@@ -58,13 +66,13 @@ namespace WorkLogApp.UI.Forms
             }
 
             IconHelper.ApplyIcon(this);
-            
-            // Rebuild UI manually since we are drastically changing it and the designer might be confused by the switch
+
+            // Rebuild UI manually since we are drastically changing it and designer might be confused by switch
             SetupNewLayout();
-            
+
             UIStyleManager.ApplyVisualEnhancements(this);
             UIStyleManager.ApplyLightTheme(this);
-            
+
             // Bind events
             BindEvents();
 
@@ -109,11 +117,11 @@ namespace WorkLogApp.UI.Forms
             // Right Panel Layout
             if (this.rightPanel != null)
             {
-                // Save existing controls (specifically the layout panel) to move them
+                // Save existing controls (specifically layout panel) to move them
                 var editorLayout = this._layoutRight;
                 this.rightPanel.Controls.Clear();
-                
-                // No more template list, just the editor
+
+                // No more template list, just editor
                 if (editorLayout != null)
                 {
                     this.rightPanel.Controls.Add(editorLayout);
@@ -153,13 +161,13 @@ namespace WorkLogApp.UI.Forms
             _gridPlaceholders.RowsAdded += (s, e) => RefreshPlaceholderInsertList();
             _gridPlaceholders.RowsRemoved += (s, e) => RefreshPlaceholderInsertList();
             _gridPlaceholders.CellValueChanged += (s, e) => RefreshPlaceholderInsertList();
-            
+
             // Save Button
             _btnSave.Click -= OnSave; // Remove old if any
             _btnSave.Click += OnSave;
-            
+
             // Add root category button (if exists in UI, or add one)
-            // Assuming there is a button to add category in the original UI, likely handled by context menu now.
+            // Assuming there is a button to add category in original UI, likely handled by context menu now.
         }
 
         #region Tree Logic
@@ -168,7 +176,7 @@ namespace WorkLogApp.UI.Forms
         {
             _treeView.BeginUpdate();
             _treeView.Nodes.Clear();
-            
+
             var categories = _templateService.GetAllCategories();
             var nodeMap = new Dictionary<string, TreeNode>();
             var rootNodes = new List<TreeNode>();
@@ -226,7 +234,7 @@ namespace WorkLogApp.UI.Forms
             try
             {
                 var newCat = _templateService.CreateCategory(name, parent?.Id);
-            
+
                 var node = new TreeNode(newCat.Name) { Tag = newCat };
                 if (_treeView.SelectedNode != null)
                 {
@@ -254,7 +262,7 @@ namespace WorkLogApp.UI.Forms
             {
                 // 1. Create Category (Leaf)
                 var newCat = _templateService.CreateCategory(name, parent?.Id);
-            
+
                 // 2. Create Template
                 var newTpl = new WorkTemplate
                 {
@@ -278,7 +286,7 @@ namespace WorkLogApp.UI.Forms
                 {
                     _treeView.Nodes.Add(node);
                 }
-            
+
                 // 4. Select it to show editor
                 _treeView.SelectedNode = node;
             }
@@ -296,13 +304,13 @@ namespace WorkLogApp.UI.Forms
             var newName = Prompt("请输入新名称：", "重命名", cat.Name);
             if (string.IsNullOrWhiteSpace(newName)) return;
 
-            // Preserve old name in case of failure (though we modify the object in place if successful? 
-            // Actually _templateService.UpdateCategory modifies the object in store, but the 'cat' object here is reference.
+            // Preserve old name in case of failure (though we modify object in place if successful?
+            // Actually _templateService.UpdateCategory modifies object in store, but 'cat' object here is reference.
             // If UpdateCategory throws, 'cat.Name' is not updated in store, but we set it here.
             // So we should set it ONLY if update succeeds, OR catch and revert.
             // Better: don't set it on object until confirmed.
-            // But UpdateCategory expects the object to have the NEW name.
-            
+            // But UpdateCategory expects object to have NEW name.
+
             var oldName = cat.Name;
             try
             {
@@ -420,25 +428,30 @@ namespace WorkLogApp.UI.Forms
             // Tags? Need a textbox for tags.
             // I'll assume there isn't one in the designer, so I might need to add one or prepend to content for now?
             // Ideally I should add a txtTags control.
-            // Let's use the Title label to show name for now, and maybe I can't edit tags easily without adding control.
-            // Wait, I have control over the form code. I can add a Tag textbox.
-            
+            // Let's use Title label to show name for now, and maybe I can't edit tags easily without adding control.
+            // Wait, I have control over form code. I can add a Tag textbox.
+
             EnsureTagControlExists();
             _txtTags.Text = string.Join(", ", t.Tags);
-            
+
             _gridPlaceholders.Rows.Clear();
-            if (t.Placeholders != null)
+            
+            // 优先使用新的 Fields 格式，否则使用旧的 Placeholders 格式
+            var fields = t.GetEffectiveFields();
+            if (fields != null && fields.Count > 0)
             {
-                foreach (var kv in t.Placeholders)
+                foreach (var field in fields)
                 {
                     string opts = "";
-                    if (t.Options != null && t.Options.ContainsKey(kv.Key))
+                    if (field.Options != null && field.Options.Count > 0)
                     {
-                        opts = string.Join("|", t.Options[kv.Key]);
+                        opts = string.Join("|", field.Options);
                     }
                     // Convert internal type to display name
-                    string displayType = _typeMap.ContainsKey(kv.Value) ? _typeMap[kv.Value] : kv.Value;
-                    _gridPlaceholders.Rows.Add(kv.Key, displayType, opts);
+                    string displayType = _typeMap.ContainsKey(field.Type) ? _typeMap[field.Type] : field.Type;
+                    string displayName = field.Name ?? field.Key;
+                    bool isRequired = field.IsRequired;
+                    _gridPlaceholders.Rows.Add(field.Key, displayType, opts, displayName, isRequired);
                 }
             }
             RefreshPlaceholderInsertList();
@@ -454,12 +467,12 @@ namespace WorkLogApp.UI.Forms
                 var panel = _txtFormatTemplate.Parent;
                 _txtTags = new TextBox { Location = new Point(120, _txtFormatTemplate.Top - 25), Width = 200 };
                 var lblTags = new Label { Text = "标签(逗号分隔):", AutoSize = true };
-                
+
                 panel.Controls.Add(lblTags);
                 panel.Controls.Add(_txtTags);
 
-                // Align label tightly to the left of the textbox
-                // Adding 3 to Top for better vertical alignment with the textbox text
+                // Align label tightly to left of textbox
+                // Adding 3 to Top for better vertical alignment with textbox text
                 lblTags.Location = new Point(_txtTags.Left - lblTags.PreferredWidth - 2, _txtTags.Top + 3);
             }
         }
@@ -476,7 +489,7 @@ namespace WorkLogApp.UI.Forms
             if (_selectedTemplate == null) return;
 
             _selectedTemplate.Content = _txtFormatTemplate.Text;
-            
+
             if (_txtTags != null)
             {
                 _selectedTemplate.Tags = _txtTags.Text.Split(new[] { ',', '，' }, StringSplitOptions.RemoveEmptyEntries)
@@ -486,6 +499,7 @@ namespace WorkLogApp.UI.Forms
             // Parse placeholders from grid
             var placeholders = new Dictionary<string, string>();
             var options = new Dictionary<string, List<string>>();
+            var fields = new List<TemplateField>();
 
             foreach (DataGridViewRow row in _gridPlaceholders.Rows)
             {
@@ -493,6 +507,8 @@ namespace WorkLogApp.UI.Forms
                 var name = Convert.ToString(row.Cells["colName"].Value)?.Trim();
                 var displayType = Convert.ToString(row.Cells["colType"].Value)?.Trim();
                 var opts = Convert.ToString(row.Cells["colOptions"].Value)?.Trim();
+                var displayName = Convert.ToString(row.Cells["colDisplayName"].Value)?.Trim();
+                var isRequired = row.Cells["colIsRequired"].Value != null && (bool)row.Cells["colIsRequired"].Value;
 
                 if (!string.IsNullOrEmpty(name))
                 {
@@ -503,11 +519,29 @@ namespace WorkLogApp.UI.Forms
                     {
                         options[name] = opts.Split('|').Select(s => s.Trim()).ToList();
                     }
+
+                    // Build TemplateField
+                    var field = new TemplateField
+                    {
+                        Key = name,
+                        Name = string.IsNullOrEmpty(displayName) ? name : displayName,
+                        Type = typeKey,
+                        Options = options.ContainsKey(name) ? options[name] : new List<string>(),
+                        IsRequired = isRequired,
+                        Order = row.Index
+                    };
+                    fields.Add(field);
                 }
             }
-            
-            _selectedTemplate.Placeholders = placeholders;
-            _selectedTemplate.Options = options;
+
+            // Update template with new Fields format
+            if (fields.Count > 0)
+            {
+                _selectedTemplate.Fields = fields;
+                // Keep Placeholders/Options for backward compatibility
+                _selectedTemplate.Placeholders = placeholders;
+                _selectedTemplate.Options = options;
+            }
 
             if (_templateService.UpdateTemplate(_selectedTemplate))
             {
@@ -537,7 +571,7 @@ namespace WorkLogApp.UI.Forms
             }
             if (_cmbInsert.Items.Count > 0) _cmbInsert.SelectedIndex = 0;
         }
-        
+
         private void OnInsertPlaceholderClick(object sender, EventArgs e)
         {
              var selected = Convert.ToString(_cmbInsert.SelectedItem)?.Trim();

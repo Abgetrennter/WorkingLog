@@ -57,7 +57,7 @@ namespace WorkLogApp.Services.Implementations
                 if (_store == null || string.IsNullOrWhiteSpace(_templatesPath)) return false;
                 try
                 {
-                    var json = JsonConvert.SerializeObject(_store);
+                    var json = JsonConvert.SerializeObject(_store, Formatting.Indented);
                     var dir = Path.GetDirectoryName(_templatesPath);
                     if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
                     File.WriteAllText(_templatesPath, json);
@@ -270,33 +270,131 @@ namespace WorkLogApp.Services.Implementations
             var result = content ?? string.Empty;
             if (fieldValues != null)
             {
-                // 支持 {字段} 与 {字段:格式}
-                result = Regex.Replace(result, "\\{([^:{}]+)(?::([^{}]+))?\\}", match =>
+                // 支持 {字段} 与 {字段:格式} 与 {字段|函数}
+                result = Regex.Replace(result, "\\{([^:{}|]+)(?::([^{}|]+))?(?:\\|([^{}]+))?\\}", match =>
                 {
-                    var name = match.Groups[1].Value;
+                    var name = match.Groups[1].Value.Trim();
                     var format = match.Groups[2].Success ? match.Groups[2].Value : null;
+                    var function = match.Groups[3].Success ? match.Groups[3].Value : null;
+                    
                     object value = null;
                     if (fieldValues.ContainsKey(name)) value = fieldValues[name];
 
                     if (value == null) return string.Empty;
 
+                    // 应用格式
+                    string formattedValue = Convert.ToString(value);
                     if (format != null)
                     {
                         if (value is DateTime dt)
-                            return dt.ToString(format);
-                        if (value is string s && DateTime.TryParse(s, out var parsed))
-                            return parsed.ToString(format);
-                        return Convert.ToString(value);
+                            formattedValue = dt.ToString(format);
+                        else if (value is string s && DateTime.TryParse(s, out var parsed))
+                            formattedValue = parsed.ToString(format);
                     }
-                    return Convert.ToString(value);
+
+                    // 应用函数
+                    if (function != null)
+                    {
+                        formattedValue = ApplyFunction(formattedValue, function, fieldValues);
+                    }
+
+                    return formattedValue;
                 });
             }
             
             // System fields
             result = result.Replace("{ItemTitle}", item?.ItemTitle ?? string.Empty);
-            // result = result.Replace("{CategoryPath}", ...); // Need to reconstruct if needed
+            result = result.Replace("{LogDate}", item?.LogDate.ToString("yyyy-MM-dd") ?? string.Empty);
+            result = result.Replace("{Today}", DateTime.Now.ToString("yyyy-MM-dd"));
+            result = result.Replace("{Now}", DateTime.Now.ToString("yyyy-MM-dd HH:mm"));
 
             return result;
+        }
+
+        /// <summary>
+        /// 应用函数转换
+        /// </summary>
+        private string ApplyFunction(string value, string function, Dictionary<string, object> fieldValues)
+        {
+            var parts = function.Split(':');
+            var funcName = parts[0].Trim().ToLowerInvariant();
+            var args = parts.Length > 1 ? parts[1].Split(',') : new string[0];
+
+            switch (funcName)
+            {
+                case "trim":
+                    return value.Trim();
+                
+                case "upper":
+                    return value.ToUpperInvariant();
+                
+                case "lower":
+                    return value.ToLowerInvariant();
+                
+                case "lines":
+                    // 将句号分隔的文本转换为多行
+                    return value.Replace("。", "。\n").Replace("；", "；\n");
+                
+                case "duration":
+                    // 计算两个时间之间的时长
+                    if (args.Length > 0 && fieldValues.TryGetValue(args[0].Trim(), out var endValue))
+                    {
+                        if (DateTime.TryParse(value, out var start) && DateTime.TryParse(Convert.ToString(endValue), out var end))
+                        {
+                            var duration = end - start;
+                            if (duration.TotalHours >= 1)
+                                return $"{duration.TotalHours:F1}小时";
+                            else
+                                return $"{duration.TotalMinutes:F0}分钟";
+                        }
+                    }
+                    return value;
+                
+                case "format":
+                    // 自定义格式
+                    if (args.Length > 0)
+                    {
+                        if (DateTime.TryParse(value, out var dt))
+                            return dt.ToString(args[0]);
+                    }
+                    return value;
+                
+                case "default":
+                    // 如果为空则使用默认值
+                    if (string.IsNullOrWhiteSpace(value) && args.Length > 0)
+                        return args[0];
+                    return value;
+                
+                case "prefix":
+                    // 添加前缀
+                    if (args.Length > 0 && !string.IsNullOrWhiteSpace(value))
+                        return args[0] + value;
+                    return value;
+                
+                case "suffix":
+                    // 添加后缀
+                    if (args.Length > 0 && !string.IsNullOrWhiteSpace(value))
+                        return value + args[0];
+                    return value;
+                
+                case "hideif":
+                    // 如果等于指定值则返回空
+                    if (args.Length > 0 && value == args[0])
+                        return string.Empty;
+                    return value;
+                
+                default:
+                    return value;
+            }
+        }
+
+        /// <summary>
+        /// 渲染模板（使用结构化字段定义）
+        /// </summary>
+        public string RenderTemplate(WorkTemplate template, Dictionary<string, object> fieldValues, WorkLogItem item)
+        {
+            if (template == null) return string.Empty;
+            return Render(template.Content, fieldValues, item);
         }
 
         #endregion
