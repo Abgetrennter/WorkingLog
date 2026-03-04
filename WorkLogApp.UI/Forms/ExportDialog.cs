@@ -50,15 +50,13 @@ namespace WorkLogApp.UI.Forms
         private void InitializeComponent()
         {
             this.Text = "导出工作日志";
-            this.Size = new Size(520, 420);
-            this.MinimumSize = new Size(480, 380);
+            this.Size = new Size(560, 480);
+            this.MinimumSize = new Size(520, 420);
             this.StartPosition = FormStartPosition.CenterParent;
             this.FormBorderStyle = FormBorderStyle.Sizable;
             this.MaximizeBox = false;
             this.MinimizeBox = false;
-            this.Padding = new Padding(24);
-            this.AutoSize = true;
-            this.AutoSizeMode = AutoSizeMode.GrowAndShrink;
+            this.Padding = new Padding(20);
 
             // 主布局
             var rootLayout = new TableLayoutPanel
@@ -66,7 +64,7 @@ namespace WorkLogApp.UI.Forms
                 Dock = DockStyle.Fill,
                 RowCount = 4,
                 ColumnCount = 1,
-                Padding = new Padding(16)
+                Padding = new Padding(12)
             };
             rootLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 时间范围
             rootLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 格式选择
@@ -78,8 +76,8 @@ namespace WorkLogApp.UI.Forms
             {
                 Text = "导出时间范围",
                 Dock = DockStyle.Top,
-                Height = 120,
-                Margin = new Padding(0, 0, 0, 16)
+                Height = 140,
+                Margin = new Padding(0, 0, 0, 12)
             };
 
             var timeLayout = new TableLayoutPanel
@@ -163,7 +161,7 @@ namespace WorkLogApp.UI.Forms
                 Text = "导出格式",
                 Dock = DockStyle.Top,
                 Height = 80,
-                Margin = new Padding(0, 0, 0, 16)
+                Margin = new Padding(0, 0, 0, 12)
             };
 
             var formatLayout = new FlowLayoutPanel
@@ -184,7 +182,7 @@ namespace WorkLogApp.UI.Forms
 
             var rbPdf = new RadioButton
             {
-                Text = "PDF (.pdf)",
+                Text = "PDF 目前有点问题 (.pdf)",
                 AutoSize = true,
                 Margin = new Padding(0, 0, 24, 0),
                 Name = "rbPdf"
@@ -209,33 +207,35 @@ namespace WorkLogApp.UI.Forms
                 Text = "导出将包含选定时间范围内的所有工作日志记录。\n导出的文件将保存到 Data 目录。",
                 Dock = DockStyle.Fill,
                 ForeColor = FluentColors.Gray130,
-                Margin = new Padding(0, 8, 0, 16)
+                Margin = new Padding(0, 8, 0, 12),
+                AutoSize = false,
+                Height = 50
             };
             rootLayout.Controls.Add(lblInfo, 0, 2);
 
             // 按钮区域
             var buttonPanel = new FlowLayoutPanel
             {
-                Dock = DockStyle.Bottom,
+                Dock = DockStyle.Fill,
                 FlowDirection = FlowDirection.RightToLeft,
-                Height = 40,
-                Margin = new Padding(0, 8, 0, 0)
+                AutoSize = true,
+                AutoSizeMode = AutoSizeMode.GrowAndShrink,
+                Padding = new Padding(0, 8, 0, 0)
             };
 
             var btnCancel = new Button
             {
                 Text = "取消",
                 DialogResult = DialogResult.Cancel,
-                Size = new Size(90, 32),
-                Margin = new Padding(8, 0, 0, 0)
+                Size = new Size(100, 36),
+                Margin = new Padding(12, 0, 0, 0)
             };
 
             var btnExport = new Button
             {
                 Text = "导出",
                 DialogResult = DialogResult.OK,
-                Size = new Size(90, 32),
-                Margin = new Padding(8, 0, 0, 0),
+                Size = new Size(100, 36),
                 Name = "btnExport"
             };
 
