@@ -165,8 +165,274 @@ namespace WorkLogApp.Services.Implementations
         private static void WriteSheet(IWorkbook wb, string sheetName, IEnumerable<WorkLog> days, DateTime monthContext)
         {
             var sheet = wb.CreateSheet(sheetName);
+            var styles = CreateSheetStyles(wb);
+            var idToName = LoadCategoryNames();
 
-            // 准备模板名称映射：CategoryId(GUID) → 模板名称
+            WriteSheetHeader(sheet, styles.HeaderStyle);
+
+            var orderedDays = GetOrderedDays(days, monthContext);
+            var rowIndex = 0;
+
+            for (int blockIndex = 0; blockIndex < orderedDays.Count; blockIndex++)
+            {
+                var day = orderedDays[blockIndex];
+                var blockStyles = GetBlockStyles(styles, blockIndex);
+
+                rowIndex = WriteDayBlock(sheet, day, rowIndex, blockStyles, idToName);
+            }
+
+            SetColumnWidths(sheet);
+        }
+
+        private static SheetStyles CreateSheetStyles(IWorkbook wb)
+        {
+            var boldFont = wb.CreateFont();
+            boldFont.IsBold = true;
+
+            return new SheetStyles
+            {
+                HeaderStyle = CreateHeaderStyle(wb, boldFont),
+                MarkerStyleA = CreateMarkerStyle(wb, boldFont, IndexedColors.LightCornflowerBlue.Index),
+                MarkerStyleB = CreateMarkerStyle(wb, boldFont, IndexedColors.LightYellow.Index),
+                BlockStyleA = CreateBlockStyle(wb, IndexedColors.LightCornflowerBlue.Index),
+                BlockStyleB = CreateBlockStyle(wb, IndexedColors.LightYellow.Index),
+                NumberStyleA = CreateNumberStyle(wb, IndexedColors.LightCornflowerBlue.Index),
+                NumberStyleB = CreateNumberStyle(wb, IndexedColors.LightYellow.Index),
+                TimeStyleA = CreateTimeStyle(wb, IndexedColors.LightCornflowerBlue.Index),
+                TimeStyleB = CreateTimeStyle(wb, IndexedColors.LightYellow.Index),
+                TitleStyleA = CreateTitleStyle(wb, IndexedColors.LightCornflowerBlue.Index, boldFont),
+                TitleStyleB = CreateTitleStyle(wb, IndexedColors.LightYellow.Index, boldFont)
+            };
+        }
+
+        private class SheetStyles
+        {
+            public ICellStyle HeaderStyle { get; set; }
+            public ICellStyle MarkerStyleA { get; set; }
+            public ICellStyle MarkerStyleB { get; set; }
+            public ICellStyle BlockStyleA { get; set; }
+            public ICellStyle BlockStyleB { get; set; }
+            public ICellStyle NumberStyleA { get; set; }
+            public ICellStyle NumberStyleB { get; set; }
+            public ICellStyle TimeStyleA { get; set; }
+            public ICellStyle TimeStyleB { get; set; }
+            public ICellStyle TitleStyleA { get; set; }
+            public ICellStyle TitleStyleB { get; set; }
+        }
+
+        private static void WriteSheetHeader(ISheet sheet, ICellStyle headerStyle)
+        {
+            var header = sheet.CreateRow(0);
+            for (int i = 0; i < HeaderZh.Length; i++)
+            {
+                var hc = header.CreateCell(i);
+                hc.SetCellValue(HeaderZh[i]);
+                hc.CellStyle = headerStyle;
+            }
+        }
+
+        private static List<WorkLog> GetOrderedDays(IEnumerable<WorkLog> days, DateTime monthContext)
+        {
+            return (days ?? Enumerable.Empty<WorkLog>())
+                .Where(d => d != null && d.LogDate.Year == monthContext.Year && d.LogDate.Month == monthContext.Month)
+                .OrderBy(d => d.LogDate.Date)
+                .ToList();
+        }
+
+        private static BlockStyles GetBlockStyles(SheetStyles styles, int blockIndex)
+        {
+            var useA = (blockIndex % 2 == 0);
+            return new BlockStyles
+            {
+                MarkerStyle = useA ? styles.MarkerStyleA : styles.MarkerStyleB,
+                BlockStyle = useA ? styles.BlockStyleA : styles.BlockStyleB,
+                NumberStyle = useA ? styles.NumberStyleA : styles.NumberStyleB,
+                TimeStyle = useA ? styles.TimeStyleA : styles.TimeStyleB,
+                TitleStyle = useA ? styles.TitleStyleA : styles.TitleStyleB
+            };
+        }
+
+        private class BlockStyles
+        {
+            public ICellStyle MarkerStyle { get; set; }
+            public ICellStyle BlockStyle { get; set; }
+            public ICellStyle NumberStyle { get; set; }
+            public ICellStyle TimeStyle { get; set; }
+            public ICellStyle TitleStyle { get; set; }
+        }
+
+        private static ICellStyle CreateHeaderStyle(IWorkbook wb, IFont boldFont)
+        {
+            var style = wb.CreateCellStyle();
+            style.SetFont(boldFont);
+            style.Alignment = HorizontalAlignment.Center;
+            style.VerticalAlignment = VerticalAlignment.Center;
+            style.BorderTop = BorderStyle.Thin;
+            style.BorderBottom = BorderStyle.Thin;
+            style.BorderLeft = BorderStyle.Thin;
+            style.BorderRight = BorderStyle.Thin;
+            return style;
+        }
+
+        private static ICellStyle CreateMarkerStyle(IWorkbook wb, IFont boldFont, short colorIndex)
+        {
+            var style = wb.CreateCellStyle();
+            style.SetFont(boldFont);
+            style.FillPattern = FillPattern.SolidForeground;
+            style.FillForegroundColor = colorIndex;
+            style.Alignment = HorizontalAlignment.Center;
+            style.VerticalAlignment = VerticalAlignment.Center;
+            style.BorderTop = BorderStyle.Thin;
+            style.BorderBottom = BorderStyle.Thin;
+            style.BorderLeft = BorderStyle.Thin;
+            style.BorderRight = BorderStyle.Thin;
+            return style;
+        }
+
+        private static ICellStyle CreateBlockStyle(IWorkbook wb, short colorIndex)
+        {
+            var style = wb.CreateCellStyle();
+            style.FillPattern = FillPattern.SolidForeground;
+            style.FillForegroundColor = colorIndex;
+            style.WrapText = true;
+            style.Alignment = HorizontalAlignment.Left;
+            style.VerticalAlignment = VerticalAlignment.Top;
+            style.BorderTop = BorderStyle.Thin;
+            style.BorderBottom = BorderStyle.Thin;
+            style.BorderLeft = BorderStyle.Thin;
+            style.BorderRight = BorderStyle.Thin;
+            return style;
+        }
+
+        private static ICellStyle CreateNumberStyle(IWorkbook wb, short colorIndex)
+        {
+            var style = wb.CreateCellStyle();
+            style.CloneStyleFrom(CreateBlockStyle(wb, colorIndex));
+            style.Alignment = HorizontalAlignment.Center;
+            return style;
+        }
+
+        private static ICellStyle CreateTimeStyle(IWorkbook wb, short colorIndex)
+        {
+            var style = wb.CreateCellStyle();
+            style.CloneStyleFrom(CreateBlockStyle(wb, colorIndex));
+            style.Alignment = HorizontalAlignment.Right;
+            return style;
+        }
+
+        private static ICellStyle CreateTitleStyle(IWorkbook wb, short colorIndex, IFont boldFont)
+        {
+            var style = wb.CreateCellStyle();
+            style.CloneStyleFrom(CreateBlockStyle(wb, colorIndex));
+            style.SetFont(boldFont);
+            return style;
+        }
+
+        private static int WriteDayBlock(ISheet sheet, WorkLog day, int rowIndex, BlockStyles styles, Dictionary<string, string> idToName)
+        {
+            rowIndex = WriteMarkerRow(sheet, day, rowIndex, styles.MarkerStyle);
+            rowIndex = WriteItemRows(sheet, day, rowIndex, styles, idToName);
+            rowIndex = WriteSummaryRow(sheet, day, rowIndex, styles);
+            return rowIndex;
+        }
+
+        private static int WriteMarkerRow(ISheet sheet, WorkLog day, int rowIndex, ICellStyle markerStyle)
+        {
+            rowIndex++;
+            var markerRow = sheet.CreateRow(rowIndex);
+            for (int c = 0; c < HeaderZh.Length; c++)
+            {
+                var cell = markerRow.CreateCell(c);
+                cell.CellStyle = markerStyle;
+                var week = GetChineseWeekday(day.LogDate.Date);
+                cell.SetCellValue(c == 0 ? $"—— {day.LogDate:yyyy年MM月dd日} {week} ——" : string.Empty);
+            }
+            sheet.AddMergedRegion(new CellRangeAddress(rowIndex, rowIndex, 0, HeaderZh.Length - 1));
+            return rowIndex;
+        }
+
+        private static int WriteItemRows(ISheet sheet, WorkLog day, int rowIndex, BlockStyles styles, Dictionary<string, string> idToName)
+        {
+            var itemsOrdered = (day.Items ?? new List<WorkLogItem>())
+                .OrderBy(i => i.SortOrder ?? 0)
+                .ThenBy(i => i.StartTime ?? DateTime.MinValue)
+                .ThenBy(i => i.ItemTitle ?? string.Empty)
+                .ToList();
+
+            foreach (var item in itemsOrdered)
+            {
+                rowIndex++;
+                var row = sheet.CreateRow(rowIndex);
+                for (int c = 0; c < HeaderZh.Length; c++) row.CreateCell(c);
+
+                row.GetCell(0).SetCellValue(day.LogDate.ToString("yyyy年MM月dd日"));
+                row.GetCell(1).SetCellValue(item.ItemTitle ?? string.Empty);
+                row.GetCell(2).SetCellValue(item.ItemContent ?? string.Empty);
+
+                var catVal = item.CategoryName ?? string.Empty;
+                if (idToName.ContainsKey(catVal)) catVal = idToName[catVal];
+                row.GetCell(3).SetCellValue(catVal);
+
+                row.GetCell(4).SetCellValue(item.Status.ToChinese());
+                row.GetCell(5).SetCellValue(item.StartTime.HasValue ? item.StartTime.Value.ToString("yyyy-MM-dd HH:mm") : string.Empty);
+                row.GetCell(6).SetCellValue(item.EndTime.HasValue ? item.EndTime.Value.ToString("yyyy-MM-dd HH:mm") : string.Empty);
+                row.GetCell(7).SetCellValue(item.Tags ?? string.Empty);
+                row.GetCell(8).SetCellValue(item.SortOrder ?? 0);
+                row.GetCell(9).SetCellValue(item.Id ?? string.Empty);
+                row.GetCell(10).SetCellValue(item.TrackingId ?? string.Empty);
+
+                row.GetCell(0).CellStyle = styles.BlockStyle;
+                row.GetCell(1).CellStyle = styles.TitleStyle;
+                row.GetCell(2).CellStyle = styles.BlockStyle;
+                row.GetCell(3).CellStyle = styles.NumberStyle;
+                row.GetCell(4).CellStyle = styles.BlockStyle;
+                row.GetCell(5).CellStyle = styles.TimeStyle;
+                row.GetCell(6).CellStyle = styles.TimeStyle;
+                row.GetCell(7).CellStyle = styles.BlockStyle;
+                row.GetCell(8).CellStyle = styles.NumberStyle;
+                row.GetCell(9).CellStyle = styles.BlockStyle;
+                row.GetCell(10).CellStyle = styles.BlockStyle;
+            }
+            return rowIndex;
+        }
+
+        private static int WriteSummaryRow(ISheet sheet, WorkLog day, int rowIndex, BlockStyles styles)
+        {
+            rowIndex++;
+            var summaryRow = sheet.CreateRow(rowIndex);
+            for (int c = 0; c < HeaderZh.Length; c++) summaryRow.CreateCell(c);
+
+            summaryRow.GetCell(1).SetCellValue(SummaryTitle);
+            summaryRow.GetCell(2).SetCellValue(day.DailySummary ?? string.Empty);
+
+            for (int c = 0; c < HeaderZh.Length; c++)
+            {
+                summaryRow.GetCell(c).CellStyle = styles.BlockStyle;
+            }
+            summaryRow.GetCell(1).CellStyle = styles.TitleStyle;
+            sheet.AddMergedRegion(new CellRangeAddress(rowIndex, rowIndex, 2, HeaderZh.Length - 1));
+            return rowIndex;
+        }
+
+        private static void SetColumnWidths(ISheet sheet)
+        {
+            sheet.SetColumnWidth(0, 20 * 256);
+            sheet.SetColumnWidth(1, 30 * 256);
+            sheet.SetColumnWidth(2, 80 * 256);
+            sheet.SetColumnWidth(3, 12 * 256);
+            sheet.SetColumnWidth(4, 10 * 256);
+            sheet.SetColumnWidth(5, 12 * 256);
+            sheet.SetColumnWidth(6, 12 * 256);
+            sheet.SetColumnWidth(7, 10 * 256);
+            sheet.SetColumnWidth(8, 8 * 256);
+            sheet.SetColumnWidth(9, 36 * 256);
+            sheet.SetColumnWidth(10, 30 * 256);
+            sheet.SetColumnHidden(9, true);
+            sheet.SetColumnHidden(10, true);
+        }
+
+        private static Dictionary<string, string> LoadCategoryNames()
+        {
             var idToName = new Dictionary<string, string>();
             try
             {
@@ -182,196 +448,7 @@ namespace WorkLogApp.Services.Implementations
                 }
             }
             catch { /* 忽略模板加载失败 */ }
-
-            // 写入中文表头
-            var header = sheet.CreateRow(0);
-            for (int i = 0; i < HeaderZh.Length; i++)
-            {
-                var hc = header.CreateCell(i);
-                hc.SetCellValue(HeaderZh[i]);
-            }
-
-            // 样式：两种块背景色 + 加粗的日期标识行
-            var boldFont = wb.CreateFont();
-            boldFont.IsBold = true;
-
-            var markerStyleA = wb.CreateCellStyle();
-            markerStyleA.SetFont(boldFont);
-            markerStyleA.FillPattern = FillPattern.SolidForeground;
-            markerStyleA.FillForegroundColor = IndexedColors.LightCornflowerBlue.Index;
-            markerStyleA.Alignment = HorizontalAlignment.Center;
-            markerStyleA.VerticalAlignment = VerticalAlignment.Center;
-            markerStyleA.BorderTop = BorderStyle.Thin;
-            markerStyleA.BorderBottom = BorderStyle.Thin;
-            markerStyleA.BorderLeft = BorderStyle.Thin;
-            markerStyleA.BorderRight = BorderStyle.Thin;
-
-            var markerStyleB = wb.CreateCellStyle();
-            markerStyleB.SetFont(boldFont);
-            markerStyleB.FillPattern = FillPattern.SolidForeground;
-            markerStyleB.FillForegroundColor = IndexedColors.LightYellow.Index;
-            markerStyleB.Alignment = HorizontalAlignment.Center;
-            markerStyleB.VerticalAlignment = VerticalAlignment.Center;
-            markerStyleB.BorderTop = BorderStyle.Thin;
-            markerStyleB.BorderBottom = BorderStyle.Thin;
-            markerStyleB.BorderLeft = BorderStyle.Thin;
-            markerStyleB.BorderRight = BorderStyle.Thin;
-
-            // 表头样式：加粗、居中、带边框
-            var headerStyle = wb.CreateCellStyle();
-            headerStyle.SetFont(boldFont);
-            headerStyle.Alignment = HorizontalAlignment.Center;
-            headerStyle.VerticalAlignment = VerticalAlignment.Center;
-            headerStyle.BorderTop = BorderStyle.Thin;
-            headerStyle.BorderBottom = BorderStyle.Thin;
-            headerStyle.BorderLeft = BorderStyle.Thin;
-            headerStyle.BorderRight = BorderStyle.Thin;
-            for (int i = 0; i < HeaderZh.Length; i++)
-            {
-                header.GetCell(i).CellStyle = headerStyle;
-            }
-
-            var blockStyleA = wb.CreateCellStyle();
-            blockStyleA.FillPattern = FillPattern.SolidForeground;
-            blockStyleA.FillForegroundColor = IndexedColors.LightCornflowerBlue.Index;
-            blockStyleA.WrapText = true;
-            blockStyleA.Alignment = HorizontalAlignment.Left;
-            blockStyleA.VerticalAlignment = VerticalAlignment.Top;
-            blockStyleA.BorderTop = BorderStyle.Thin;
-            blockStyleA.BorderBottom = BorderStyle.Thin;
-            blockStyleA.BorderLeft = BorderStyle.Thin;
-            blockStyleA.BorderRight = BorderStyle.Thin;
-
-            var blockStyleB = wb.CreateCellStyle();
-            blockStyleB.FillPattern = FillPattern.SolidForeground;
-            blockStyleB.FillForegroundColor = IndexedColors.LightYellow.Index;
-            blockStyleB.WrapText = true;
-            blockStyleB.Alignment = HorizontalAlignment.Left;
-            blockStyleB.VerticalAlignment = VerticalAlignment.Top;
-            blockStyleB.BorderTop = BorderStyle.Thin;
-            blockStyleB.BorderBottom = BorderStyle.Thin;
-            blockStyleB.BorderLeft = BorderStyle.Thin;
-            blockStyleB.BorderRight = BorderStyle.Thin;
-
-            // 数字列样式（居中，带边框，继承块底色）
-            var numberStyleA = wb.CreateCellStyle();
-            numberStyleA.CloneStyleFrom(blockStyleA);
-            numberStyleA.Alignment = HorizontalAlignment.Center;
-            var numberStyleB = wb.CreateCellStyle();
-            numberStyleB.CloneStyleFrom(blockStyleB);
-            numberStyleB.Alignment = HorizontalAlignment.Center;
-
-            // 时间列样式（右对齐，带边框，继承块底色）
-            var timeStyleA = wb.CreateCellStyle();
-            timeStyleA.CloneStyleFrom(blockStyleA);
-            timeStyleA.Alignment = HorizontalAlignment.Right;
-            var timeStyleB = wb.CreateCellStyle();
-            timeStyleB.CloneStyleFrom(blockStyleB);
-            timeStyleB.Alignment = HorizontalAlignment.Right;
-
-            // 标题列样式（加粗）
-            var titleStyleA = wb.CreateCellStyle();
-            titleStyleA.CloneStyleFrom(blockStyleA);
-            titleStyleA.SetFont(boldFont);
-            var titleStyleB = wb.CreateCellStyle();
-            titleStyleB.CloneStyleFrom(blockStyleB);
-            titleStyleB.SetFont(boldFont);
-
-            var orderedDays = (days ?? Enumerable.Empty<WorkLog>())
-                .Where(d => d != null && d.LogDate.Year == monthContext.Year && d.LogDate.Month == monthContext.Month)
-                .OrderBy(d => d.LogDate.Date)
-                .ToList();
-
-            int rowIndex = 0;
-            int blockIndex = 0;
-            foreach (var day in orderedDays)
-            {
-                bool useA = (blockIndex % 2 == 0);
-                var markerStyle = useA ? markerStyleA : markerStyleB;
-                var blockStyle = useA ? blockStyleA : blockStyleB;
-                var numberStyle = useA ? numberStyleA : numberStyleB;
-                var timeStyle = useA ? timeStyleA : timeStyleB;
-                var titleStyle = useA ? titleStyleA : titleStyleB;
-
-                // 日期标识行（中文日期 + 中文星期）
-                rowIndex++;
-                var markerRow = sheet.CreateRow(rowIndex);
-                for (int c = 0; c < HeaderZh.Length; c++)
-                {
-                    var cell = markerRow.CreateCell(c);
-                    cell.CellStyle = markerStyle;
-                    var week = GetChineseWeekday(day.LogDate.Date);
-                    cell.SetCellValue(c == 0 ? $"—— {day.LogDate:yyyy年MM月dd日} {week} ——" : string.Empty);
-                }
-                sheet.AddMergedRegion(new CellRangeAddress(rowIndex, rowIndex, 0, HeaderZh.Length - 1));
-
-                var itemsOrdered = (day.Items ?? new List<WorkLogItem>())
-                    .OrderBy(i => i.SortOrder ?? 0)
-                    .ThenBy(i => i.StartTime ?? DateTime.MinValue)
-                    .ThenBy(i => i.ItemTitle ?? string.Empty)
-                    .ToList();
-                foreach (var item in itemsOrdered)
-                {
-                    rowIndex++;
-                    var row = sheet.CreateRow(rowIndex);
-                    for (int c = 0; c < HeaderZh.Length; c++) row.CreateCell(c);
-
-                    // 中文日期格式
-                    row.GetCell(0).SetCellValue(day.LogDate.ToString("yyyy年MM月dd日"));
-                    row.GetCell(1).SetCellValue(item.ItemTitle ?? string.Empty);
-                    row.GetCell(2).SetCellValue(item.ItemContent ?? string.Empty);
-                    // 分类列直接写名称
-                    var catVal = item.CategoryName ?? string.Empty;
-                    if (idToName.ContainsKey(catVal)) catVal = idToName[catVal];
-                    row.GetCell(3).SetCellValue(catVal);
-                    row.GetCell(4).SetCellValue(item.Status.ToChinese());
-                    row.GetCell(5).SetCellValue(item.StartTime.HasValue ? item.StartTime.Value.ToString("yyyy-MM-dd HH:mm") : string.Empty);
-                    row.GetCell(6).SetCellValue(item.EndTime.HasValue ? item.EndTime.Value.ToString("yyyy-MM-dd HH:mm") : string.Empty);
-                    row.GetCell(7).SetCellValue(item.Tags ?? string.Empty);
-                    row.GetCell(8).SetCellValue(item.SortOrder ?? 0);
-                    row.GetCell(9).SetCellValue(item.Id ?? string.Empty);
-                    row.GetCell(10).SetCellValue(item.TrackingId ?? string.Empty);
-                    row.GetCell(0).CellStyle = blockStyle;
-                    row.GetCell(1).CellStyle = titleStyle;
-                    row.GetCell(2).CellStyle = blockStyle;
-                    row.GetCell(3).CellStyle = numberStyle;
-                    row.GetCell(4).CellStyle = blockStyle;
-                    row.GetCell(5).CellStyle = timeStyle;
-                    row.GetCell(6).CellStyle = timeStyle;
-                    row.GetCell(7).CellStyle = blockStyle;
-                    row.GetCell(8).CellStyle = numberStyle;
-                    row.GetCell(9).CellStyle = blockStyle;
-                    row.GetCell(10).CellStyle = blockStyle;
-                }
-                // 每个日期块的最后一行写入当日总结（标题=当日总结，内容=总结文本）
-                rowIndex++;
-                var summaryRow = sheet.CreateRow(rowIndex);
-                for (int c = 0; c < HeaderZh.Length; c++) summaryRow.CreateCell(c);
-                summaryRow.GetCell(1).SetCellValue(SummaryTitle);
-                summaryRow.GetCell(2).SetCellValue(day.DailySummary ?? string.Empty);
-                for (int c = 0; c < HeaderZh.Length; c++)
-                {
-                    summaryRow.GetCell(c).CellStyle = blockStyle;
-                }
-                summaryRow.GetCell(1).CellStyle = titleStyle;
-                sheet.AddMergedRegion(new CellRangeAddress(rowIndex, rowIndex, 2, HeaderZh.Length - 1));
-                blockIndex++;
-            }
-
-            // 列宽适配（可读性优化，内容列加宽，数字列缩窄）
-            sheet.SetColumnWidth(0, 20 * 256);
-            sheet.SetColumnWidth(1, 30 * 256);
-            sheet.SetColumnWidth(2, 80 * 256);
-            sheet.SetColumnWidth(3, 12 * 256);
-            sheet.SetColumnWidth(4, 10 * 256);
-            sheet.SetColumnWidth(5, 12 * 256);
-            sheet.SetColumnWidth(6, 12 * 256);
-            sheet.SetColumnWidth(7, 10 * 256);
-            sheet.SetColumnWidth(8, 8 * 256);
-            sheet.SetColumnWidth(9, 36 * 256);
-            sheet.SetColumnWidth(10, 30 * 256);
-            sheet.SetColumnHidden(9, true);
-            sheet.SetColumnHidden(10, true);
+            return idToName;
         }
 
         private static string GetChineseWeekday(DateTime dt)
