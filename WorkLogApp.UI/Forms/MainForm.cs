@@ -147,33 +147,22 @@ namespace WorkLogApp.UI.Forms
             int availableWidth = _listView.ClientSize.Width - SystemInformation.VerticalScrollBarWidth;
             if (availableWidth <= 0) return;
 
-            // 计算最小列宽总和
-            int minTotalWidth = 120 + 150 + 80 + 200 + 100 + 100 + 100; // 各列最小宽度
-            
-            if (availableWidth >= minTotalWidth)
-            {
-                // 有充足空间，按比例分配
-                double scaleFactor = (double)availableWidth / minTotalWidth;
-                
-                _listView.Columns[0].Width = (int)(120 * scaleFactor);  // 日期
-                _listView.Columns[1].Width = (int)(150 * scaleFactor);  // 标题
-                _listView.Columns[2].Width = Math.Max(60, (int)(80 * scaleFactor));   // 状态
-                _listView.Columns[3].Width = (int)(200 * scaleFactor);  // 内容
-                _listView.Columns[4].Width = (int)(100 * scaleFactor);  // 标签
-                _listView.Columns[5].Width = (int)(100 * scaleFactor);  // 开始
-                _listView.Columns[6].Width = (int)(100 * scaleFactor);  // 结束
-            }
-            else
-            {
-                // 空间不足，使用最小宽度
-                _listView.Columns[0].Width = 100;
-                _listView.Columns[1].Width = 120;
-                _listView.Columns[2].Width = 60;
-                _listView.Columns[3].Width = 150;
-                _listView.Columns[4].Width = 80;
-                _listView.Columns[5].Width = 80;
-                _listView.Columns[6].Width = 80;
-            }
+            // 计算最小列宽总和（7列：日期120、标题150、状态80、内容200、标签100、开始100、结束100）
+            int minTotalWidth = 120 + 150 + 80 + 200 + 100 + 100 + 100;
+
+            // 确保可用宽度至少为最小宽度，避免极端情况下的异常
+            availableWidth = Math.Max(availableWidth, minTotalWidth);
+
+            // 按比例分配列宽
+            double scaleFactor = (double)availableWidth / minTotalWidth;
+
+            _listView.Columns[0].Width = (int)(120 * scaleFactor);  // 日期
+            _listView.Columns[1].Width = (int)(150 * scaleFactor);  // 标题
+            _listView.Columns[2].Width = Math.Max(60, (int)(80 * scaleFactor));   // 状态（最小60）
+            _listView.Columns[3].Width = (int)(200 * scaleFactor);  // 内容
+            _listView.Columns[4].Width = (int)(100 * scaleFactor);  // 标签
+            _listView.Columns[5].Width = (int)(100 * scaleFactor);  // 开始
+            _listView.Columns[6].Width = (int)(100 * scaleFactor);  // 结束
         }
 
         /// <summary>
