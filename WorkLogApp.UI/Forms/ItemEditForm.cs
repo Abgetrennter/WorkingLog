@@ -3,17 +3,22 @@ using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
+using WorkLogApp.Core.Constants;
 using WorkLogApp.Core.Enums;
 using WorkLogApp.Core.Helpers;
 using WorkLogApp.Core.Models;
-using WorkLogApp.Services.Implementations;
 using WorkLogApp.Services.Interfaces;
+using WorkLogApp.UI.Helpers;
 using WorkLogApp.UI.UI;
 
 namespace WorkLogApp.UI.Forms
 {
+    /// <summary>
+    /// 工作日志编辑窗体
+    /// </summary>
     public partial class ItemEditForm : Form
     {
+        private const string WorkLogFilePrefix = "工作日志_";
         private readonly WorkLogItem _item;
         
         // 设计期支持：提供无参构造，便于设计器实例化
@@ -83,16 +88,9 @@ namespace WorkLogApp.UI.Forms
             // 3. 执行追溯汇总逻辑 (Unique to this button)
             // 需要构造服务
             var baseDir = AppDomain.CurrentDomain.BaseDirectory;
-            var dataDir = Path.Combine(baseDir, "Data");
+            var dataDir = Path.Combine(baseDir, AppConstants.DataDirectoryName);
             Directory.CreateDirectory(dataDir);
-            IImportExportService exportService = Program.Container?.GetInstance<IImportExportService>();
-            if (exportService == null)
-            {
-                // 如果容器不可用，尝试创建（设计时支持）
-                var pdfService = new PdfExportService();
-                var wordService = new WordExportService();
-                exportService = new ImportExportService(pdfService, wordService);
-            }
+            IImportExportService exportService = ServiceFactory.GetImportExportService();
 
             TraceBackAndMergeProgress(exportService, dataDir);
             
@@ -269,17 +267,10 @@ namespace WorkLogApp.UI.Forms
 
                 // 持久化到 Data\工作日志_yyyyMM.xlsx
                 var baseDir = AppDomain.CurrentDomain.BaseDirectory;
-                var dataDir = Path.Combine(baseDir, "Data");
+                var dataDir = Path.Combine(baseDir, AppConstants.DataDirectoryName);
                 Directory.CreateDirectory(dataDir);
 
-                IImportExportService exportService = Program.Container?.GetInstance<IImportExportService>();
-                if (exportService == null)
-                {
-                    // 如果容器不可用，尝试创建（设计时支持）
-                    var pdfService = new PdfExportService();
-                    var wordService = new WordExportService();
-                    exportService = new ImportExportService(pdfService, wordService);
-                }
+                IImportExportService exportService = ServiceFactory.GetImportExportService();
 
                 // (移除) 如果状态为已完成，执行追溯汇总逻辑
                 // if (_item.Status == StatusEnum.Done) ...
@@ -308,7 +299,7 @@ namespace WorkLogApp.UI.Forms
                 File.WriteAllText(filePath, _item.ItemContent);
 
                 MessageBox.Show(this,
-                    $"已保存到 Excel 与文本备份:\n{Path.Combine(dataDir, ImportExportService.FilePrefix + _item.LogDate.ToString("yyyyMM") + ".xlsx")}\n{filePath}",
+                    $"已保存到 Excel 与文本备份:\n{Path.Combine(dataDir, WorkLogFilePrefix + _item.LogDate.ToString("yyyyMM") + ".xlsx")}\n{filePath}",
                     "保存成功", MessageBoxButtons.OK, MessageBoxIcon.Information);
 
                 DialogResult = DialogResult.OK;

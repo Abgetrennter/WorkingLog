@@ -6,6 +6,7 @@ using System.Linq;
 using System.Configuration;
 using System.Diagnostics;
 using System.Windows.Forms;
+using WorkLogApp.Core.Constants;
 using WorkLogApp.Core.Models;
 using WorkLogApp.Core.Enums;
 using WorkLogApp.Core.Helpers;
@@ -258,9 +259,9 @@ namespace WorkLogApp.UI.Forms
             try
             {
                 var baseDir = AppDomain.CurrentDomain.BaseDirectory;
-                var relativePath = System.Configuration.ConfigurationManager.AppSettings["DataPath"] ?? "Data";
-                var dataDir = System.IO.Path.Combine(baseDir, relativePath);
-                System.IO.Directory.CreateDirectory(dataDir);
+                var relativePath = ConfigurationManager.AppSettings[AppConstants.DataPathConfigKey] ?? AppConstants.DataDirectoryName;
+                var dataDir = Path.Combine(baseDir, relativePath);
+                Directory.CreateDirectory(dataDir);
 
                 using (var dialog = new ExportDialog(
                     _importExportService,
@@ -314,7 +315,7 @@ namespace WorkLogApp.UI.Forms
 
                 // 保存到当月 Excel
                 var baseDir = AppDomain.CurrentDomain.BaseDirectory;
-                var relativePath = ConfigurationManager.AppSettings["DataPath"] ?? "Data";
+                var relativePath = ConfigurationManager.AppSettings[AppConstants.DataPathConfigKey] ?? AppConstants.DataDirectoryName;
                 var dataDir = Path.Combine(baseDir, relativePath);
                 Directory.CreateDirectory(dataDir);
 
@@ -402,7 +403,7 @@ namespace WorkLogApp.UI.Forms
             try
             {
                 var baseDir = AppDomain.CurrentDomain.BaseDirectory;
-                var relativePath = ConfigurationManager.AppSettings["DataPath"] ?? "Data";
+                var relativePath = ConfigurationManager.AppSettings[AppConstants.DataPathConfigKey] ?? AppConstants.DataDirectoryName;
                 var dataDir = Path.Combine(baseDir, relativePath);
                 Directory.CreateDirectory(dataDir);
 
@@ -716,7 +717,7 @@ namespace WorkLogApp.UI.Forms
         {
             try
             {
-                var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data");
+                var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, AppConstants.DataDirectoryName);
                 if (!Directory.Exists(path)) Directory.CreateDirectory(path);
                 System.Diagnostics.Process.Start("explorer.exe", path);
             }

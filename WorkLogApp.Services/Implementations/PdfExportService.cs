@@ -52,7 +52,7 @@ namespace WorkLogApp.Services.Implementations
         public IEnumerable<string> GetAvailableChineseFonts()
         {
             var availableFonts = new List<string>();
-            
+             
             foreach (var fontName in ChineseFontNames)
             {
                 try
@@ -66,9 +66,9 @@ namespace WorkLogApp.Services.Implementations
                         }
                     }
                 }
-                catch
+                catch (Exception ex)
                 {
-                    // 字体不存在，跳过
+                    Logger.Debug($"字体 '{fontName}' 不可用: {ex.Message}");
                 }
             }
 
@@ -80,8 +80,16 @@ namespace WorkLogApp.Services.Implementations
         /// </summary>
         public bool ExportToPdf(WorkLog log, string outputPath, PdfExportOptions options = null)
         {
-            if (log == null) return false;
-            if (string.IsNullOrWhiteSpace(outputPath)) return false;
+            if (log == null)
+            {
+                Logger.Warning("PDF 导出失败: log 参数为 null");
+                return false;
+            }
+            if (string.IsNullOrWhiteSpace(outputPath))
+            {
+                Logger.Warning("PDF 导出失败: 输出路径为空");
+                return false;
+            }
 
             options = options ?? new PdfExportOptions();
 
@@ -99,12 +107,12 @@ namespace WorkLogApp.Services.Implementations
                     document.Save(outputPath);
                 }
 
+                Logger.Info($"PDF 导出成功: {outputPath}");
                 return true;
             }
             catch (Exception ex)
             {
-                // 可以在这里添加日志记录
-                System.Diagnostics.Debug.WriteLine($"PDF export error: {ex.Message}");
+                Logger.Error($"PDF 导出失败: {outputPath}", ex);
                 return false;
             }
         }
@@ -114,8 +122,16 @@ namespace WorkLogApp.Services.Implementations
         /// </summary>
         public bool ExportMonthToPdf(DateTime month, IEnumerable<WorkLog> days, string outputPath, PdfExportOptions options = null)
         {
-            if (days == null) return false;
-            if (string.IsNullOrWhiteSpace(outputPath)) return false;
+            if (days == null)
+            {
+                Logger.Warning("PDF 月度导出失败: days 参数为 null");
+                return false;
+            }
+            if (string.IsNullOrWhiteSpace(outputPath))
+            {
+                Logger.Warning("PDF 月度导出失败: 输出路径为空");
+                return false;
+            }
 
             options = options ?? new PdfExportOptions();
 
@@ -158,11 +174,12 @@ namespace WorkLogApp.Services.Implementations
                     document.Save(outputPath);
                 }
 
+                Logger.Info($"PDF 月度导出成功: {outputPath}, 包含 {validDays.Count} 天数据");
                 return true;
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"PDF month export error: {ex.Message}");
+                Logger.Error($"PDF 月度导出失败: {outputPath}", ex);
                 return false;
             }
         }

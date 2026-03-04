@@ -4,6 +4,7 @@ using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Windows.Forms;
+using WorkLogApp.Core.Constants;
 using WorkLogApp.Core.Models;
 using WorkLogApp.Services.Interfaces;
 using WorkLogApp.UI.UI;
@@ -204,7 +205,7 @@ namespace WorkLogApp.UI.Forms
             // 说明标签
             var lblInfo = new Label
             {
-                Text = "导出将包含选定时间范围内的所有工作日志记录。\n导出的文件将保存到 Data 目录。",
+                Text = $"导出将包含选定时间范围内的所有工作日志记录。\n导出的文件将保存到 {AppConstants.DataDirectoryName} 目录。",
                 Dock = DockStyle.Fill,
                 ForeColor = FluentColors.Gray130,
                 Margin = new Padding(0, 8, 0, 12),

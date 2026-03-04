@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Reflection;
+using WorkLogApp.Core.Constants;
 
 namespace WorkLogApp.UI.Helpers
 {
@@ -71,11 +72,15 @@ namespace WorkLogApp.UI.Helpers
         /// </summary>
         public static void ExtractConfigs(string baseDir)
         {
-            var configsDir = Path.Combine(baseDir, "Configs");
+            var configsDir = Path.Combine(baseDir, AppConstants.ConfigsDirectoryName);
             EnsureDirectory(configsDir);
 
-            ExtractResourceIfNotExists("Configs.dev.config.json", Path.Combine(configsDir, "dev.config.json"));
-            ExtractResourceIfNotExists("Configs.prod.config.json", Path.Combine(configsDir, "prod.config.json"));
+            ExtractResourceIfNotExists(
+                $"{AppConstants.ConfigResourceNamespace}{AppConstants.DevConfigFileName}",
+                Path.Combine(configsDir, AppConstants.DevConfigFileName));
+            ExtractResourceIfNotExists(
+                $"{AppConstants.ConfigResourceNamespace}{AppConstants.ProdConfigFileName}",
+                Path.Combine(configsDir, AppConstants.ProdConfigFileName));
         }
 
         /// <summary>
@@ -83,10 +88,12 @@ namespace WorkLogApp.UI.Helpers
         /// </summary>
         public static void ExtractTemplates(string baseDir)
         {
-            var templatesDir = Path.Combine(baseDir, "Templates");
+            var templatesDir = Path.Combine(baseDir, AppConstants.TemplatesDirectoryName);
             EnsureDirectory(templatesDir);
 
-            ExtractResourceIfNotExists("Templates.templates.json", Path.Combine(templatesDir, "templates.json"));
+            ExtractResourceIfNotExists(
+                $"{AppConstants.TemplateResourceNamespace}{AppConstants.TemplatesFileName}",
+                Path.Combine(templatesDir, AppConstants.TemplatesFileName));
         }
 
         /// <summary>
@@ -109,9 +116,10 @@ namespace WorkLogApp.UI.Helpers
         /// <summary>
         /// 确保数据目录存在
         /// </summary>
-        public static void EnsureDataDirectory(string baseDir, string dataDirName = "Data")
+        public static void EnsureDataDirectory(string baseDir, string dataDirName = null)
         {
-            var dataDir = Path.Combine(baseDir, dataDirName);
+            var dirName = dataDirName ?? AppConstants.DataDirectoryName;
+            var dataDir = Path.Combine(baseDir, dirName);
             EnsureDirectory(dataDir);
         }
     }

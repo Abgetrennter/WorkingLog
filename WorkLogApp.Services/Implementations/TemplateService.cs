@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using Newtonsoft.Json;
+using WorkLogApp.Core.Helpers;
 using WorkLogApp.Core.Models;
 using WorkLogApp.Services.Interfaces;
 
@@ -13,27 +14,32 @@ namespace WorkLogApp.Services.Implementations
     {
         private TemplateStore _store;
         private string _templatesPath;
-        private readonly object _lock = new object();
+        private readonly System.Threading.ReaderWriterLockSlim _rwLock = new System.Threading.ReaderWriterLockSlim();
 
         public bool LoadTemplates(string templatesJsonPath)
         {
-            lock (_lock)
+            _rwLock.EnterWriteLock();
+            try
             {
                 _templatesPath = templatesJsonPath;
                 if (!File.Exists(templatesJsonPath))
                 {
-                    // Initialize empty store if file doesn't exist
+                    Logger.Warning($"模板文件不存在: {templatesJsonPath}，将使用空存储");
                     _store = new TemplateStore();
                     return true;
                 }
-
+ 
                 try
                 {
                     var json = File.ReadAllText(templatesJsonPath);
                     _store = JsonConvert.DeserializeObject<TemplateStore>(json);
                     
                     // Fallback if deserialization returns null (e.g. empty file)
-                    if (_store == null) _store = new TemplateStore();
+                    if (_store == null)
+                    {
+                        Logger.Warning($"模板文件反序列化返回 null: {templatesJsonPath}");
+                        _store = new TemplateStore();
+                    }
                     
                     // Ensure lists are not null
                     if (_store.Categories == null) _store.Categories = new List<Category>();
@@ -41,32 +47,79 @@ namespace WorkLogApp.Services.Implementations
                     
                     return true;
                 }
-                catch
+                catch (JsonException ex)
                 {
-                    // On error (e.g. format mismatch), init empty
+                    Logger.Error($"模板文件 JSON 格式错误: {templatesJsonPath}", ex);
                     _store = new TemplateStore();
                     return false;
                 }
+                catch (Exception ex)
+                {
+                    Logger.Error($"加载模板文件失败: {templatesJsonPath}", ex);
+                    _store = new TemplateStore();
+                    return false;
+                }
+            }
+            finally
+            {
+                _rwLock.ExitWriteLock();
             }
         }
 
         public bool SaveTemplates()
         {
-            lock (_lock)
+            _rwLock.EnterWriteLock();
+            try
             {
-                if (_store == null || string.IsNullOrWhiteSpace(_templatesPath)) return false;
+                if (_store == null || string.IsNullOrWhiteSpace(_templatesPath))
+                {
+                    Logger.Error("保存模板失败: store 为 null 或路径为空");
+                    return false;
+                }
                 try
                 {
                     var json = JsonConvert.SerializeObject(_store, Formatting.Indented);
                     var dir = Path.GetDirectoryName(_templatesPath);
                     if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
                     File.WriteAllText(_templatesPath, json);
+                    Logger.Info($"模板已保存: {_templatesPath}");
                     return true;
                 }
-                catch
+                catch (Exception ex)
                 {
+                    Logger.Error($"保存模板失败: {_templatesPath}", ex);
                     return false;
                 }
+            }
+            finally
+            {
+                _rwLock.ExitWriteLock();
+            }
+        }
+
+        /// <summary>
+        /// 内部保存方法，假设调用者已持有写锁
+        /// </summary>
+        private bool SaveTemplatesInternal()
+        {
+            if (_store == null || string.IsNullOrWhiteSpace(_templatesPath))
+            {
+                Logger.Error("保存模板失败: store 为 null 或路径为空");
+                return false;
+            }
+            try
+            {
+                var json = JsonConvert.SerializeObject(_store, Formatting.Indented);
+                var dir = Path.GetDirectoryName(_templatesPath);
+                if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
+                File.WriteAllText(_templatesPath, json);
+                Logger.Info($"模板已保存: {_templatesPath}");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"保存模板失败: {_templatesPath}", ex);
+                return false;
             }
         }
 
@@ -74,26 +127,37 @@ namespace WorkLogApp.Services.Implementations
 
         public List<Category> GetAllCategories()
         {
-            lock (_lock)
+            _rwLock.EnterReadLock();
+            try
             {
                 // Return flat list, UI can build tree
                 // Or we could build tree here if needed, but let's return all flat data
                 // Sort by SortOrder
                 return _store?.Categories.OrderBy(c => c.SortOrder).ToList() ?? new List<Category>();
             }
+            finally
+            {
+                _rwLock.ExitReadLock();
+            }
         }
 
         public Category GetCategory(string id)
         {
-            lock (_lock)
+            _rwLock.EnterReadLock();
+            try
             {
                 return _store?.Categories.FirstOrDefault(c => c.Id == id);
+            }
+            finally
+            {
+                _rwLock.ExitReadLock();
             }
         }
 
         public Category CreateCategory(string name, string parentId)
         {
-            lock (_lock)
+            _rwLock.EnterWriteLock();
+            try
             {
                 if (_store == null) _store = new TemplateStore();
 
@@ -111,14 +175,19 @@ namespace WorkLogApp.Services.Implementations
                     SortOrder = 0 // Default to top or bottom? Let's say 0.
                 };
                 _store.Categories.Add(category);
-                SaveTemplates();
+                SaveTemplatesInternal();
                 return category;
+            }
+            finally
+            {
+                _rwLock.ExitWriteLock();
             }
         }
 
         public bool UpdateCategory(Category category)
         {
-            lock (_lock)
+            _rwLock.EnterWriteLock();
+            try
             {
                 var existing = _store?.Categories.FirstOrDefault(c => c.Id == category.Id);
                 if (existing == null) return false;
@@ -136,17 +205,22 @@ namespace WorkLogApp.Services.Implementations
                 existing.SortOrder = category.SortOrder;
                 // ParentId usually changed via Move
                 
-                return SaveTemplates();
+                return SaveTemplatesInternal();
+            }
+            finally
+            {
+                _rwLock.ExitWriteLock();
             }
         }
 
         public bool DeleteCategory(string id)
         {
-            lock (_lock)
+            _rwLock.EnterWriteLock();
+            try
             {
                 if (_store == null) return false;
                 
-                // Recursive check? For now, simple delete. 
+                // Recursive check? For now, simple delete.
                 // UI should handle warnings about children.
                 // But we should probably delete children too to avoid orphans?
                 // Or just delete the node and let orphans be orphans (bad idea).
@@ -157,26 +231,49 @@ namespace WorkLogApp.Services.Implementations
 
                 _store.Categories.Remove(toDelete);
                 
-                // Also remove templates associated? 
+                // Also remove templates associated?
                 // Maybe we should keep them or nullify their category?
                 // Let's remove templates for now to keep it clean.
                 _store.Templates.RemoveAll(t => t.CategoryId == id);
 
-                // Remove children recursively? 
+                // Remove children recursively?
                 // A robust implementation would find all descendants.
-                var children = _store.Categories.Where(c => c.ParentId == id).ToList();
-                foreach(var child in children)
+                // 收集所有子分类ID，避免递归调用时的锁问题
+                var childrenIds = new List<string>();
+                CollectChildrenIds(id, childrenIds);
+                foreach(var childId in childrenIds)
                 {
-                    DeleteCategory(child.Id); // Recursive delete
+                    _store.Categories.RemoveAll(c => c.Id == childId);
+                    _store.Templates.RemoveAll(t => t.CategoryId == childId);
                 }
 
-                return SaveTemplates();
+                return SaveTemplatesInternal();
+            }
+            finally
+            {
+                _rwLock.ExitWriteLock();
+            }
+        }
+
+        /// <summary>
+        /// 辅助方法：收集所有子分类ID
+        /// </summary>
+        private void CollectChildrenIds(string parentId, List<string> childrenIds)
+        {
+            var children = _store?.Categories.Where(c => c.ParentId == parentId).ToList();
+            if (children == null) return;
+            
+            foreach (var child in children)
+            {
+                childrenIds.Add(child.Id);
+                CollectChildrenIds(child.Id, childrenIds);
             }
         }
 
         public bool MoveCategory(string id, string newParentId)
         {
-            lock (_lock)
+            _rwLock.EnterWriteLock();
+            try
             {
                 var cat = _store?.Categories.FirstOrDefault(c => c.Id == id);
                 if (cat == null) return false;
@@ -184,11 +281,15 @@ namespace WorkLogApp.Services.Implementations
                 // Prevent circular reference
                 if (id == newParentId) return false;
                 
-                // TODO: Check if newParentId is a child of id (prevent making a node its own descendant)
+                // Check if newParentId is a child of id (prevent making a node its own descendant)
                 if (IsDescendant(id, newParentId)) return false;
 
                 cat.ParentId = newParentId;
-                return SaveTemplates();
+                return SaveTemplatesInternal();
+            }
+            finally
+            {
+                _rwLock.ExitWriteLock();
             }
         }
 
@@ -211,53 +312,78 @@ namespace WorkLogApp.Services.Implementations
 
         public List<WorkTemplate> GetTemplatesByCategory(string categoryId)
         {
-            lock (_lock)
+            _rwLock.EnterReadLock();
+            try
             {
                 return _store?.Templates.Where(t => t.CategoryId == categoryId).ToList() ?? new List<WorkTemplate>();
+            }
+            finally
+            {
+                _rwLock.ExitReadLock();
             }
         }
 
         public WorkTemplate GetTemplate(string id)
         {
-            lock (_lock)
+            _rwLock.EnterReadLock();
+            try
             {
                 return _store?.Templates.FirstOrDefault(t => t.Id == id);
+            }
+            finally
+            {
+                _rwLock.ExitReadLock();
             }
         }
 
         public WorkTemplate CreateTemplate(WorkTemplate template)
         {
-            lock (_lock)
+            _rwLock.EnterWriteLock();
+            try
             {
                 if (_store == null) _store = new TemplateStore();
                 if (string.IsNullOrEmpty(template.Id)) template.Id = Guid.NewGuid().ToString();
                 
                 _store.Templates.Add(template);
-                SaveTemplates();
+                SaveTemplatesInternal();
                 return template;
+            }
+            finally
+            {
+                _rwLock.ExitWriteLock();
             }
         }
 
         public bool UpdateTemplate(WorkTemplate template)
         {
-            lock (_lock)
+            _rwLock.EnterWriteLock();
+            try
             {
                 if (_store == null) return false;
                 var index = _store.Templates.FindIndex(t => t.Id == template.Id);
                 if (index < 0) return false;
 
                 _store.Templates[index] = template;
-                return SaveTemplates();
+                return SaveTemplatesInternal();
+            }
+            finally
+            {
+                _rwLock.ExitWriteLock();
             }
         }
 
         public bool DeleteTemplate(string id)
         {
-            lock (_lock)
+            _rwLock.EnterWriteLock();
+            try
             {
                 if (_store == null) return false;
                 var count = _store.Templates.RemoveAll(t => t.Id == id);
-                return count > 0 && SaveTemplates();
+                return count > 0 && SaveTemplatesInternal();
+            }
+            finally
+            {
+                _rwLock.ExitWriteLock();
             }
         }
 

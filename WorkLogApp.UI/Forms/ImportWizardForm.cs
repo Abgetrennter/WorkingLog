@@ -4,9 +4,11 @@ using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Windows.Forms;
+using WorkLogApp.Core.Constants;
+using WorkLogApp.Core.Helpers;
 using WorkLogApp.Core.Models;
 using WorkLogApp.Services.Interfaces;
-using WorkLogApp.Services.Implementations;
+using WorkLogApp.UI.Helpers;
 using WorkLogApp.UI.UI;
 
 namespace WorkLogApp.UI.Forms
@@ -91,14 +93,7 @@ namespace WorkLogApp.UI.Forms
         {
             try
             {
-                IImportExportService svc = _importExportService ?? Program.Container?.GetInstance<IImportExportService>();
-                if (svc == null)
-                {
-                    // 如果容器不可用，尝试创建（设计时支持）
-                    var pdfService = new PdfExportService();
-                    var wordService = new WordExportService();
-                    svc = new ImportExportService(pdfService, wordService);
-                }
+                IImportExportService svc = _importExportService ?? ServiceFactory.GetImportExportService();
                 var days = svc.ImportFromFile(_sourcePath) ?? Enumerable.Empty<WorkLog>();
                 _imported = days.ToList();
                 _previewList.BeginUpdate();
@@ -136,16 +131,9 @@ namespace WorkLogApp.UI.Forms
             try
             {
                 var baseDir = AppDomain.CurrentDomain.BaseDirectory;
-                var dataDir = Path.Combine(baseDir, "Data");
+                var dataDir = Path.Combine(baseDir, AppConstants.DataDirectoryName);
                 Directory.CreateDirectory(dataDir);
-                IImportExportService svc = _importExportService ?? Program.Container?.GetInstance<IImportExportService>();
-                if (svc == null)
-                {
-                    // 如果容器不可用，尝试创建（设计时支持）
-                    var pdfService = new PdfExportService();
-                    var wordService = new WordExportService();
-                    svc = new ImportExportService(pdfService, wordService);
-                }
+                IImportExportService svc = _importExportService ?? ServiceFactory.GetImportExportService();
 
                 // 按月份分组写入（按天聚合）
                 var groups = _imported.GroupBy(d => new { d.LogDate.Year, d.LogDate.Month });

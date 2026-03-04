@@ -5,11 +5,12 @@ using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
+using WorkLogApp.Core.Constants;
 using WorkLogApp.Core.Enums;
 using WorkLogApp.Core.Helpers;
 using WorkLogApp.Core.Models;
 using WorkLogApp.Services.Interfaces;
-using WorkLogApp.Services.Implementations;
+using WorkLogApp.UI.Helpers;
 using WorkLogApp.UI.Controls;
 using WorkLogApp.UI.UI;
 
@@ -194,17 +195,10 @@ namespace WorkLogApp.UI.Forms
             try
             {
                 var baseDir = AppDomain.CurrentDomain.BaseDirectory;
-                var dataDir = Path.Combine(baseDir, "Data");
+                var dataDir = Path.Combine(baseDir, AppConstants.DataDirectoryName);
                 if (!Directory.Exists(dataDir)) Directory.CreateDirectory(dataDir);
 
-                IImportExportService exportService = Program.Container?.GetInstance<IImportExportService>();
-                if (exportService == null)
-                {
-                    // 如果容器不可用，尝试创建（设计时支持）
-                    var pdfService = new PdfExportService();
-                    var wordService = new WordExportService();
-                    exportService = new ImportExportService(pdfService, wordService);
-                }
+                IImportExportService exportService = ServiceFactory.GetImportExportService();
                 var day = new WorkLog { LogDate = item.LogDate.Date, Items = new System.Collections.Generic.List<WorkLogItem> { item } };
                 var success = exportService.ExportMonth(item.LogDate, new[] { day }, dataDir);
 

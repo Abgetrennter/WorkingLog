@@ -6,6 +6,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
+using WorkLogApp.Core.Helpers;
 
 namespace WorkLogApp.UI.UI
 {
@@ -58,6 +59,35 @@ namespace WorkLogApp.UI.UI
             Heading1 = new Font(family, 16f, FontStyle.Bold, GraphicsUnit.Point);
             Heading2 = new Font(family, 14f, FontStyle.Bold, GraphicsUnit.Point);
             Heading3 = new Font(family, 14f, FontStyle.Bold, GraphicsUnit.Point);
+        }
+
+        /// <summary>
+        /// 释放 UI 样式资源
+        /// </summary>
+        public static void Dispose()
+        {
+            try
+            {
+                BodyFont?.Dispose();
+                CompactFont?.Dispose();
+                Heading1?.Dispose();
+                Heading2?.Dispose();
+                Heading3?.Dispose();
+                
+                _pfc?.Dispose();
+                
+                BodyFont = null;
+                CompactFont = null;
+                Heading1 = null;
+                Heading2 = null;
+                Heading3 = null;
+                _pfc = null;
+                _customFamily = null;
+            }
+            catch (Exception ex)
+            {
+                Logger.Error("释放 UI 样式资源失败", ex);
+            }
         }
 
         // 便捷重载：使用全局缩放比例
