@@ -78,10 +78,11 @@ namespace WorkLogApp.UI.Forms
             this._panelBottom.TabIndex = 1;
             // 
             // TodoForm
-            // 
+            //
             this.AutoScaleDimensions = new System.Drawing.SizeF(9F, 18F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(584, 464);
+            this.ClientSize = new System.Drawing.Size(600, 480);
+            this.MinimumSize = new System.Drawing.Size(400, 300);
             this.Controls.Add(this._txtContent);
             this.Controls.Add(this._panelBottom);
             this.Name = "TodoForm";

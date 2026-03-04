@@ -19,9 +19,20 @@ namespace WorkLogApp.UI.Forms
         {
             Text = "每日总结";
             StartPosition = FormStartPosition.CenterParent;
+            MinimumSize = new Size(500, 350);
             Width = 875;
             Height = 625;
             IconHelper.ApplyIcon(this);
+
+            var rootLayout = new TableLayoutPanel
+            {
+                Dock = DockStyle.Fill,
+                RowCount = 2,
+                ColumnCount = 1,
+                Padding = new Padding(12)
+            };
+            rootLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
+            rootLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
 
             _textBox = new TextBox
             {
@@ -33,18 +44,18 @@ namespace WorkLogApp.UI.Forms
 
             _bottomBar = new FlowLayoutPanel
             {
-                Dock = DockStyle.Bottom,
-                Height = 48,
+                AutoSize = true,
                 FlowDirection = FlowDirection.RightToLeft,
-                Padding = new Padding(8)
+                Padding = new Padding(0, 8, 0, 0)
             };
 
             _btnClose = new Button { Text = "关闭", DialogResult = DialogResult.OK, Width = 100, Height = 32 };
 
             _bottomBar.Controls.Add(_btnClose);
 
-            Controls.Add(_textBox);
-            Controls.Add(_bottomBar);
+            rootLayout.Controls.Add(_textBox, 0, 0);
+            rootLayout.Controls.Add(_bottomBar, 0, 1);
+            Controls.Add(rootLayout);
 
             _textBox.Text = initialText ?? string.Empty;
 
@@ -57,8 +68,19 @@ namespace WorkLogApp.UI.Forms
         {
             Text = "每日总结";
             StartPosition = FormStartPosition.CenterParent;
+            MinimumSize = new Size(500, 350);
             Width = 875;
             Height = 625;
+
+            var rootLayout = new TableLayoutPanel
+            {
+                Dock = DockStyle.Fill,
+                RowCount = 2,
+                ColumnCount = 1,
+                Padding = new Padding(12)
+            };
+            rootLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
+            rootLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
 
             _textBox = new TextBox
             {
@@ -70,14 +92,13 @@ namespace WorkLogApp.UI.Forms
 
             _bottomBar = new FlowLayoutPanel
             {
-                Dock = DockStyle.Bottom,
-                Height = 48,
+                AutoSize = true,
                 FlowDirection = FlowDirection.RightToLeft,
-                Padding = new Padding(8)
+                Padding = new Padding(0, 8, 0, 0)
             };
 
             _btnClose = new Button { Text = "关闭", DialogResult = DialogResult.OK, Width = 100, Height = 32 };
-            _btnReset = new Button { Text = "重置", Width = 100, Height = 32 };
+            _btnReset = new Button { Text = "重置", Width = 100, Height = 32, Margin = new Padding(0, 0, 8, 0) };
             _btnReset.Click += (s, e) =>
             {
                 _textBox.Text = BuildChain(_items);
@@ -86,8 +107,9 @@ namespace WorkLogApp.UI.Forms
             _bottomBar.Controls.Add(_btnClose);
             _bottomBar.Controls.Add(_btnReset);
 
-            Controls.Add(_textBox);
-            Controls.Add(_bottomBar);
+            rootLayout.Controls.Add(_textBox, 0, 0);
+            rootLayout.Controls.Add(_bottomBar, 0, 1);
+            Controls.Add(rootLayout);
 
             _items = items ?? Enumerable.Empty<WorkLogItem>();
             _textBox.Text = string.IsNullOrWhiteSpace(existingText) ? BuildChain(_items) : existingText;

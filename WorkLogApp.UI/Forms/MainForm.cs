@@ -127,6 +127,55 @@ namespace WorkLogApp.UI.Forms
         }
 
         /// <summary>
+        /// 窗体大小改变时调整列宽
+        /// </summary>
+        protected override void OnResize(EventArgs e)
+        {
+            base.OnResize(e);
+            AdjustListViewColumnWidths();
+        }
+
+        /// <summary>
+        /// 根据窗体大小自适应调整ListView列宽
+        /// </summary>
+        private void AdjustListViewColumnWidths()
+        {
+            if (_listView == null || _listView.Columns.Count == 0) return;
+
+            // 获取可用宽度（减去滚动条宽度）
+            int availableWidth = _listView.ClientSize.Width - SystemInformation.VerticalScrollBarWidth;
+            if (availableWidth <= 0) return;
+
+            // 计算最小列宽总和
+            int minTotalWidth = 120 + 150 + 80 + 200 + 100 + 100 + 100; // 各列最小宽度
+            
+            if (availableWidth >= minTotalWidth)
+            {
+                // 有充足空间，按比例分配
+                double scaleFactor = (double)availableWidth / minTotalWidth;
+                
+                _listView.Columns[0].Width = (int)(120 * scaleFactor);  // 日期
+                _listView.Columns[1].Width = (int)(150 * scaleFactor);  // 标题
+                _listView.Columns[2].Width = Math.Max(60, (int)(80 * scaleFactor));   // 状态
+                _listView.Columns[3].Width = (int)(200 * scaleFactor);  // 内容
+                _listView.Columns[4].Width = (int)(100 * scaleFactor);  // 标签
+                _listView.Columns[5].Width = (int)(100 * scaleFactor);  // 开始
+                _listView.Columns[6].Width = (int)(100 * scaleFactor);  // 结束
+            }
+            else
+            {
+                // 空间不足，使用最小宽度
+                _listView.Columns[0].Width = 100;
+                _listView.Columns[1].Width = 120;
+                _listView.Columns[2].Width = 60;
+                _listView.Columns[3].Width = 150;
+                _listView.Columns[4].Width = 80;
+                _listView.Columns[5].Width = 80;
+                _listView.Columns[6].Width = 80;
+            }
+        }
+
+        /// <summary>
         /// 配置 Fluent 风格的工具栏
         /// </summary>
         private void SetupFluentToolBar()

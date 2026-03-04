@@ -1,6 +1,7 @@
 using System;
 using System.Configuration;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Windows.Forms;
 using SimpleInjector;
 using WorkLogApp.Services.Implementations;
@@ -20,9 +21,19 @@ namespace WorkLogApp.UI
         /// </summary>
         public static Container Container => _container;
 
+        // P/Invoke声明：设置DPI感知
+        [DllImport("user32.dll")]
+        private static extern bool SetProcessDPIAware();
+
         [STAThread]
         static void Main()
         {
+            // 设置高DPI感知模式（支持PerMonitorV2）
+            if (Environment.OSVersion.Version.Major >= 6) // Windows Vista及以上
+            {
+                SetProcessDPIAware();
+            }
+            
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
             // 初始化全局样式（字体、缩放、渲染）

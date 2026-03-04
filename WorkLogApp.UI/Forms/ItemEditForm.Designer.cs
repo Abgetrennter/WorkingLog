@@ -360,13 +360,15 @@ namespace WorkLogApp.UI.Forms
             this.bottomBar.TabIndex = 18;
             // 
             // ItemEditForm
-            // 
+            //
             this.AcceptButton = this._btnSave;
             this.CancelButton = this._btnCancel;
             this.ClientSize = new System.Drawing.Size(1125, 812);
+            this.MinimumSize = new System.Drawing.Size(700, 500);
             this.Controls.Add(this.rootLayout);
             this.Name = "ItemEditForm";
             this.Text = "编辑日志事项";
+            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
             ((System.ComponentModel.ISupportInitialize)(this._sortUpDown)).EndInit();
             this.rootLayout.ResumeLayout(false);
             this.rootLayout.PerformLayout();

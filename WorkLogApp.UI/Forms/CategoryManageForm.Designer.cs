@@ -276,10 +276,10 @@ namespace WorkLogApp.UI.Forms
             this._btnSave.Click += new System.EventHandler(this.OnSaveCategory);
             // 
             // rootLayout
-            // 
+            //
             this.rootLayout.ColumnCount = 2;
-            this.rootLayout.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 300F));
-            this.rootLayout.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
+            this.rootLayout.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 25F));
+            this.rootLayout.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 75F));
             this.rootLayout.Controls.Add(this.leftPanel, 0, 0);
             this.rootLayout.Controls.Add(this.rightPanel, 1, 0);
             this.rootLayout.Dock = System.Windows.Forms.DockStyle.Fill;
@@ -290,13 +290,15 @@ namespace WorkLogApp.UI.Forms
             this.rootLayout.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
             this.rootLayout.Size = new System.Drawing.Size(971, 670);
             this.rootLayout.TabIndex = 0;
-            // 
+            //
             // CategoryManageForm
-            // 
-            this.ClientSize = new System.Drawing.Size(1214, 838);
+            //
+            this.ClientSize = new System.Drawing.Size(1000, 700);
+            this.MinimumSize = new System.Drawing.Size(800, 500);
             this.Controls.Add(this.rootLayout);
             this.Name = "CategoryManageForm";
             this.Text = "分类与模板管理";
+            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
             this.leftPanel.ResumeLayout(false);
             this.rightPanel.ResumeLayout(false);
             this._layoutRight.ResumeLayout(false);
