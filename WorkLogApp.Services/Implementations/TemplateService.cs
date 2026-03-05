@@ -296,12 +296,14 @@ namespace WorkLogApp.Services.Implementations
         private bool IsDescendant(string potentialAncestorId, string potentialDescendantId)
         {
             if (string.IsNullOrEmpty(potentialDescendantId)) return false;
-            var current = GetCategory(potentialDescendantId);
+            
+            // 直接访问 _store 避免锁递归
+            var current = _store?.Categories.FirstOrDefault(c => c.Id == potentialDescendantId);
             while (current != null)
             {
                 if (current.ParentId == potentialAncestorId) return true;
                 if (string.IsNullOrEmpty(current.ParentId)) break;
-                current = GetCategory(current.ParentId);
+                current = _store?.Categories.FirstOrDefault(c => c.Id == current.ParentId);
             }
             return false;
         }
