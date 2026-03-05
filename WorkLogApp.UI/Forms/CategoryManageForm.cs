@@ -172,6 +172,9 @@ namespace WorkLogApp.UI.Forms
 
         #region Tree Logic
 
+        /// <summary>
+        /// 加载分类树
+        /// </summary>
         private void LoadCategoryTree()
         {
             _treeView.BeginUpdate();
@@ -181,21 +184,21 @@ namespace WorkLogApp.UI.Forms
             var nodeMap = new Dictionary<string, TreeNode>();
             var rootNodes = new List<TreeNode>();
 
-            foreach (var cat in categories)
+            foreach (var category in categories)
             {
-                var node = new TreeNode(cat.Name) { Tag = cat };
-                nodeMap[cat.Id] = node;
+                var node = new TreeNode(category.Name) { Tag = category };
+                nodeMap[category.Id] = node;
             }
 
-            foreach (var cat in categories)
+            foreach (var category in categories)
             {
-                if (!string.IsNullOrEmpty(cat.ParentId) && nodeMap.ContainsKey(cat.ParentId))
+                if (!string.IsNullOrEmpty(category.ParentId) && nodeMap.ContainsKey(category.ParentId))
                 {
-                    nodeMap[cat.ParentId].Nodes.Add(nodeMap[cat.Id]);
+                    nodeMap[category.ParentId].Nodes.Add(nodeMap[category.Id]);
                 }
                 else
                 {
-                    rootNodes.Add(nodeMap[cat.Id]);
+                    rootNodes.Add(nodeMap[category.Id]);
                 }
             }
 
@@ -296,50 +299,56 @@ namespace WorkLogApp.UI.Forms
             }
         }
 
+        /// <summary>
+        /// 重命名分类
+        /// </summary>
         private void OnRenameCategory(object sender, EventArgs e)
         {
-            var cat = _treeView.SelectedNode?.Tag as Category;
-            if (cat == null) return;
+            var category = _treeView.SelectedNode?.Tag as Category;
+            if (category == null) return;
 
-            var newName = Prompt("请输入新名称：", "重命名", cat.Name);
+            var newName = Prompt("请输入新名称：", "重命名", category.Name);
             if (string.IsNullOrWhiteSpace(newName)) return;
 
             // Preserve old name in case of failure (though we modify object in place if successful?
-            // Actually _templateService.UpdateCategory modifies object in store, but 'cat' object here is reference.
-            // If UpdateCategory throws, 'cat.Name' is not updated in store, but we set it here.
+            // Actually _templateService.UpdateCategory modifies object in store, but 'category' object here is reference.
+            // If UpdateCategory throws, 'category.Name' is not updated in store, but we set it here.
             // So we should set it ONLY if update succeeds, OR catch and revert.
             // Better: don't set it on object until confirmed.
             // But UpdateCategory expects object to have NEW name.
 
-            var oldName = cat.Name;
+            var oldName = category.Name;
             try
             {
-                cat.Name = newName;
-                if (_templateService.UpdateCategory(cat))
+                category.Name = newName;
+                if (_templateService.UpdateCategory(category))
                 {
                     _treeView.SelectedNode.Text = newName;
                 }
                 else
                 {
                      // Update failed (not exception, just false?)
-                     cat.Name = oldName; 
+                     category.Name = oldName;
                 }
             }
             catch (Exception ex)
             {
-                cat.Name = oldName; // Revert
+                category.Name = oldName; // Revert
                 MessageBox.Show(this, ex.Message, "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
+        /// <summary>
+        /// 删除分类
+        /// </summary>
         private void OnDeleteCategory(object sender, EventArgs e)
         {
-            var cat = _treeView.SelectedNode?.Tag as Category;
-            if (cat == null) return;
+            var category = _treeView.SelectedNode?.Tag as Category;
+            if (category == null) return;
 
-            if (MessageBox.Show($"确定要删除 '{cat.Name}' 吗？", "确认删除", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) == DialogResult.Yes)
+            if (MessageBox.Show($"确定要删除 '{category.Name}' 吗？", "确认删除", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) == DialogResult.Yes)
             {
-                if (_templateService.DeleteCategory(cat.Id))
+                if (_templateService.DeleteCategory(category.Id))
                 {
                     _treeView.SelectedNode.Remove();
                     _selectedCategory = null;

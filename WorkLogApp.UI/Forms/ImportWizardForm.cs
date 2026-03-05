@@ -89,12 +89,15 @@ namespace WorkLogApp.UI.Forms
             }
         }
 
+        /// <summary>
+        /// 预览文件内容
+        /// </summary>
         private void PreviewFile()
         {
             try
             {
-                IImportExportService svc = _importExportService ?? ServiceFactory.GetImportExportService();
-                var days = svc.ImportFromFile(_sourcePath) ?? Enumerable.Empty<WorkLog>();
+                IImportExportService service = _importExportService ?? ServiceFactory.GetImportExportService();
+                var days = service.ImportFromFile(_sourcePath) ?? Enumerable.Empty<WorkLog>();
                 _imported = days.ToList();
                 _previewList.BeginUpdate();
                 _previewList.Items.Clear();
@@ -120,6 +123,9 @@ namespace WorkLogApp.UI.Forms
             }
         }
 
+        /// <summary>
+        /// 执行导入操作
+        /// </summary>
         private void OnImport(object sender, EventArgs e)
         {
             if (_imported == null || _imported.Count == 0)
@@ -133,7 +139,7 @@ namespace WorkLogApp.UI.Forms
                 var baseDir = AppDomain.CurrentDomain.BaseDirectory;
                 var dataDir = Path.Combine(baseDir, AppConstants.DataDirectoryName);
                 Directory.CreateDirectory(dataDir);
-                IImportExportService svc = _importExportService ?? ServiceFactory.GetImportExportService();
+                IImportExportService service = _importExportService ?? ServiceFactory.GetImportExportService();
 
                 // 按月份分组写入（按天聚合）
                 var groups = _imported.GroupBy(d => new { d.LogDate.Year, d.LogDate.Month });
@@ -143,7 +149,7 @@ namespace WorkLogApp.UI.Forms
                     var monthDate = new DateTime(g.Key.Year, g.Key.Month, 1);
                     var list = g.ToList();
                     total += list.SelectMany(d => d.Items ?? new List<WorkLogItem>()).Count();
-                    svc.ExportMonth(monthDate, list, dataDir);
+                    service.ExportMonth(monthDate, list, dataDir);
                 }
                 MessageBox.Show(this, $"导入完成，共导入 {total} 条记录。", "成功", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 DialogResult = DialogResult.OK;

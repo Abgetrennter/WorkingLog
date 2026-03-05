@@ -53,7 +53,7 @@ namespace WorkLogApp.UI.Forms
             _categoryCombo.TemplateService = _templateService;
             _categoryCombo.OnlySelectLeaf = true; // Only allow selecting leaf nodes (which map to templates)
             
-            _categoryCombo.SelectedCategoryChanged += (s, cat) => LoadTemplateForCategory(cat);
+            _categoryCombo.SelectedCategoryChanged += (s, category) => LoadTemplateForCategory(category);
 
             // 初始化状态下拉
             _statusCombo.DisplayMember = "Value";
@@ -89,24 +89,24 @@ namespace WorkLogApp.UI.Forms
             if (category == null) return;
             
             var templates = _templateService.GetTemplatesByCategory(category.Id);
-            var tpl = templates.FirstOrDefault();
+            var template = templates.FirstOrDefault();
             
-            if (tpl != null)
+            if (template != null)
             {
-                _currentTemplate = tpl;
-                BuildFormForTemplate(tpl);
+                _currentTemplate = template;
+                BuildFormForTemplate(template);
                 
                 // Auto-fill title with template name (only if title is empty)
                 if (string.IsNullOrWhiteSpace(_titleBox.Text))
                 {
-                    _titleBox.Text = tpl.Name;
+                    _titleBox.Text = template.Name;
                 }
                 
                 // Auto-fill tags
-                if (tpl.Tags != null && tpl.Tags.Any())
+                if (template.Tags != null && template.Tags.Any())
                 {
                     var existingTags = _tagsBox.Text.Split(new[] { ',', '，', ' ' }, StringSplitOptions.RemoveEmptyEntries).ToList();
-                    foreach(var tag in tpl.Tags)
+                    foreach(var tag in template.Tags)
                     {
                         if (!existingTags.Contains(tag)) existingTags.Add(tag);
                     }
@@ -115,11 +115,15 @@ namespace WorkLogApp.UI.Forms
             }
         }
 
-        private void BuildFormForTemplate(WorkTemplate tpl)
+        /// <summary>
+        /// 根据模板构建表单
+        /// </summary>
+        /// <param name="template">工作模板</param>
+        private void BuildFormForTemplate(WorkTemplate template)
         {
-            if (tpl == null) return;
+            if (template == null) return;
             // 使用新的 GetEffectiveFields() 方法，优先使用 Fields，否则转换 Placeholders
-            var fields = tpl.GetEffectiveFields();
+            var fields = template.GetEffectiveFields();
             _formPanel.BuildForm(fields);
         }
 
