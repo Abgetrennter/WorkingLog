@@ -125,14 +125,18 @@ namespace WorkLogApp.Services.Implementations
 
         #region Category Operations
 
-        public List<Category> GetAllCategories()
+        /// <summary>
+        /// 获取所有分类（返回只读列表，防止外部修改内部数据）
+        /// </summary>
+        /// <returns>分类列表，按 SortOrder 排序</returns>
+        public IReadOnlyList<Category> GetAllCategories()
         {
             _rwLock.EnterReadLock();
             try
             {
-                // Return flat list, UI can build tree
-                // Or we could build tree here if needed, but let's return all flat data
-                // Sort by SortOrder
+                // 返回只读列表，防止外部修改内部数据
+                // UI 可以根据需要构建树形结构
+                // 按 SortOrder 排序
                 return _store?.Categories.OrderBy(c => c.SortOrder).ToList() ?? new List<Category>();
             }
             finally
@@ -141,6 +145,11 @@ namespace WorkLogApp.Services.Implementations
             }
         }
 
+        /// <summary>
+        /// 根据 ID 获取分类
+        /// </summary>
+        /// <param name="id">分类 ID</param>
+        /// <returns>分类对象，如果不存在则返回 null</returns>
         public Category GetCategory(string id)
         {
             _rwLock.EnterReadLock();
@@ -312,7 +321,12 @@ namespace WorkLogApp.Services.Implementations
 
         #region Template Operations
 
-        public List<WorkTemplate> GetTemplatesByCategory(string categoryId)
+        /// <summary>
+        /// 根据分类 ID 获取模板列表（返回只读列表，防止外部修改内部数据）
+        /// </summary>
+        /// <param name="categoryId">分类 ID</param>
+        /// <returns>模板列表</returns>
+        public IReadOnlyList<WorkTemplate> GetTemplatesByCategory(string categoryId)
         {
             _rwLock.EnterReadLock();
             try
@@ -325,6 +339,11 @@ namespace WorkLogApp.Services.Implementations
             }
         }
 
+        /// <summary>
+        /// 根据 ID 获取模板
+        /// </summary>
+        /// <param name="id">模板 ID</param>
+        /// <returns>模板对象，如果不存在则返回 null</returns>
         public WorkTemplate GetTemplate(string id)
         {
             _rwLock.EnterReadLock();

@@ -118,7 +118,7 @@ namespace WorkLogApp.UI.Controls
             }
         }
 
-        private List<TreeNode> BuildTree(List<Category> categories)
+        private List<TreeNode> BuildTree(IReadOnlyList<Category> categories)
         {
             var nodes = new Dictionary<string, TreeNode>();
             var rootNodes = new List<TreeNode>();

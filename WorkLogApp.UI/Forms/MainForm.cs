@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Configuration;
 using System.Diagnostics;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 using WorkLogApp.Core.Constants;
 using WorkLogApp.Core.Models;
@@ -195,13 +196,13 @@ namespace WorkLogApp.UI.Forms
             _chkShowByMonth.Margin = new Padding(8, 8, 4, 0);
             _toolBar.AddToCenter(_chkShowByMonth);
 
-            _dayPicker.Width = 140;
+            _dayPicker.Width = AppConstants.ListViewDatePickerWidth;
             _dayPicker.Dock = DockStyle.Left;
             _dayPicker.Margin = new Padding(4, 4, 4, 0);
             FluentStyleManager.ApplyFluentStyle(_dayPicker);
             _toolBar.AddToCenter(_dayPicker);
 
-            _monthPicker.Width = 100;
+            _monthPicker.Width = AppConstants.ListViewMonthPickerWidth;
             _monthPicker.Dock = DockStyle.Left;
             _monthPicker.Margin = new Padding(4, 4, 4, 0);
             FluentStyleManager.ApplyFluentStyle(_monthPicker);
@@ -290,12 +291,26 @@ namespace WorkLogApp.UI.Forms
             }
         }
 
-        private void OnImportMonthClick(object sender, EventArgs e)
+        /// <summary>
+        /// 刷新月份数据（异步）
+        /// </summary>
+        private async void OnImportMonthClick(object sender, EventArgs e)
         {
-            RefreshItems();
+            await RefreshItemsAsync();
         }
 
-        private void OnSaveClick(object sender, EventArgs e)
+        /// <summary>
+        /// 保存数据到 Excel（异步）
+        /// </summary>
+        private async void OnSaveClick(object sender, EventArgs e)
+        {
+            await SaveDataAsync();
+        }
+
+        /// <summary>
+        /// 保存数据到 Excel（异步实现）
+        /// </summary>
+        private async Task SaveDataAsync()
         {
             try
             {
@@ -315,16 +330,25 @@ namespace WorkLogApp.UI.Forms
                     monthRef = new DateTime(_monthPicker.Value.Year, _monthPicker.Value.Month, 1);
                 }
 
-                _importExportService.RewriteMonth(monthRef, _allMonthItems, dataDir);
+                // 使用 Task.Run 在后台线程执行耗时操作
+                await Task.Run(() => _importExportService.RewriteMonth(monthRef, _allMonthItems, dataDir));
 
                 // 保存后重新绑定，以反映可能的排序变化
-                RefreshItems();
+                await RefreshItemsAsync();
                 MessageBox.Show(this, "已保存排序并更新当月 Excel。", "成功", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
             catch (Exception ex)
             {
                 MessageBox.Show(this, "保存失败：" + ex.Message, "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
+        }
+
+        /// <summary>
+        /// 刷新数据（异步实现）
+        /// </summary>
+        private async Task RefreshItemsAsync()
+        {
+            await Task.Run(() => RefreshItems());
         }
 
         protected override void OnShown(EventArgs e)

@@ -8,6 +8,7 @@ using NPOI.SS.UserModel;
 using NPOI.SS.Util;
 using NPOI.XSSF.UserModel;
 using Newtonsoft.Json;
+using WorkLogApp.Core.Constants;
 using WorkLogApp.Core.Enums;
 using WorkLogApp.Core.Helpers;
 using WorkLogApp.Core.Models;
@@ -15,14 +16,21 @@ using WorkLogApp.Services.Interfaces;
 
 namespace WorkLogApp.Services.Implementations
 {
+    /// <summary>
+    /// 导入导出服务实现类
+    /// 提供工作日志的 Excel 导入/导出、PDF/Word 导出功能
+    /// </summary>
     public class ImportExportService : IImportExportService
     {
         private readonly IPdfExportService _pdfExportService;
         private readonly IWordExportService _wordExportService;
 
         /// <summary>
-        /// 默认构造函数（用于依赖注入）
+        /// 初始化 ImportExportService 类的新实例
         /// </summary>
+        /// <param name="pdfExportService">PDF 导出服务</param>
+        /// <param name="wordExportService">Word 导出服务</param>
+        /// <exception cref="ArgumentNullException">当 pdfExportService 或 wordExportService 为 null 时抛出</exception>
         public ImportExportService(IPdfExportService pdfExportService, IWordExportService wordExportService)
         {
             _pdfExportService = pdfExportService ?? throw new ArgumentNullException(nameof(pdfExportService));
@@ -72,6 +80,14 @@ namespace WorkLogApp.Services.Implementations
         private const string ColumnTrackingId = "TrackingId";
         private const string SummaryTitle = "当日总结";
 
+        /// <summary>
+        /// 导出指定月份的工作日志到 Excel 文件（合并模式）
+        /// 将新数据与现有文件合并，保留已有数据
+        /// </summary>
+        /// <param name="month">要导出的月份</param>
+        /// <param name="days">工作日志列表</param>
+        /// <param name="outputDirectory">输出目录</param>
+        /// <returns>是否导出成功</returns>
         public bool ExportMonth(DateTime month, IEnumerable<WorkLog> days, string outputDirectory)
         {
             if (days == null) return false;
@@ -98,7 +114,14 @@ namespace WorkLogApp.Services.Implementations
             return RewriteMonth(month, combined, outputDirectory);
         }
 
-        // 覆盖写入整月数据：生成按周分组的多个工作表
+        /// <summary>
+        /// 覆盖写入整月数据到 Excel 文件
+        /// 生成按周分组的多个工作表，完全覆盖现有文件
+        /// </summary>
+        /// <param name="month">要导出的月份</param>
+        /// <param name="days">工作日志列表</param>
+        /// <param name="outputDirectory">输出目录</param>
+        /// <returns>是否导出成功</returns>
         public bool RewriteMonth(DateTime month, IEnumerable<WorkLog> days, string outputDirectory)
         {
             if (days == null) return false;
@@ -414,21 +437,26 @@ namespace WorkLogApp.Services.Implementations
             return rowIndex;
         }
 
+        /// <summary>
+        /// 设置 Excel 列宽度
+        /// </summary>
+        /// <param name="sheet">工作表</param>
         private static void SetColumnWidths(ISheet sheet)
         {
-            sheet.SetColumnWidth(0, 20 * 256);
-            sheet.SetColumnWidth(1, 30 * 256);
-            sheet.SetColumnWidth(2, 80 * 256);
-            sheet.SetColumnWidth(3, 12 * 256);
-            sheet.SetColumnWidth(4, 10 * 256);
-            sheet.SetColumnWidth(5, 12 * 256);
-            sheet.SetColumnWidth(6, 12 * 256);
-            sheet.SetColumnWidth(7, 10 * 256);
-            sheet.SetColumnWidth(8, 8 * 256);
-            sheet.SetColumnWidth(9, 36 * 256);
-            sheet.SetColumnWidth(10, 30 * 256);
-            sheet.SetColumnHidden(9, true);
-            sheet.SetColumnHidden(10, true);
+            // 使用常量定义列宽，便于统一维护
+            sheet.SetColumnWidth(0, AppConstants.ExcelColumnDateWidth * AppConstants.ExcelColumnWidthUnit);       // 日期
+            sheet.SetColumnWidth(1, AppConstants.ExcelColumnTitleWidth * AppConstants.ExcelColumnWidthUnit);      // 标题
+            sheet.SetColumnWidth(2, AppConstants.ExcelColumnContentWidth * AppConstants.ExcelColumnWidthUnit);    // 内容
+            sheet.SetColumnWidth(3, AppConstants.ExcelColumnCategoryWidth * AppConstants.ExcelColumnWidthUnit);   // 分类
+            sheet.SetColumnWidth(4, AppConstants.ExcelColumnStatusWidth * AppConstants.ExcelColumnWidthUnit);     // 状态
+            sheet.SetColumnWidth(5, AppConstants.ExcelColumnTimeWidth * AppConstants.ExcelColumnWidthUnit);       // 开始时间
+            sheet.SetColumnWidth(6, AppConstants.ExcelColumnTimeWidth * AppConstants.ExcelColumnWidthUnit);       // 结束时间
+            sheet.SetColumnWidth(7, AppConstants.ExcelColumnTagsWidth * AppConstants.ExcelColumnWidthUnit);       // 标签
+            sheet.SetColumnWidth(8, AppConstants.ExcelColumnSortOrderWidth * AppConstants.ExcelColumnWidthUnit);  // 排序
+            sheet.SetColumnWidth(9, AppConstants.ExcelColumnIdWidth * AppConstants.ExcelColumnWidthUnit);         // 日志 ID
+            sheet.SetColumnWidth(10, AppConstants.ExcelColumnIdWidth * AppConstants.ExcelColumnWidthUnit);        // 追踪 ID
+            sheet.SetColumnHidden(9, true);  // 隐藏 ID 列
+            sheet.SetColumnHidden(10, true); // 隐藏追踪 ID 列
         }
 
         private static Dictionary<string, string> LoadCategoryNames()
@@ -465,6 +493,12 @@ namespace WorkLogApp.Services.Implementations
             }
         }
 
+        /// <summary>
+        /// 从 Excel 文件导入指定月份的工作日志
+        /// </summary>
+        /// <param name="month">要导入的月份</param>
+        /// <param name="inputDirectory">输入目录</param>
+        /// <returns>工作日志列表</returns>
         public IEnumerable<WorkLog> ImportMonth(DateTime month, string inputDirectory)
         {
             if (string.IsNullOrWhiteSpace(inputDirectory)) return new List<WorkLog>();
@@ -488,11 +522,22 @@ namespace WorkLogApp.Services.Implementations
             return ImportFromFile(filePath);
         }
 
+        /// <summary>
+        /// 从 Excel 文件导入工作日志
+        /// </summary>
+        /// <param name="filePath">Excel 文件路径</param>
+        /// <returns>工作日志列表</returns>
         public IEnumerable<WorkLog> ImportFromFile(string filePath)
         {
             return ImportFromFileWithDiagnostics(filePath).Data;
         }
 
+        /// <summary>
+        /// 从 Excel 文件导入工作日志（带诊断信息）
+        /// 返回包含导入数据和错误信息的完整结果
+        /// </summary>
+        /// <param name="filePath">Excel 文件路径</param>
+        /// <returns>包含导入数据和错误信息的结果对象</returns>
         public ImportResult ImportFromFileWithDiagnostics(string filePath)
         {
             var result = new ImportResult();
@@ -743,6 +788,11 @@ namespace WorkLogApp.Services.Implementations
             return result;
         }
 
+        /// <summary>
+        /// 从 JSON 文件导入工作日志
+        /// </summary>
+        /// <param name="filePath">JSON 文件路径</param>
+        /// <returns>包含导入数据和错误信息的结果对象</returns>
         public ImportResult ImportFromTxt(string filePath)
         {
             var result = new ImportResult();
@@ -767,6 +817,12 @@ namespace WorkLogApp.Services.Implementations
             return result;
         }
 
+        /// <summary>
+        /// 比较两组工作日志数据，验证一致性
+        /// </summary>
+        /// <param name="source">源数据</param>
+        /// <param name="target">目标数据</param>
+        /// <returns>比较结果，包含差异信息</returns>
         public ImportResult CompareAndVerify(IEnumerable<WorkLog> source, IEnumerable<WorkLog> target)
         {
             var result = new ImportResult();

@@ -78,6 +78,16 @@ namespace WorkLogApp.Core.Constants
         /// </summary>
         public const string TemplatesPathConfigKey = "TemplatesPath";
 
+        /// <summary>
+        /// 配置环境键名
+        /// </summary>
+        public const string ConfigEnvironmentKey = "ConfigEnvironment";
+
+        /// <summary>
+        /// 默认环境名称
+        /// </summary>
+        public const string DefaultEnvironment = "dev";
+
         #endregion
 
         #region 资源命名空间
@@ -172,6 +182,109 @@ namespace WorkLogApp.Core.Constants
         /// 紧凑模式字体大小
         /// </summary>
         public const float CompactFontSize = 8f;
+
+        #endregion
+
+        #region Excel 列宽配置
+
+        /// <summary>
+        /// Excel 列宽基础单位（NPOI 使用 1/256 字符宽度）
+        /// </summary>
+        public const int ExcelColumnWidthUnit = 256;
+
+        /// <summary>
+        /// 日期列宽度（字符数）
+        /// </summary>
+        public const int ExcelColumnDateWidth = 20;
+
+        /// <summary>
+        /// 标题列宽度（字符数）
+        /// </summary>
+        public const int ExcelColumnTitleWidth = 30;
+
+        /// <summary>
+        /// 内容列宽度（字符数）
+        /// </summary>
+        public const int ExcelColumnContentWidth = 80;
+
+        /// <summary>
+        /// 分类列宽度（字符数）
+        /// </summary>
+        public const int ExcelColumnCategoryWidth = 12;
+
+        /// <summary>
+        /// 状态列宽度（字符数）
+        /// </summary>
+        public const int ExcelColumnStatusWidth = 10;
+
+        /// <summary>
+        /// 时间列宽度（字符数）
+        /// </summary>
+        public const int ExcelColumnTimeWidth = 12;
+
+        /// <summary>
+        /// 标签列宽度（字符数）
+        /// </summary>
+        public const int ExcelColumnTagsWidth = 10;
+
+        /// <summary>
+        /// 排序列宽度（字符数）
+        /// </summary>
+        public const int ExcelColumnSortOrderWidth = 8;
+
+        /// <summary>
+        /// ID 列宽度（字符数）
+        /// </summary>
+        public const int ExcelColumnIdWidth = 36;
+
+        #endregion
+
+        #region ListView 列宽配置
+
+        /// <summary>
+        /// ListView 日期列最小宽度
+        /// </summary>
+        public const int ListViewColumnDateMinWidth = 120;
+
+        /// <summary>
+        /// ListView 标题列最小宽度
+        /// </summary>
+        public const int ListViewColumnTitleMinWidth = 150;
+
+        /// <summary>
+        /// ListView 状态列最小宽度
+        /// </summary>
+        public const int ListViewColumnStatusMinWidth = 80;
+
+        /// <summary>
+        /// ListView 状态列绝对最小宽度
+        /// </summary>
+        public const int ListViewColumnStatusAbsoluteMinWidth = 60;
+
+        /// <summary>
+        /// ListView 内容列最小宽度
+        /// </summary>
+        public const int ListViewColumnContentMinWidth = 200;
+
+        /// <summary>
+        /// ListView 标签列最小宽度
+        /// </summary>
+        public const int ListViewColumnTagsMinWidth = 100;
+
+        /// <summary>
+        /// ListView 时间列最小宽度
+        /// </summary>
+        public const int ListViewColumnTimeMinWidth = 100;
+
+        /// <summary>
+        /// ListView 日期选择器宽度
+        /// </summary>
+        public const int ListViewDatePickerWidth = 140;
+
+        /// <summary>
+        /// ListView 月份选择器宽度
+        /// </summary>
+        public const int ListViewMonthPickerWidth = 100;
 
         #endregion
     }
