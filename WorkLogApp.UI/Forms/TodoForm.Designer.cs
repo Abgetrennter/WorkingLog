@@ -76,7 +76,7 @@ namespace WorkLogApp.UI.Forms
             this._panelBottom.Name = "_panelBottom";
             this._panelBottom.Size = new System.Drawing.Size(560, 60);
             this._panelBottom.TabIndex = 1;
-            // 
+            //
             // TodoForm
             //
             this.AutoScaleDimensions = new System.Drawing.SizeF(9F, 18F);
@@ -90,7 +90,7 @@ namespace WorkLogApp.UI.Forms
             this.ShowIcon = false;
             this.ShowInTaskbar = false;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
-            this.Text = "待办事项";
+            this.Text = "草稿本 (个人便签)";
             this._panelBottom.ResumeLayout(false);
             this.ResumeLayout(false);
             this.PerformLayout();

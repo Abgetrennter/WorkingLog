@@ -325,11 +325,6 @@ namespace WorkLogApp.UI.Forms
             var currentTitle = _item.ItemTitle;
             var collectedProgress = new System.Collections.Generic.List<string>();
             
-            // 检查当日是否也有进展（尚未保存到 Content 中，但如果在 txtDailyProgress 中有内容，也应该包含？）
-            // 用户逻辑是：点击“确认添加”后进入 Content。所以此时 Content 应该已经包含了当日进展。
-            // 我们还需要提取当日 Content 中的进展吗？
-            // 需求：汇总所有的追溯的日志的每日进度。
-            // 包括当日的吗？通常包括。
             // 提取当日内容中的进展
             var todayProgress = ExtractProgress(_item.ItemContent);
             if (!string.IsNullOrWhiteSpace(todayProgress))
@@ -339,11 +334,12 @@ namespace WorkLogApp.UI.Forms
 
             var checkDate = _item.LogDate.AddDays(-1);
             var notFoundCount = 0;
+            const int MaxConsecutiveNotFound = 14; // 允许连续 14 天未找到（支持任务搁置后继续）
             
             // 简单的内存缓存，避免重复加载同一月文件
             var loadedMonths = new System.Collections.Generic.Dictionary<string, System.Collections.Generic.List<WorkLog>>();
 
-            while (notFoundCount <= 3)
+            while (notFoundCount < MaxConsecutiveNotFound)
             {
                 var monthKey = checkDate.ToString("yyyyMM");
                 System.Collections.Generic.List<WorkLog> monthLogs = null;
@@ -378,7 +374,7 @@ namespace WorkLogApp.UI.Forms
                 }
 
                 checkDate = checkDate.AddDays(-1);
-                if ((_item.LogDate - checkDate).TotalDays > 365) break; // 防死循环
+                if ((_item.LogDate - checkDate).TotalDays > 365) break; // 防死循环：最多追溯一年
             }
 
             collectedProgress.Reverse(); // 时间正序

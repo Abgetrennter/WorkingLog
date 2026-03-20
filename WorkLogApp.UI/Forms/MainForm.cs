@@ -542,8 +542,8 @@ namespace WorkLogApp.UI.Forms
 
             if (prevItems != null && prevItems.Any())
             {
-                // Only inherit 'Doing' items
-                var inherited = prevItems.Where(i => i.Status == StatusEnum.Doing).ToList();
+                // 继承所有未完成状态的任务 (Todo, Doing, Blocked)
+                var inherited = prevItems.Where(i => StatusHelper.IsIncomplete(i.Status)).ToList();
                 if (inherited.Any())
                 {
                     if (targetLog == null)

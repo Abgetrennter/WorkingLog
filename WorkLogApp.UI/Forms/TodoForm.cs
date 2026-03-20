@@ -11,6 +11,7 @@ namespace WorkLogApp.UI.Forms
         private readonly string _filePath;
         private bool _isDirty = false;
         private Timer _autoSaveTimer;
+        private const string PlaceholderText = "【草稿本 - 个人便签】\r\n\r\n此处内容仅作为个人临时记录，自动保存到本地 todo.txt 文件。\r\n此处的待办事项不会自动结转到工作日志中，也不会出现在正式的工作日志列表里。\r\n\r\n如需创建正式的工作日志条目，请在主界面点击「创建」按钮。";
 
         public TodoForm()
         {
@@ -36,14 +37,21 @@ namespace WorkLogApp.UI.Forms
             {
                 if (File.Exists(_filePath))
                 {
-                    _txtContent.Text = File.ReadAllText(_filePath, Encoding.UTF8);
+                    var content = File.ReadAllText(_filePath, Encoding.UTF8);
+                    _txtContent.Text = string.IsNullOrWhiteSpace(content) ? PlaceholderText : content;
                     // Reset dirty flag after loading
+                    _isDirty = false;
+                }
+                else
+                {
+                    // 首次打开，显示提示文字
+                    _txtContent.Text = PlaceholderText;
                     _isDirty = false;
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"加载待办事项失败: {ex.Message}", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show($"加载待办事项失败：{ex.Message}", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
@@ -83,29 +91,7 @@ namespace WorkLogApp.UI.Forms
 
         private void OnCancelClick(object sender, EventArgs e)
         {
-            // If there are unsaved changes (that haven't been auto-saved yet), we might want to save them or discard?
-            // Requirement says "Save button" and "Cancel button". 
-            // "Cancel" usually implies discarding changes since last save, but with auto-save, it's tricky.
-            // However, the requirement says "Text content real-time auto-save draft (prevent loss)".
-            // So "Cancel" might just close the window. 
-            // But if the user typed something and hit Cancel, they might expect it to NOT be saved permanently if it wasn't auto-saved?
-            // Actually, if auto-save is "real-time", then the file is already updated.
-            // So "Cancel" just closes. "Save" also saves and closes.
-            
-            // To be safe and follow standard "Cancel" behavior, we might want to revert? 
-            // But "Auto-save draft" implies we WANT to keep it.
-            // So I will just close. The auto-save ensures data isn't lost. 
-            // If the user explicitly wants to "Save", we ensure it's saved.
-            
-            // Wait, if I open, delete everything, and hit Cancel, it should probably revert?
-            // But "Auto-save" contradicts "Cancel reverts".
-            // "Draft" implies it's saved somewhere.
-            // Given the requirement "Prevent loss", persistence is key.
-            // I'll stick to: Auto-save persists to file. Cancel just closes (and maybe stops pending save).
-            // But if I want to be very strict: 
-            // Maybe "Save" is just "Close with explicit save" and "Cancel" is "Close without explicit save (but auto-save might have run)".
-            
-            // Let's assume "Cancel" just closes the form.
+            // Cancel just closes the form. Auto-save ensures data isn't lost.
             this.Close();
         }
 
