@@ -10,9 +10,13 @@ using WorkLogApp.Services.Interfaces;
 
 namespace WorkLogApp.Services.Implementations
 {
+    /// <summary>
+    /// 模板服务实现类（CQRS 统一实现）
+    /// 实现 ITemplateService 接口，提供模板和分类的 CRUD 操作以及渲染功能
+    /// </summary>
     public class TemplateService : ITemplateService
     {
-        private TemplateStore _store;
+        private TemplateStore _templateStore;
         private string _templatesPath;
         private readonly System.Threading.ReaderWriterLockSlim _rwLock = new System.Threading.ReaderWriterLockSlim();
 
@@ -25,38 +29,38 @@ namespace WorkLogApp.Services.Implementations
                 if (!File.Exists(templatesJsonPath))
                 {
                     Logger.Warning($"模板文件不存在: {templatesJsonPath}，将使用空存储");
-                    _store = new TemplateStore();
+                    _templateStore = new TemplateStore();
                     return true;
                 }
- 
+
                 try
                 {
                     var json = File.ReadAllText(templatesJsonPath);
-                    _store = JsonConvert.DeserializeObject<TemplateStore>(json);
-                    
+                    _templateStore = JsonConvert.DeserializeObject<TemplateStore>(json);
+
                     // Fallback if deserialization returns null (e.g. empty file)
-                    if (_store == null)
+                    if (_templateStore == null)
                     {
                         Logger.Warning($"模板文件反序列化返回 null: {templatesJsonPath}");
-                        _store = new TemplateStore();
+                        _templateStore = new TemplateStore();
                     }
-                    
+
                     // Ensure lists are not null
-                    if (_store.Categories == null) _store.Categories = new List<Category>();
-                    if (_store.Templates == null) _store.Templates = new List<WorkTemplate>();
-                    
+                    if (_templateStore.Categories == null) _templateStore.Categories = new List<Category>();
+                    if (_templateStore.Templates == null) _templateStore.Templates = new List<WorkTemplate>();
+
                     return true;
                 }
                 catch (JsonException ex)
                 {
                     Logger.Error($"模板文件 JSON 格式错误: {templatesJsonPath}", ex);
-                    _store = new TemplateStore();
+                    _templateStore = new TemplateStore();
                     return false;
                 }
                 catch (Exception ex)
                 {
                     Logger.Error($"加载模板文件失败: {templatesJsonPath}", ex);
-                    _store = new TemplateStore();
+                    _templateStore = new TemplateStore();
                     return false;
                 }
             }
@@ -71,14 +75,14 @@ namespace WorkLogApp.Services.Implementations
             _rwLock.EnterWriteLock();
             try
             {
-                if (_store == null || string.IsNullOrWhiteSpace(_templatesPath))
+                if (_templateStore == null || string.IsNullOrWhiteSpace(_templatesPath))
                 {
                     Logger.Error("保存模板失败: store 为 null 或路径为空");
                     return false;
                 }
                 try
                 {
-                    var json = JsonConvert.SerializeObject(_store, Formatting.Indented);
+                    var json = JsonConvert.SerializeObject(_templateStore, Formatting.Indented);
                     var dir = Path.GetDirectoryName(_templatesPath);
                     if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
                     File.WriteAllText(_templatesPath, json);
@@ -102,14 +106,14 @@ namespace WorkLogApp.Services.Implementations
         /// </summary>
         private bool SaveTemplatesInternal()
         {
-            if (_store == null || string.IsNullOrWhiteSpace(_templatesPath))
+            if (_templateStore == null || string.IsNullOrWhiteSpace(_templatesPath))
             {
                 Logger.Error("保存模板失败: store 为 null 或路径为空");
                 return false;
             }
             try
             {
-                var json = JsonConvert.SerializeObject(_store, Formatting.Indented);
+                var json = JsonConvert.SerializeObject(_templateStore, Formatting.Indented);
                 var dir = Path.GetDirectoryName(_templatesPath);
                 if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
                 File.WriteAllText(_templatesPath, json);
@@ -137,7 +141,7 @@ namespace WorkLogApp.Services.Implementations
                 // 返回只读列表，防止外部修改内部数据
                 // UI 可以根据需要构建树形结构
                 // 按 SortOrder 排序
-                return _store?.Categories.OrderBy(c => c.SortOrder).ToList() ?? new List<Category>();
+                return _templateStore?.Categories.OrderBy(c => c.SortOrder).ToList() ?? new List<Category>();
             }
             finally
             {
@@ -155,7 +159,7 @@ namespace WorkLogApp.Services.Implementations
             _rwLock.EnterReadLock();
             try
             {
-                return _store?.Categories.FirstOrDefault(c => c.Id == id);
+                return _templateStore?.Categories.FirstOrDefault(c => c.Id == id);
             }
             finally
             {
@@ -168,10 +172,10 @@ namespace WorkLogApp.Services.Implementations
             _rwLock.EnterWriteLock();
             try
             {
-                if (_store == null) _store = new TemplateStore();
+                if (_templateStore == null) _templateStore = new TemplateStore();
 
                 // Check for duplicate name
-                if (_store.Categories.Any(c => string.Equals(c.Name, name, StringComparison.OrdinalIgnoreCase)))
+                if (_templateStore.Categories.Any(c => string.Equals(c.Name, name, StringComparison.OrdinalIgnoreCase)))
                 {
                     throw new InvalidOperationException($"分类名称 '{name}' 已存在。");
                 }
@@ -183,7 +187,7 @@ namespace WorkLogApp.Services.Implementations
                     ParentId = parentId,
                     SortOrder = 0 // Default to top or bottom? Let's say 0.
                 };
-                _store.Categories.Add(category);
+                _templateStore.Categories.Add(category);
                 SaveTemplatesInternal();
                 return category;
             }
@@ -198,13 +202,13 @@ namespace WorkLogApp.Services.Implementations
             _rwLock.EnterWriteLock();
             try
             {
-                var existing = _store?.Categories.FirstOrDefault(c => c.Id == category.Id);
+                var existing = _templateStore?.Categories.FirstOrDefault(c => c.Id == category.Id);
                 if (existing == null) return false;
 
                 // Check for duplicate name if name changed
                 if (!string.Equals(existing.Name, category.Name, StringComparison.OrdinalIgnoreCase))
                 {
-                    if (_store.Categories.Any(c => c.Id != category.Id && string.Equals(c.Name, category.Name, StringComparison.OrdinalIgnoreCase)))
+                    if (_templateStore.Categories.Any(c => c.Id != category.Id && string.Equals(c.Name, category.Name, StringComparison.OrdinalIgnoreCase)))
                     {
                         throw new InvalidOperationException($"分类名称 '{category.Name}' 已存在。");
                     }
@@ -213,7 +217,7 @@ namespace WorkLogApp.Services.Implementations
                 existing.Name = category.Name;
                 existing.SortOrder = category.SortOrder;
                 // ParentId usually changed via Move
-                
+
                 return SaveTemplatesInternal();
             }
             finally
@@ -227,33 +231,33 @@ namespace WorkLogApp.Services.Implementations
             _rwLock.EnterWriteLock();
             try
             {
-                if (_store == null) return false;
-                
+                if (_templateStore == null) return false;
+
                 // Recursive check? For now, simple delete.
                 // UI should handle warnings about children.
                 // But we should probably delete children too to avoid orphans?
                 // Or just delete the node and let orphans be orphans (bad idea).
                 // Let's delete the node.
-                
-                var toDelete = _store.Categories.FirstOrDefault(c => c.Id == id);
+
+                var toDelete = _templateStore.Categories.FirstOrDefault(c => c.Id == id);
                 if (toDelete == null) return false;
 
-                _store.Categories.Remove(toDelete);
-                
+                _templateStore.Categories.Remove(toDelete);
+
                 // Also remove templates associated?
                 // Maybe we should keep them or nullify their category?
                 // Let's remove templates for now to keep it clean.
-                _store.Templates.RemoveAll(t => t.CategoryId == id);
+                _templateStore.Templates.RemoveAll(t => t.CategoryId == id);
 
                 // Remove children recursively?
                 // A robust implementation would find all descendants.
                 // 收集所有子分类ID，避免递归调用时的锁问题
                 var childrenIds = new List<string>();
                 CollectChildrenIds(id, childrenIds);
-                foreach(var childId in childrenIds)
+                foreach (var childId in childrenIds)
                 {
-                    _store.Categories.RemoveAll(c => c.Id == childId);
-                    _store.Templates.RemoveAll(t => t.CategoryId == childId);
+                    _templateStore.Categories.RemoveAll(c => c.Id == childId);
+                    _templateStore.Templates.RemoveAll(t => t.CategoryId == childId);
                 }
 
                 return SaveTemplatesInternal();
@@ -269,9 +273,9 @@ namespace WorkLogApp.Services.Implementations
         /// </summary>
         private void CollectChildrenIds(string parentId, List<string> childrenIds)
         {
-            var children = _store?.Categories.Where(c => c.ParentId == parentId).ToList();
+            var children = _templateStore?.Categories.Where(c => c.ParentId == parentId).ToList();
             if (children == null) return;
-            
+
             foreach (var child in children)
             {
                 childrenIds.Add(child.Id);
@@ -284,12 +288,12 @@ namespace WorkLogApp.Services.Implementations
             _rwLock.EnterWriteLock();
             try
             {
-                var cat = _store?.Categories.FirstOrDefault(c => c.Id == id);
+                var cat = _templateStore?.Categories.FirstOrDefault(c => c.Id == id);
                 if (cat == null) return false;
-                
+
                 // Prevent circular reference
                 if (id == newParentId) return false;
-                
+
                 // Check if newParentId is a child of id (prevent making a node its own descendant)
                 if (IsDescendant(id, newParentId)) return false;
 
@@ -305,14 +309,14 @@ namespace WorkLogApp.Services.Implementations
         private bool IsDescendant(string potentialAncestorId, string potentialDescendantId)
         {
             if (string.IsNullOrEmpty(potentialDescendantId)) return false;
-            
-            // 直接访问 _store 避免锁递归
-            var current = _store?.Categories.FirstOrDefault(c => c.Id == potentialDescendantId);
+
+            // 直接访问 _templateStore避免锁递归
+            var current = _templateStore?.Categories.FirstOrDefault(c => c.Id == potentialDescendantId);
             while (current != null)
             {
                 if (current.ParentId == potentialAncestorId) return true;
                 if (string.IsNullOrEmpty(current.ParentId)) break;
-                current = _store?.Categories.FirstOrDefault(c => c.Id == current.ParentId);
+                current = _templateStore?.Categories.FirstOrDefault(c => c.Id == current.ParentId);
             }
             return false;
         }
@@ -331,7 +335,7 @@ namespace WorkLogApp.Services.Implementations
             _rwLock.EnterReadLock();
             try
             {
-                return _store?.Templates.Where(t => t.CategoryId == categoryId).ToList() ?? new List<WorkTemplate>();
+                return _templateStore?.Templates.Where(t => t.CategoryId == categoryId).ToList() ?? new List<WorkTemplate>();
             }
             finally
             {
@@ -349,7 +353,7 @@ namespace WorkLogApp.Services.Implementations
             _rwLock.EnterReadLock();
             try
             {
-                return _store?.Templates.FirstOrDefault(t => t.Id == id);
+                return _templateStore?.Templates.FirstOrDefault(t => t.Id == id);
             }
             finally
             {
@@ -362,10 +366,10 @@ namespace WorkLogApp.Services.Implementations
             _rwLock.EnterWriteLock();
             try
             {
-                if (_store == null) _store = new TemplateStore();
+                if (_templateStore == null) _templateStore = new TemplateStore();
                 if (string.IsNullOrEmpty(template.Id)) template.Id = Guid.NewGuid().ToString();
-                
-                _store.Templates.Add(template);
+
+                _templateStore.Templates.Add(template);
                 SaveTemplatesInternal();
                 return template;
             }
@@ -380,11 +384,11 @@ namespace WorkLogApp.Services.Implementations
             _rwLock.EnterWriteLock();
             try
             {
-                if (_store == null) return false;
-                var index = _store.Templates.FindIndex(t => t.Id == template.Id);
+                if (_templateStore == null) return false;
+                var index = _templateStore.Templates.FindIndex(t => t.Id == template.Id);
                 if (index < 0) return false;
 
-                _store.Templates[index] = template;
+                _templateStore.Templates[index] = template;
                 return SaveTemplatesInternal();
             }
             finally
@@ -398,8 +402,8 @@ namespace WorkLogApp.Services.Implementations
             _rwLock.EnterWriteLock();
             try
             {
-                if (_store == null) return false;
-                var count = _store.Templates.RemoveAll(t => t.Id == id);
+                if (_templateStore == null) return false;
+                var count = _templateStore.Templates.RemoveAll(t => t.Id == id);
                 return count > 0 && SaveTemplatesInternal();
             }
             finally
@@ -423,7 +427,7 @@ namespace WorkLogApp.Services.Implementations
                     var name = match.Groups[1].Value.Trim();
                     var format = match.Groups[2].Success ? match.Groups[2].Value : null;
                     var function = match.Groups[3].Success ? match.Groups[3].Value : null;
-                    
+
                     object value = null;
                     if (fieldValues.ContainsKey(name)) value = fieldValues[name];
 
@@ -448,7 +452,7 @@ namespace WorkLogApp.Services.Implementations
                     return formattedValue;
                 });
             }
-            
+
             // System fields
             result = result.Replace("{ItemTitle}", item?.ItemTitle ?? string.Empty);
             result = result.Replace("{LogDate}", item?.LogDate.ToString("yyyy-MM-dd") ?? string.Empty);
@@ -471,17 +475,17 @@ namespace WorkLogApp.Services.Implementations
             {
                 case "trim":
                     return value.Trim();
-                
+
                 case "upper":
                     return value.ToUpperInvariant();
-                
+
                 case "lower":
                     return value.ToLowerInvariant();
-                
+
                 case "lines":
                     // 将句号分隔的文本转换为多行
                     return value.Replace("。", "。\n").Replace("；", "；\n");
-                
+
                 case "duration":
                     // 计算两个时间之间的时长
                     if (args.Length > 0 && fieldValues.TryGetValue(args[0].Trim(), out var endValue))
@@ -496,7 +500,7 @@ namespace WorkLogApp.Services.Implementations
                         }
                     }
                     return value;
-                
+
                 case "format":
                     // 自定义格式
                     if (args.Length > 0)
@@ -505,31 +509,31 @@ namespace WorkLogApp.Services.Implementations
                             return dt.ToString(args[0]);
                     }
                     return value;
-                
+
                 case "default":
                     // 如果为空则使用默认值
                     if (string.IsNullOrWhiteSpace(value) && args.Length > 0)
                         return args[0];
                     return value;
-                
+
                 case "prefix":
                     // 添加前缀
                     if (args.Length > 0 && !string.IsNullOrWhiteSpace(value))
                         return args[0] + value;
                     return value;
-                
+
                 case "suffix":
                     // 添加后缀
                     if (args.Length > 0 && !string.IsNullOrWhiteSpace(value))
                         return value + args[0];
                     return value;
-                
+
                 case "hideif":
                     // 如果等于指定值则返回空
                     if (args.Length > 0 && value == args[0])
                         return string.Empty;
                     return value;
-                
+
                 default:
                     return value;
             }
