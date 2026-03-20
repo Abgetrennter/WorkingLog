@@ -267,7 +267,7 @@ namespace WorkLogApp.UI.Forms
                 var newCat = _templateService.CreateCategory(name, parent?.Id);
 
                 // 2. Create Template
-                var newTpl = new WorkTemplate
+                var newTemplate = new WorkTemplate
                 {
                     Name = name,
                     CategoryId = newCat.Id,
@@ -276,7 +276,7 @@ namespace WorkLogApp.UI.Forms
                     Placeholders = new Dictionary<string, string>(),
                     Options = new Dictionary<string, List<string>>()
                 };
-                _templateService.CreateTemplate(newTpl);
+                _templateService.CreateTemplate(newTemplate);
 
                 // 3. Add Node
                 var node = new TreeNode(newCat.Name) { Tag = newCat };

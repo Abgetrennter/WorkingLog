@@ -97,9 +97,9 @@ namespace WorkLogApp.UI
                 var env = ConfigurationManager.AppSettings["ConfigEnvironment"] ?? "dev";
                 var configPath = Path.Combine(baseDir, AppConstants.ConfigsDirectoryName, $"{env}.config.json");
                 
-                var relativeTplPath = ConfigurationManager.AppSettings[AppConstants.TemplatesPathConfigKey]
+                var relativeTemplatePath = ConfigurationManager.AppSettings[AppConstants.TemplatesPathConfigKey]
                     ?? Path.Combine(AppConstants.TemplatesDirectoryName, AppConstants.TemplatesFileName);
-                var templatesPath = Path.Combine(baseDir, relativeTplPath);
+                var templatesPath = Path.Combine(baseDir, relativeTemplatePath);
  
                 // 设置依赖注入容器
                 _container = new Container();

@@ -466,10 +466,10 @@ namespace WorkLogApp.Services.Implementations
             {
                 var baseDir = AppDomain.CurrentDomain.BaseDirectory;
                 var templatesPath = Path.Combine(baseDir, "Templates", "data.json");
-                var tplSvc = new TemplateService();
-                if (tplSvc.LoadTemplates(templatesPath))
+                var templateSvc = new TemplateService();
+                if (templateSvc.LoadTemplates(templatesPath))
                 {
-                    foreach (var cat in tplSvc.GetAllCategories())
+                    foreach (var cat in templateSvc.GetAllCategories())
                     {
                         idToName[cat.Id] = cat.Name;
                     }
