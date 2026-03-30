@@ -384,13 +384,26 @@ namespace WorkLogApp.UI.Controls
         /// <summary>
         /// 获取字段值字典
         /// </summary>
-        public Dictionary<string, object> GetFieldValues()
+        /// <param name="fillEmptyWithNone">是否将非必填项的空值填充为"无"</param>
+        public Dictionary<string, object> GetFieldValues(bool fillEmptyWithNone = false)
         {
             var dict = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
             foreach (var kv in _controls)
             {
                 var ctrl = kv.Value;
+                var field = ctrl.Tag as TemplateField;
                 object val = GetControlValue(ctrl);
+                
+                // 处理空值：将非必填项的空值填充为"无"
+                if (fillEmptyWithNone && val != null)
+                {
+                    var strVal = val.ToString();
+                    if (string.IsNullOrWhiteSpace(strVal) && (field == null || !field.IsRequired))
+                    {
+                        val = "无";
+                    }
+                }
+                
                 dict[kv.Key] = val;
             }
             return dict;

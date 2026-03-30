@@ -157,7 +157,7 @@ namespace WorkLogApp.UI.Forms
                 return;
             }
 
-            var values = _formPanel.GetFieldValues();
+            var values = _formPanel.GetFieldValues(fillEmptyWithNone: true);
             
             // Build category path string for display/log if needed
             // We might want to store full path name or just ID.
