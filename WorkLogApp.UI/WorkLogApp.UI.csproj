@@ -46,6 +46,7 @@
     <EmbeddedResource Include="..\Templates\templates.json">
       <Link>Templates\templates.json</Link>
     </EmbeddedResource>
+    <EmbeddedResource Include="app.ico" />
     <EmbeddedResource Include="App.config">
       <Link>App.config</Link>
     </EmbeddedResource>

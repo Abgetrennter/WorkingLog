@@ -22,8 +22,9 @@ namespace WorkLogApp.UI.Forms
         private readonly IImportExportService _importExportService;
         private readonly IPdfExportService _pdfExportService;
         private readonly IWordExportService _wordExportService;
-        private System.Collections.Generic.List<WorkLogItem> _currentItems = new System.Collections.Generic.List<WorkLogItem>();
+        private System.Collections.Generic.List<WorkLogItem> _allItems = new System.Collections.Generic.List<WorkLogItem>();
         private System.Collections.Generic.List<WorkLog> _allMonthItems = new System.Collections.Generic.List<WorkLog>();
+        private ComboBox _statusFilterComboBox;
 
         // 设计期支持：提供无参构造，方便设计器实例化
         public MainForm()
@@ -74,16 +75,43 @@ namespace WorkLogApp.UI.Forms
                 _listView.DragOver += OnListViewDragOver;
                 _listView.DragDrop += OnListViewDragDrop;
 
-                /*
+                // 右键菜单快捷操作
                 var cms = new ContextMenuStrip();
-                var miMilestone = new ToolStripMenuItem("追加里程碑...");
-                var miDone = new ToolStripMenuItem("标记为已完成");
-                miMilestone.Click += OnAppendMilestoneClick;
-                miDone.Click += OnMarkDoneClick;
-                cms.Items.Add(miMilestone);
-                cms.Items.Add(miDone);
+                
+                // 状态流转子菜单
+                var miChangeStatus = new ToolStripMenuItem("更改状态");
+                var miTodo = new ToolStripMenuItem("待办");
+                var miDoing = new ToolStripMenuItem("进行中");
+                var miDone = new ToolStripMenuItem("已完成");
+                var miBlocked = new ToolStripMenuItem("阻塞");
+                var miCancelled = new ToolStripMenuItem("已取消");
+                
+                miTodo.Click += (s, e) => OnChangeStatusClick(StatusEnum.Todo);
+                miDoing.Click += (s, e) => OnChangeStatusClick(StatusEnum.Doing);
+                miDone.Click += (s, e) => OnChangeStatusClick(StatusEnum.Done);
+                miBlocked.Click += (s, e) => OnChangeStatusClick(StatusEnum.Blocked);
+                miCancelled.Click += (s, e) => OnChangeStatusClick(StatusEnum.Cancelled);
+                
+                miChangeStatus.DropDownItems.Add(miTodo);
+                miChangeStatus.DropDownItems.Add(miDoing);
+                miChangeStatus.DropDownItems.Add(miDone);
+                miChangeStatus.DropDownItems.Add(miBlocked);
+                miChangeStatus.DropDownItems.Add(miCancelled);
+                
+                cms.Items.Add(miChangeStatus);
+                cms.Items.Add(new ToolStripSeparator());
+                
+                // 追加进展
+                var miAppendProgress = new ToolStripMenuItem("追加进展...");
+                miAppendProgress.Click += OnAppendProgressClick;
+                cms.Items.Add(miAppendProgress);
+                
+                // 删除项
+                var miDelete = new ToolStripMenuItem("删除");
+                miDelete.Click += OnDeleteItemClick;
+                cms.Items.Add(miDelete);
+                
                 _listView.ContextMenuStrip = cms;
-                */
 
                 _monthPicker.Format = DateTimePickerFormat.Custom;
                 _monthPicker.CustomFormat = "yyyy-MM";
@@ -189,7 +217,7 @@ namespace WorkLogApp.UI.Forms
 
             _toolBar.AddSeparator(_toolBar.LeftGroup);
 
-            // 中间：日期选择区域
+            // 中间：日期选择区域 + 状态过滤
             _chkShowByMonth.Text = "按月";
             _chkShowByMonth.AutoSize = true;
             _chkShowByMonth.Dock = DockStyle.Left;
@@ -207,6 +235,26 @@ namespace WorkLogApp.UI.Forms
             _monthPicker.Margin = new Padding(4, 4, 4, 0);
             FluentStyleManager.ApplyFluentStyle(_monthPicker);
             _toolBar.AddToCenter(_monthPicker);
+
+            // 状态过滤下拉框
+            _statusFilterComboBox = new ComboBox
+            {
+                DropDownStyle = ComboBoxStyle.DropDownList,
+                Width = 120,
+                Margin = new Padding(8, 4, 4, 0),
+                Dock = DockStyle.Left
+            };
+            _statusFilterComboBox.Items.Add("全部状态");
+            _statusFilterComboBox.Items.Add("仅未完成");
+            _statusFilterComboBox.Items.Add("待办");
+            _statusFilterComboBox.Items.Add("进行中");
+            _statusFilterComboBox.Items.Add("已完成");
+            _statusFilterComboBox.Items.Add("阻塞");
+            _statusFilterComboBox.Items.Add("已取消");
+            _statusFilterComboBox.SelectedIndex = 0;
+            _statusFilterComboBox.SelectedIndexChanged += OnStatusFilterChanged;
+            FluentStyleManager.ApplyFluentStyle(_statusFilterComboBox);
+            _toolBar.AddToCenter(_statusFilterComboBox);
 
             _toolBar.AddSeparator(_toolBar.CenterGroup);
 
@@ -439,7 +487,7 @@ namespace WorkLogApp.UI.Forms
                     CheckAndInheritItems(_importExportService, dataDir);
 
                     // 显示当天
-                    _currentItems = _allMonthItems
+                    _allItems = _allMonthItems
                         .Where(d => d.LogDate.Date == selectedDate.Date)
                         .SelectMany(d => d.Items)
                         .OrderBy(i => i.SortOrder)
@@ -448,14 +496,17 @@ namespace WorkLogApp.UI.Forms
                 else
                 {
                     // 显示全月
-                    _currentItems = _allMonthItems
+                    _allItems = _allMonthItems
                         .SelectMany(d => d.Items)
                         .OrderBy(i => i.LogDate)
                         .ThenBy(i => i.SortOrder)
                         .ToList();
                 }
 
-                BindListView(_currentItems);
+                // 应用状态过滤
+                var displayItems = ApplyStatusFilter(_allItems);
+                
+                BindListView(displayItems);
             }
             catch (Exception ex)
             {
@@ -476,9 +527,95 @@ namespace WorkLogApp.UI.Forms
                 lv.SubItems.Add(item.Tags ?? "");
                 lv.SubItems.Add(item.StartTime?.ToString("yyyy-MM-dd HH:mm") ?? "");
                 lv.SubItems.Add(item.EndTime?.ToString("yyyy-MM-dd HH:mm") ?? "");
+                
+                // 状态色彩编码
+                ApplyStatusColor(lv, item.Status);
+                
                 _listView.Items.Add(lv);
             }
             _listView.EndUpdate();
+        }
+
+        /// <summary>
+        /// 根据状态应用颜色编码
+        /// </summary>
+        private void ApplyStatusColor(ListViewItem item, StatusEnum status)
+        {
+            switch (status)
+            {
+                case StatusEnum.Todo:
+                    // 待办 - 灰色
+                    item.ForeColor = Color.Gray;
+                    break;
+                case StatusEnum.Doing:
+                    // 进行中 - 醒目蓝色
+                    item.ForeColor = Color.FromArgb(0, 120, 215);
+                    break;
+                case StatusEnum.Done:
+                    // 已完成 - 绿色
+                    item.ForeColor = Color.FromArgb(0, 153, 0);
+                    break;
+                case StatusEnum.Blocked:
+                    // 阻塞 - 红色
+                    item.ForeColor = Color.FromArgb(200, 0, 0);
+                    break;
+                case StatusEnum.Cancelled:
+                    // 已取消 - 浅灰色
+                    item.ForeColor = Color.LightGray;
+                    break;
+            }
+        }
+
+        /// <summary>
+        /// 状态过滤改变事件
+        /// </summary>
+        private void OnStatusFilterChanged(object sender, EventArgs e)
+        {
+            if (_allItems == null) return;
+            var displayItems = ApplyStatusFilter(_allItems);
+            BindListView(displayItems);
+        }
+
+        /// <summary>
+        /// 应用状态过滤到当前列表，返回过滤后的列表
+        /// </summary>
+        private System.Collections.Generic.List<WorkLogItem> ApplyStatusFilter(System.Collections.Generic.List<WorkLogItem> items)
+        {
+            if (_statusFilterComboBox == null || items == null) return items;
+            
+            var selectedIndex = _statusFilterComboBox.SelectedIndex;
+            if (selectedIndex == 0)
+            {
+                // 全部状态 - 不过滤
+                return items;
+            }
+
+            // 创建一个过滤后的临时列表用于显示
+            var filteredItems = new System.Collections.Generic.List<WorkLogItem>();
+            
+            switch (selectedIndex)
+            {
+                case 1: // 仅未完成
+                    filteredItems.AddRange(items.Where(i => StatusHelper.IsIncomplete(i.Status)));
+                    break;
+                case 2: // 待办
+                    filteredItems.AddRange(items.Where(i => i.Status == StatusEnum.Todo));
+                    break;
+                case 3: // 进行中
+                    filteredItems.AddRange(items.Where(i => i.Status == StatusEnum.Doing));
+                    break;
+                case 4: // 已完成
+                    filteredItems.AddRange(items.Where(i => i.Status == StatusEnum.Done));
+                    break;
+                case 5: // 阻塞
+                    filteredItems.AddRange(items.Where(i => i.Status == StatusEnum.Blocked));
+                    break;
+                case 6: // 已取消
+                    filteredItems.AddRange(items.Where(i => i.Status == StatusEnum.Cancelled));
+                    break;
+            }
+            
+            return filteredItems;
         }
 
         private void OnListViewDoubleClick(object sender, EventArgs e)
@@ -496,6 +633,94 @@ namespace WorkLogApp.UI.Forms
                     OnSaveClick(null, null);
                 }
             }
+        }
+
+        /// <summary>
+        /// 右键菜单 - 更改状态
+        /// </summary>
+        private void OnChangeStatusClick(StatusEnum newStatus)
+        {
+            if (_listView.SelectedItems.Count == 0) return;
+            var item = _listView.SelectedItems[0].Tag as WorkLogItem;
+            if (item == null) return;
+
+            var result = MessageBox.Show(
+                this,
+                $"确定要将 \"{item.ItemTitle}\" 的状态更改为 \"{StatusHelper.ToChinese(newStatus)}\" 吗？",
+                "确认更改状态",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Question);
+
+            if (result != DialogResult.Yes) return;
+
+            item.Status = newStatus;
+            
+            // 如果设置为已完成，自动填充结束时间
+            if (newStatus == StatusEnum.Done && !item.EndTime.HasValue)
+            {
+                item.EndTime = DateTime.Now;
+            }
+            
+            // 如果设置为进行中，自动填充开始时间
+            if (newStatus == StatusEnum.Doing && !item.StartTime.HasValue)
+            {
+                item.StartTime = DateTime.Now;
+            }
+
+            // 保存更改
+            OnSaveClick(null, null);
+        }
+
+        /// <summary>
+        /// 右键菜单 - 追加进展
+        /// </summary>
+        private void OnAppendProgressClick(object sender, EventArgs e)
+        {
+            if (_listView.SelectedItems.Count == 0) return;
+            var item = _listView.SelectedItems[0].Tag as WorkLogItem;
+            if (item == null) return;
+
+            using (var form = new ItemEditForm(item, null))
+            {
+                form.StartPosition = FormStartPosition.CenterParent;
+                if (form.ShowDialog(this) == DialogResult.OK)
+                {
+                    // 修改后保存
+                    OnSaveClick(null, null);
+                }
+            }
+        }
+
+        /// <summary>
+        /// 右键菜单 - 删除项
+        /// </summary>
+        private void OnDeleteItemClick(object sender, EventArgs e)
+        {
+            if (_listView.SelectedItems.Count == 0) return;
+            var item = _listView.SelectedItems[0].Tag as WorkLogItem;
+            if (item == null) return;
+
+            var result = MessageBox.Show(
+                this,
+                $"确定要删除 \"{item.ItemTitle}\" 吗？此操作不可恢复。",
+                "确认删除",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Warning);
+
+            if (result != DialogResult.Yes) return;
+
+            // 从列表中移除
+            _allItems.Remove(item);
+            
+            // 从月份数据中移除
+            var workLog = _allMonthItems.FirstOrDefault(w => w.LogDate.Date == item.LogDate.Date);
+            if (workLog != null)
+            {
+                workLog.Items.Remove(item);
+            }
+
+            // 保存更改
+            OnSaveClick(null, null);
         }
 
         private void CheckAndInheritItems(IImportExportService svc, string dataDir)
@@ -644,7 +869,7 @@ namespace WorkLogApp.UI.Forms
 
             if (draggedItem != null && targetItem != null && draggedItem != targetItem)
             {
-                var items = _currentItems; // 当前显示的列表引用
+                var items = _allItems; // 当前显示的列表引用
                 var srcLog = draggedItem.Tag as WorkLogItem;
 
                 var dstLog = targetItem.Tag as WorkLogItem;
@@ -659,8 +884,8 @@ namespace WorkLogApp.UI.Forms
                     _listView.Items.Insert(targetIndex, draggedItem);
                     
                     // 触发保存逻辑会重新计算 SortOrder
-                    // 但需要先更新内存中的 _currentItems 顺序
-                    // _currentItems 只是一个 View，真实数据在 _allMonthItems
+                    // 但需要先更新内存中的 _allItems 顺序
+                    // _allItems 只是一个 View，真实数据在 _allMonthItems
                     // 我们只需要标记顺序变了，在 Save 时会根据 ListView 顺序重写 SortOrder
                 }
             }
