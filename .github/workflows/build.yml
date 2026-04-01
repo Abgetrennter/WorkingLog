@@ -1,0 +1,41 @@
+name: Build
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup MSBuild
+      uses: microsoft/setup-msbuild@v2
+
+    - name: Restore NuGet packages
+      run: nuget restore WorkLogApp.sln
+
+    - name: Build solution
+      run: msbuild WorkLogApp.sln /p:Configuration=Release /p:Platform="Any CPU"
+
+    - name: Setup VSTest
+      uses: darenm/Setup-VSTest@v1
+
+    - name: Run tests
+      run: vstest WorkLogApp.Tests\bin\Release\WorkLogApp.Tests.dll
+
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      if: success()
+      with:
+        name: WorkLogApp-Release
+        path: |
+          WorkLogApp.UI\bin\Release\
+          WorkLogApp.Services\bin\Release\
+          WorkLogApp.Core\bin\Release\
+        retention-days: 30
