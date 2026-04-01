@@ -17,3 +17,6 @@ Data/
 dist/
 tools/node_modules/
 .roo/
+
+# 模板文件（运行时从嵌入式资源提取）
+Templates/
