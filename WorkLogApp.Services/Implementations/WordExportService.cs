@@ -20,8 +20,16 @@ namespace WorkLogApp.Services.Implementations
         /// </summary>
         public bool ExportToWord(WorkLog log, string outputPath, WordExportOptions options = null)
         {
-            if (log == null) return false;
-            if (string.IsNullOrWhiteSpace(outputPath)) return false;
+            if (log == null)
+            {
+                Logger.Warning("Word 导出失败: log 参数为 null");
+                return false;
+            }
+            if (string.IsNullOrWhiteSpace(outputPath))
+            {
+                Logger.Warning("Word 导出失败: 输出路径为空");
+                return false;
+            }
 
             options = options ?? new WordExportOptions();
 
@@ -32,7 +40,7 @@ namespace WorkLogApp.Services.Implementations
                 using (var doc = DocX.Create(outputPath))
                 {
                     ConfigureDocument(doc, options);
-                    
+                     
                     // 添加标题
                     var titlePara = doc.InsertParagraph($"{log.LogDate:yyyy年MM月dd日} 工作日志");
                     titlePara.FontSize(options.TitleFontSize)
@@ -83,11 +91,12 @@ namespace WorkLogApp.Services.Implementations
                     doc.Save();
                 }
 
+                Logger.Info($"Word 导出成功: {outputPath}");
                 return true;
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Word export error: {ex.Message}");
+                Logger.Error($"Word 导出失败: {outputPath}", ex);
                 return false;
             }
         }
@@ -97,8 +106,16 @@ namespace WorkLogApp.Services.Implementations
         /// </summary>
         public bool ExportMonthToWord(DateTime month, IEnumerable<WorkLog> days, string outputPath, WordExportOptions options = null)
         {
-            if (days == null) return false;
-            if (string.IsNullOrWhiteSpace(outputPath)) return false;
+            if (days == null)
+            {
+                Logger.Warning("Word 月度导出失败: days 参数为 null");
+                return false;
+            }
+            if (string.IsNullOrWhiteSpace(outputPath))
+            {
+                Logger.Warning("Word 月度导出失败: 输出路径为空");
+                return false;
+            }
 
             options = options ?? new WordExportOptions();
 
@@ -161,11 +178,12 @@ namespace WorkLogApp.Services.Implementations
                     doc.Save();
                 }
 
+                Logger.Info($"Word 月度导出成功: {outputPath}, 包含 {validDays.Count} 天数据");
                 return true;
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Word month export error: {ex.Message}");
+                Logger.Error($"Word 月度导出失败: {outputPath}", ex);
                 return false;
             }
         }

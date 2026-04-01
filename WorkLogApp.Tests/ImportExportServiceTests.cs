@@ -16,7 +16,9 @@ namespace WorkLogApp.Tests
         public void ExportMonth_ShouldGroupDataByWeeks()
         {
             // Arrange
-            var service = new ImportExportService();
+            var pdfService = new PdfExportService();
+            var wordService = new WordExportService();
+            var service = new ImportExportService(pdfService, wordService);
             var month = new DateTime(2024, 1, 1);
             var outputDir = Path.Combine(Path.GetTempPath(), "WorkLogTests_" + Guid.NewGuid());
             Directory.CreateDirectory(outputDir);
@@ -96,7 +98,9 @@ namespace WorkLogApp.Tests
         public void ExportMonth_EmptyData_ShouldCreateDefaultSheet()
         {
             // Arrange
-            var service = new ImportExportService();
+            var pdfService = new PdfExportService();
+            var wordService = new WordExportService();
+            var service = new ImportExportService(pdfService, wordService);
             var month = new DateTime(2024, 2, 1);
             var outputDir = Path.Combine(Path.GetTempPath(), "WorkLogTests_" + Guid.NewGuid());
             Directory.CreateDirectory(outputDir);

@@ -5,7 +5,11 @@
     <TargetFramework>net472</TargetFramework>
     <UseWindowsForms>true</UseWindowsForms>
     <ApplicationIcon>app.ico</ApplicationIcon>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
     <GenerateResourceUsePreserializedResources>true</GenerateResourceUsePreserializedResources>
+    <!-- 启用自动DPI缩放支持 -->
+    <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
+    <ForceDesignerDPIUnaware>true</ForceDesignerDPIUnaware>
   </PropertyGroup>
 
   <ItemGroup>
@@ -42,6 +46,7 @@
     <EmbeddedResource Include="..\Templates\templates.json">
       <Link>Templates\templates.json</Link>
     </EmbeddedResource>
+    <EmbeddedResource Include="app.ico" />
     <EmbeddedResource Include="App.config">
       <Link>App.config</Link>
     </EmbeddedResource>

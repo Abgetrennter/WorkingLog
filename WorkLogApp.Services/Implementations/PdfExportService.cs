@@ -30,13 +30,29 @@ namespace WorkLogApp.Services.Implementations
             "DengXian"              // 等线 (Win10+)
         };
 
+        // 字体解析器（静态初始化）
+        private static readonly CustomFontResolver _fontResolver;
+        private static readonly object _fontResolverLock = new object();
+
+        static PdfExportService()
+        {
+            lock (_fontResolverLock)
+            {
+                if (GlobalFontSettings.FontResolver == null)
+                {
+                    _fontResolver = new CustomFontResolver();
+                    GlobalFontSettings.FontResolver = _fontResolver;
+                }
+            }
+        }
+
         /// <summary>
         /// 获取系统已安装的中文字体名称列表
         /// </summary>
         public IEnumerable<string> GetAvailableChineseFonts()
         {
             var availableFonts = new List<string>();
-            
+             
             foreach (var fontName in ChineseFontNames)
             {
                 try
@@ -50,9 +66,9 @@ namespace WorkLogApp.Services.Implementations
                         }
                     }
                 }
-                catch
+                catch (Exception ex)
                 {
-                    // 字体不存在，跳过
+                    Logger.Debug($"字体 '{fontName}' 不可用: {ex.Message}");
                 }
             }
 
@@ -64,8 +80,16 @@ namespace WorkLogApp.Services.Implementations
         /// </summary>
         public bool ExportToPdf(WorkLog log, string outputPath, PdfExportOptions options = null)
         {
-            if (log == null) return false;
-            if (string.IsNullOrWhiteSpace(outputPath)) return false;
+            if (log == null)
+            {
+                Logger.Warning("PDF 导出失败: log 参数为 null");
+                return false;
+            }
+            if (string.IsNullOrWhiteSpace(outputPath))
+            {
+                Logger.Warning("PDF 导出失败: 输出路径为空");
+                return false;
+            }
 
             options = options ?? new PdfExportOptions();
 
@@ -83,12 +107,12 @@ namespace WorkLogApp.Services.Implementations
                     document.Save(outputPath);
                 }
 
+                Logger.Info($"PDF 导出成功: {outputPath}");
                 return true;
             }
             catch (Exception ex)
             {
-                // 可以在这里添加日志记录
-                System.Diagnostics.Debug.WriteLine($"PDF export error: {ex.Message}");
+                Logger.Error($"PDF 导出失败: {outputPath}", ex);
                 return false;
             }
         }
@@ -98,8 +122,16 @@ namespace WorkLogApp.Services.Implementations
         /// </summary>
         public bool ExportMonthToPdf(DateTime month, IEnumerable<WorkLog> days, string outputPath, PdfExportOptions options = null)
         {
-            if (days == null) return false;
-            if (string.IsNullOrWhiteSpace(outputPath)) return false;
+            if (days == null)
+            {
+                Logger.Warning("PDF 月度导出失败: days 参数为 null");
+                return false;
+            }
+            if (string.IsNullOrWhiteSpace(outputPath))
+            {
+                Logger.Warning("PDF 月度导出失败: 输出路径为空");
+                return false;
+            }
 
             options = options ?? new PdfExportOptions();
 
@@ -142,11 +174,12 @@ namespace WorkLogApp.Services.Implementations
                     document.Save(outputPath);
                 }
 
+                Logger.Info($"PDF 月度导出成功: {outputPath}, 包含 {validDays.Count} 天数据");
                 return true;
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"PDF month export error: {ex.Message}");
+                Logger.Error($"PDF 月度导出失败: {outputPath}", ex);
                 return false;
             }
         }
@@ -474,26 +507,24 @@ namespace WorkLogApp.Services.Implementations
         /// </summary>
         private PdfFonts GetFonts(PdfExportOptions options)
         {
+            // 字体解析器会自动处理：
+            // 1. 同目录下的字体文件（font.ttf等）
+            // 2. 系统已安装的中文字体
             XFont baseFont;
 
-            if (!string.IsNullOrWhiteSpace(options.CustomFontPath) && File.Exists(options.CustomFontPath))
+            try
             {
-                // 使用自定义字体文件
-                try
-                {
-                    // PdfSharp 1.5 不支持直接加载 TTF 文件创建 XFont
-                    // 需要通过 GDI+ 字体或系统字体
-                    baseFont = new XFont(options.FontName, options.FontSize, XFontStyle.Regular);
-                }
-                catch
-                {
-                    baseFont = GetSystemChineseFont(options.FontSize);
-                }
+                // 优先使用指定的字体名称
+                string fontName = !string.IsNullOrWhiteSpace(options.FontName)
+                    ? options.FontName
+                    : "Microsoft YaHei";
+
+                baseFont = new XFont(fontName, options.FontSize, XFontStyle.Regular);
             }
-            else
+            catch
             {
-                // 使用系统字体
-                baseFont = GetSystemChineseFont(options.FontSize, options.FontName);
+                // 回退到默认中文字体
+                baseFont = new XFont("Microsoft YaHei", options.FontSize, XFontStyle.Regular);
             }
 
             return new PdfFonts
@@ -502,41 +533,6 @@ namespace WorkLogApp.Services.Implementations
                 HeaderFont = new XFont(baseFont.Name, options.FontSize + 1, XFontStyle.Bold),
                 BodyFont = baseFont
             };
-        }
-
-        /// <summary>
-        /// 获取系统中文字体
-        /// </summary>
-        private XFont GetSystemChineseFont(double size, string preferredFont = null)
-        {
-            var fontNames = new List<string>();
-            
-            if (!string.IsNullOrWhiteSpace(preferredFont))
-            {
-                fontNames.Add(preferredFont);
-            }
-            
-            fontNames.AddRange(ChineseFontNames);
-
-            foreach (var fontName in fontNames)
-            {
-                try
-                {
-                    var font = new XFont(fontName, size, XFontStyle.Regular);
-                    // 验证字体是否有效
-                    if (font.Name.Contains(fontName) || fontName.Contains(font.Name))
-                    {
-                        return font;
-                    }
-                }
-                catch
-                {
-                    continue;
-                }
-            }
-
-            // 最终回退到 Arial
-            return new XFont("Arial", size, XFontStyle.Regular);
         }
 
         /// <summary>
@@ -576,6 +572,206 @@ namespace WorkLogApp.Services.Implementations
             public XFont TitleFont { get; set; }
             public XFont HeaderFont { get; set; }
             public XFont BodyFont { get; set; }
+        }
+
+        /// <summary>
+        /// 自定义字体解析器 - 支持从同目录加载字体文件及 Windows 系统字体目录
+        /// </summary>
+        private class CustomFontResolver : IFontResolver
+        {
+            private readonly Dictionary<string, byte[]> _fontCache = new Dictionary<string, byte[]>(StringComparer.OrdinalIgnoreCase);
+            private readonly object _cacheLock = new object();
+
+            public CustomFontResolver()
+            {
+                // 预加载同目录下的字体文件
+                LoadCustomFonts();
+            }
+
+            /// <summary>
+            /// 加载同目录下的字体文件
+            /// </summary>
+            private void LoadCustomFonts()
+            {
+                try
+                {
+                    var baseDir = AppDomain.CurrentDomain.BaseDirectory;
+                    var fontFiles = new[]
+                    {
+                        "font.ttf",
+                        "msyh.ttf",
+                        "simhei.ttf",
+                        "simsun.ttc",
+                        "simkai.ttf"
+                    };
+
+                    foreach (var fontFile in fontFiles)
+                    {
+                        var fontPath = Path.Combine(baseDir, fontFile);
+                        if (File.Exists(fontPath))
+                        {
+                            try
+                            {
+                                var fontData = File.ReadAllBytes(fontPath);
+                                string fontName = Path.GetFileNameWithoutExtension(fontFile);
+                                lock (_cacheLock)
+                                {
+                                    _fontCache[fontName] = fontData;
+                                }
+                                System.Diagnostics.Debug.WriteLine($"Loaded font: {fontName} from {fontPath}");
+                            }
+                            catch (Exception ex)
+                            {
+                                System.Diagnostics.Debug.WriteLine($"Failed to load font {fontFile}: {ex.Message}");
+                            }
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Error loading custom fonts: {ex.Message}");
+                }
+            }
+
+            public byte[] GetFont(string faceFileName)
+            {
+                lock (_cacheLock)
+                {
+                    if (_fontCache.TryGetValue(faceFileName, out byte[] fontData))
+                    {
+                        return fontData;
+                    }
+                }
+
+                // 如果 faceFileName 是完整的系统文件路径，尝试读取
+                if (Path.IsPathRooted(faceFileName) && File.Exists(faceFileName))
+                {
+                    try
+                    {
+                        var data = File.ReadAllBytes(faceFileName);
+                        lock (_cacheLock)
+                        {
+                            _fontCache[faceFileName] = data;
+                        }
+                        return data;
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"Failed to load system font {faceFileName}: {ex.Message}");
+                    }
+                }
+
+                return null;
+            }
+
+            public FontResolverInfo ResolveTypeface(string familyName, bool isBold, bool isItalic)
+            {
+                // 优先使用自定义字体
+                if (TryGetCustomFont(familyName, isBold, isItalic, out string faceFileName))
+                {
+                    return new FontResolverInfo(faceFileName);
+                }
+
+                // 尝试从系统目录读取 fallback
+                if (TryGetSystemFont(familyName, isBold, isItalic, out faceFileName))
+                {
+                    return new FontResolverInfo(faceFileName);
+                }
+
+                // 回退到系统字体
+                return PlatformFontResolver.ResolveTypeface(familyName, isBold, isItalic);
+            }
+
+            private bool TryGetSystemFont(string familyName, bool isBold, bool isItalic, out string faceFileName)
+            {
+                faceFileName = null;
+                string winFontsDir = Environment.GetFolderPath(Environment.SpecialFolder.Fonts);
+                
+                // 映射常见中文字体到 Windows 字体文件
+                string targetFileName = null;
+                
+                if (familyName.IndexOf("YaHei", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                    familyName.IndexOf("雅黑", StringComparison.Ordinal) >= 0)
+                {
+                    targetFileName = isBold ? "msyhbd.ttc" : "msyh.ttc";
+                    if (!File.Exists(Path.Combine(winFontsDir, targetFileName)))
+                    {
+                        targetFileName = isBold ? "msyhbd.ttf" : "msyh.ttf";
+                    }
+                }
+                else if (familyName.IndexOf("SimHei", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                         familyName.IndexOf("黑体", StringComparison.Ordinal) >= 0)
+                {
+                    targetFileName = "simhei.ttf";
+                }
+                else if (familyName.IndexOf("SimSun", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                         familyName.IndexOf("宋体", StringComparison.Ordinal) >= 0)
+                {
+                    targetFileName = "simsun.ttc";
+                }
+
+                if (targetFileName != null)
+                {
+                    string fullPath = Path.Combine(winFontsDir, targetFileName);
+                    if (File.Exists(fullPath))
+                    {
+                        faceFileName = fullPath;
+                        return true;
+                    }
+                }
+
+                // 兜底方案：如果找不到对应的中文字体，强制尝试使用微软雅黑
+                string fallbackPath = Path.Combine(winFontsDir, "msyh.ttc");
+                if (!File.Exists(fallbackPath)) fallbackPath = Path.Combine(winFontsDir, "msyh.ttf");
+                
+                if (File.Exists(fallbackPath))
+                {
+                    faceFileName = fallbackPath;
+                    return true;
+                }
+
+                return false;
+            }
+
+            private bool TryGetCustomFont(string familyName, bool isBold, bool isItalic, out string faceFileName)
+            {
+                faceFileName = null;
+
+                // 尝试匹配自定义字体
+                lock (_cacheLock)
+                {
+                    foreach (var key in _fontCache.Keys)
+                    {
+                        if (string.Equals(key, familyName, StringComparison.OrdinalIgnoreCase) ||
+                            string.Equals(key, familyName.Replace(" ", ""), StringComparison.OrdinalIgnoreCase))
+                        {
+                            faceFileName = key;
+                            return true;
+                        }
+                    }
+                }
+
+                // 特殊映射：微软雅黑
+                if (familyName.IndexOf("YaHei", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                    familyName.IndexOf("雅黑", StringComparison.Ordinal) >= 0)
+                {
+                    lock (_cacheLock)
+                    {
+                        if (_fontCache.ContainsKey("font"))
+                        {
+                            faceFileName = "font";
+                            return true;
+                        }
+                        if (_fontCache.ContainsKey("msyh"))
+                        {
+                            faceFileName = "msyh";
+                            return true;
+                        }
+                    }
+                }
+
+                return false;
+            }
         }
     }
 }

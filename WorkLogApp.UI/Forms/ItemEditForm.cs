@@ -1,20 +1,31 @@
 using System;
+using System.Collections.Generic;
+using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
+using WorkLogApp.Core.Constants;
 using WorkLogApp.Core.Enums;
 using WorkLogApp.Core.Helpers;
 using WorkLogApp.Core.Models;
-using WorkLogApp.Services.Implementations;
 using WorkLogApp.Services.Interfaces;
+using WorkLogApp.UI.Helpers;
 using WorkLogApp.UI.UI;
 
 namespace WorkLogApp.UI.Forms
 {
+    /// <summary>
+    /// 工作日志编辑窗体
+    /// </summary>
     public partial class ItemEditForm : Form
     {
+        private const string WorkLogFilePrefix = "工作日志_";
         private readonly WorkLogItem _item;
+        private bool _hasShownCrossDayHint = false;
+        private Panel _historyPanel;
+        private RichTextBox _historyTextBox;
+        private bool _hasHistory = false;
         
         // 设计期支持：提供无参构造，便于设计器实例化
         public ItemEditForm()
@@ -54,11 +65,85 @@ namespace WorkLogApp.UI.Forms
 
             var dateStr = _item.LogDate.ToString("yyyy-MM-dd");
             var formatted = $"\n\n——————————\n【{dateStr} 进展】\n{text}\n——————————\n";
+            
+            // 记录当前选中的位置
+            int originalSelectionStart = _contentBox.SelectionStart;
+            int originalSelectionLength = _contentBox.SelectionLength;
+            
+            // 追加文本
             _contentBox.AppendText(formatted);
             _txtDailyProgress.Clear();
             
+            // 即时反馈：自动滚动到底部并高亮新增内容
+            _contentBox.SelectionStart = _contentBox.TextLength;
+            _contentBox.ScrollToCaret();
+            
+            // 显示成功提示
+            ShowProgressAddedToast();
+            
             // 自动触发保存
             OnSaveClick(sender, e);
+        }
+
+        /// <summary>
+        /// 显示进展添加成功的即时反馈
+        /// </summary>
+        private void ShowProgressAddedToast()
+        {
+            // 使用 Label 创建临时 Toast 提示
+            var toastLabel = new Label
+            {
+                Text = "✓ 进展已添加",
+                AutoSize = true,
+                BackColor = Color.FromArgb(0, 153, 0),
+                ForeColor = Color.White,
+                Padding = new Padding(10, 5, 10, 5),
+                Location = new Point(
+                    this.ClientSize.Width - 120,
+                    progressButtonPanel.Bottom + 10
+                ),
+                Anchor = AnchorStyles.Top | AnchorStyles.Right,
+                Visible = false
+            };
+            
+            // 创建淡入动画 Timer
+            var fadeTimer = new Timer { Interval = 30 };
+            int opacity = 0;
+            int displayCount = 0;
+            
+            fadeTimer.Tick += (s, e) =>
+            {
+                if (opacity < 255)
+                {
+                    // 淡入效果
+                    opacity = Math.Min(opacity + 25, 255);
+                    toastLabel.BackColor = Color.FromArgb(opacity, 0, 153, 0);
+                    toastLabel.Visible = true;
+                }
+                else
+                {
+                    // 保持显示
+                    displayCount++;
+                    if (displayCount > 50) // 约 1.5 秒后开始淡出
+                    {
+                        if (opacity > 0)
+                        {
+                            // 淡出效果
+                            opacity = Math.Max(opacity - 25, 0);
+                            toastLabel.BackColor = Color.FromArgb(opacity, 0, 153, 0);
+                        }
+                        else
+                        {
+                            // 完全淡出后移除
+                            fadeTimer.Stop();
+                            toastLabel.Dispose();
+                        }
+                    }
+                }
+            };
+            
+            this.Controls.Add(toastLabel);
+            fadeTimer.Start();
         }
 
         private void OnCompleteClick(object sender, EventArgs e)
@@ -83,16 +168,9 @@ namespace WorkLogApp.UI.Forms
             // 3. 执行追溯汇总逻辑 (Unique to this button)
             // 需要构造服务
             var baseDir = AppDomain.CurrentDomain.BaseDirectory;
-            var dataDir = Path.Combine(baseDir, "Data");
+            var dataDir = Path.Combine(baseDir, AppConstants.DataDirectoryName);
             Directory.CreateDirectory(dataDir);
-            IImportExportService exportService = Program.Container?.GetInstance<IImportExportService>();
-            if (exportService == null)
-            {
-                // 如果容器不可用，尝试创建（设计时支持）
-                var pdfService = new PdfExportService();
-                var wordService = new WordExportService();
-                exportService = new ImportExportService(pdfService, wordService);
-            }
+            IImportExportService exportService = ServiceFactory.GetImportExportService();
 
             TraceBackAndMergeProgress(exportService, dataDir);
             
@@ -108,6 +186,55 @@ namespace WorkLogApp.UI.Forms
             if (_statusComboBox.SelectedValue is StatusEnum s)
             {
                 UpdateVisibility(s);
+                
+                // 检测是否为跨日任务并提示
+                if (s == StatusEnum.Done && !_hasShownCrossDayHint)
+                {
+                    CheckAndShowCrossDayHint();
+                }
+            }
+        }
+
+        /// <summary>
+        /// 检测是否为跨日任务并显示提示
+        /// </summary>
+        private void CheckAndShowCrossDayHint()
+        {
+            // 检查是否存在跨日记录（当前项的日期之前是否有同标题的记录）
+            var baseDir = AppDomain.CurrentDomain.BaseDirectory;
+            var dataDir = Path.Combine(baseDir, AppConstants.DataDirectoryName);
+            Directory.CreateDirectory(dataDir);
+            
+            IImportExportService exportService = ServiceFactory.GetImportExportService();
+            
+            // 获取当月数据
+            var monthRef = new DateTime(_item.LogDate.Year, _item.LogDate.Month, 1);
+            var monthDays = exportService.ImportMonth(monthRef, dataDir);
+            
+            if (monthDays == null) return;
+            
+            // 查找是否有更早日期的相同标题任务
+            var hasPreviousRecords = monthDays
+                .Where(d => d.LogDate.Date < _item.LogDate.Date)
+                .SelectMany(d => d.Items)
+                .Any(i => i.ItemTitle == _item.ItemTitle && i.LogDate.Date != _item.LogDate.Date);
+            
+            if (hasPreviousRecords)
+            {
+                _hasShownCrossDayHint = true;
+                
+                var result = MessageBox.Show(
+                    this,
+                    $"检测到该任务（\"{_item.ItemTitle}\"）在过去多日有记录。\n\n是否现在生成项目全周期进展汇总？\n\n点击\"是\"将追溯合并所有历史进展；点击\"否\"则仅更改状态。",
+                    "跨日任务检测",
+                    MessageBoxButtons.YesNo,
+                    MessageBoxIcon.Question);
+                
+                if (result == DialogResult.Yes)
+                {
+                    TraceBackAndMergeProgress(exportService, dataDir);
+                    _contentBox.Text = _item.ItemContent;
+                }
             }
         }
 
@@ -228,6 +355,126 @@ namespace WorkLogApp.UI.Forms
             }
             // 排序
             _sortUpDown.Value = _item.SortOrder.HasValue ? _item.SortOrder.Value : 0;
+
+            // 检测跨日任务并展示历史轨迹
+            LoadHistoryPanel();
+        }
+
+        /// <summary>
+        /// 加载历史轨迹面板
+        /// </summary>
+        private void LoadHistoryPanel()
+        {
+            // 检查是否存在跨日记录
+            var baseDir = AppDomain.CurrentDomain.BaseDirectory;
+            var dataDir = Path.Combine(baseDir, AppConstants.DataDirectoryName);
+            Directory.CreateDirectory(dataDir);
+            
+            IImportExportService exportService = ServiceFactory.GetImportExportService();
+            
+            // 获取当月数据
+            var monthRef = new DateTime(_item.LogDate.Year, _item.LogDate.Month, 1);
+            var monthDays = exportService.ImportMonth(monthRef, dataDir);
+            
+            if (monthDays == null) return;
+            
+            // 查找所有更早日期的相同标题任务
+            var previousItems = monthDays
+                .Where(d => d.LogDate.Date < _item.LogDate.Date)
+                .SelectMany(d => d.Items)
+                .Where(i => i.ItemTitle == _item.ItemTitle && i.LogDate.Date != _item.LogDate.Date)
+                .OrderBy(i => i.LogDate)
+                .ToList();
+            
+            if (!previousItems.Any()) return;
+            
+            _hasHistory = true;
+            
+            // 创建历史轨迹面板
+            CreateHistoryPanel(previousItems);
+        }
+
+        /// <summary>
+        /// 创建历史轨迹面板
+        /// </summary>
+        private void CreateHistoryPanel(List<WorkLogItem> previousItems)
+        {
+            // 历史轨迹容器
+            _historyPanel = new Panel
+            {
+                Dock = DockStyle.Bottom,
+                Height = 200,
+                BackColor = Color.FromArgb(250, 250, 250),
+                BorderStyle = BorderStyle.FixedSingle,
+                Padding = new Padding(10),
+                Visible = true
+            };
+            
+            // 标题标签
+            var titleLabel = new Label
+            {
+                Text = "📜 历史轨迹 (只读)",
+                Font = new Font("Microsoft YaHei UI", 10F, FontStyle.Bold),
+                Dock = DockStyle.Top,
+                Height = 30,
+                ForeColor = Color.FromArgb(0, 102, 204)
+            };
+            
+            // 历史内容文本框
+            _historyTextBox = new RichTextBox
+            {
+                Dock = DockStyle.Fill,
+                ReadOnly = true,
+                BackColor = Color.White,
+                BorderStyle = BorderStyle.None,
+                Font = new Font("Microsoft YaHei UI", 9F),
+                ScrollBars = RichTextBoxScrollBars.Vertical
+            };
+            
+            // 构建历史文本
+            var historyText = new System.Text.StringBuilder();
+            historyText.AppendLine("检测到此任务在过去多日有记录，以下是历史进展：\n");
+            
+            foreach (var item in previousItems)
+            {
+                historyText.AppendLine($"【{item.LogDate:yyyy-MM-dd}】 {item.Status.ToChinese()}");
+                if (!string.IsNullOrWhiteSpace(item.ItemContent))
+                {
+                    // 截取内容前200字符
+                    var preview = item.ItemContent.Length > 200 ? item.ItemContent.Substring(0, 200) + "..." : item.ItemContent;
+                    historyText.AppendLine($"  {preview.Replace("\n", " ")}");
+                }
+                historyText.AppendLine();
+            }
+            
+            _historyTextBox.Text = historyText.ToString();
+            
+            // 添加到面板
+            _historyPanel.Controls.Add(_historyTextBox);
+            _historyPanel.Controls.Add(titleLabel);
+            
+            // 添加到窗体
+            this.Controls.Add(_historyPanel);
+            _historyPanel.BringToFront();
+            
+            // 调整主内容区域高度
+            AdjustLayoutForHistoryPanel();
+        }
+
+        /// <summary>
+        /// 调整布局以适应历史轨迹面板
+        /// </summary>
+        private void AdjustLayoutForHistoryPanel()
+        {
+            // 如果有历史面板，将内容框的高度减小以容纳历史面板
+            if (_hasHistory && _historyPanel != null)
+            {
+                var contentPanel = _contentBox.Parent as Panel;
+                if (contentPanel != null)
+                {
+                    contentPanel.Height -= _historyPanel.Height;
+                }
+            }
         }
 
         private void OnSaveClick(object sender, EventArgs e)
@@ -269,17 +516,10 @@ namespace WorkLogApp.UI.Forms
 
                 // 持久化到 Data\工作日志_yyyyMM.xlsx
                 var baseDir = AppDomain.CurrentDomain.BaseDirectory;
-                var dataDir = Path.Combine(baseDir, "Data");
+                var dataDir = Path.Combine(baseDir, AppConstants.DataDirectoryName);
                 Directory.CreateDirectory(dataDir);
 
-                IImportExportService exportService = Program.Container?.GetInstance<IImportExportService>();
-                if (exportService == null)
-                {
-                    // 如果容器不可用，尝试创建（设计时支持）
-                    var pdfService = new PdfExportService();
-                    var wordService = new WordExportService();
-                    exportService = new ImportExportService(pdfService, wordService);
-                }
+                IImportExportService exportService = ServiceFactory.GetImportExportService();
 
                 // (移除) 如果状态为已完成，执行追溯汇总逻辑
                 // if (_item.Status == StatusEnum.Done) ...
@@ -308,7 +548,7 @@ namespace WorkLogApp.UI.Forms
                 File.WriteAllText(filePath, _item.ItemContent);
 
                 MessageBox.Show(this,
-                    $"已保存到 Excel 与文本备份:\n{Path.Combine(dataDir, ImportExportService.FilePrefix + _item.LogDate.ToString("yyyyMM") + ".xlsx")}\n{filePath}",
+                    $"已保存到 Excel 与文本备份:\n{Path.Combine(dataDir, WorkLogFilePrefix + _item.LogDate.ToString("yyyyMM") + ".xlsx")}\n{filePath}",
                     "保存成功", MessageBoxButtons.OK, MessageBoxIcon.Information);
 
                 DialogResult = DialogResult.OK;
@@ -334,11 +574,6 @@ namespace WorkLogApp.UI.Forms
             var currentTitle = _item.ItemTitle;
             var collectedProgress = new System.Collections.Generic.List<string>();
             
-            // 检查当日是否也有进展（尚未保存到 Content 中，但如果在 txtDailyProgress 中有内容，也应该包含？）
-            // 用户逻辑是：点击“确认添加”后进入 Content。所以此时 Content 应该已经包含了当日进展。
-            // 我们还需要提取当日 Content 中的进展吗？
-            // 需求：汇总所有的追溯的日志的每日进度。
-            // 包括当日的吗？通常包括。
             // 提取当日内容中的进展
             var todayProgress = ExtractProgress(_item.ItemContent);
             if (!string.IsNullOrWhiteSpace(todayProgress))
@@ -348,11 +583,12 @@ namespace WorkLogApp.UI.Forms
 
             var checkDate = _item.LogDate.AddDays(-1);
             var notFoundCount = 0;
+            const int MaxConsecutiveNotFound = 14; // 允许连续 14 天未找到（支持任务搁置后继续）
             
             // 简单的内存缓存，避免重复加载同一月文件
             var loadedMonths = new System.Collections.Generic.Dictionary<string, System.Collections.Generic.List<WorkLog>>();
 
-            while (notFoundCount <= 3)
+            while (notFoundCount < MaxConsecutiveNotFound)
             {
                 var monthKey = checkDate.ToString("yyyyMM");
                 System.Collections.Generic.List<WorkLog> monthLogs = null;
@@ -387,7 +623,7 @@ namespace WorkLogApp.UI.Forms
                 }
 
                 checkDate = checkDate.AddDays(-1);
-                if ((_item.LogDate - checkDate).TotalDays > 365) break; // 防死循环
+                if ((_item.LogDate - checkDate).TotalDays > 365) break; // 防死循环：最多追溯一年
             }
 
             collectedProgress.Reverse(); // 时间正序

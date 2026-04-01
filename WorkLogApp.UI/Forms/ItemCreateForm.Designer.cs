@@ -299,11 +299,13 @@ namespace WorkLogApp.UI.Forms
             this.bottomBar.TabIndex = 5;
             // 
             // ItemCreateForm
-            // 
+            //
             this.ClientSize = new System.Drawing.Size(1054, 824);
+            this.MinimumSize = new System.Drawing.Size(700, 500);
             this.Controls.Add(this.rootLayout);
             this.Name = "ItemCreateForm";
             this.Text = "创建日志事项";
+            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
             this.rootLayout.ResumeLayout(false);
             this.rootLayout.PerformLayout();
             this.headerLayout.ResumeLayout(false);

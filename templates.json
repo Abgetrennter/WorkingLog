@@ -1,0 +1,567 @@
+{
+  "Categories": [
+    {
+      "Id": "XX",
+      "Name": "日志",
+      "ParentId": null,
+      "SortOrder": 0,
+      "Children": []
+    },
+    {
+      "Id": "XX",
+      "Name": "系统",
+      "ParentId": "XX",
+      "SortOrder": 0,
+      "Children": []
+    },
+    {
+      "Id": "XX",
+      "Name": "内部系统",
+      "ParentId": "XX",
+      "SortOrder": 0,
+      "Children": []
+    },
+    {
+      "Id": "XX",
+      "Name": "新建账号",
+      "ParentId": "XX",
+      "SortOrder": 0,
+      "Children": []
+    },
+    {
+      "Id": "XX",
+      "Name": "注销账号",
+      "ParentId": "XX",
+      "SortOrder": 0,
+      "Children": []
+    },
+    {
+      "Id": "XX",
+      "Name": "下载视频",
+      "ParentId": "XX",
+      "SortOrder": 0,
+      "Children": []
+    },
+    {
+      "Id": "XX",
+      "Name": "调整投屏",
+      "ParentId": "XX",
+      "SortOrder": 0,
+      "Children": []
+    },
+    {
+      "Id": "XX",
+      "Name": "外部系统",
+      "ParentId": "XX",
+      "SortOrder": 0,
+      "Children": []
+    },
+    {
+      "Id": "XX",
+      "Name": "新建&调整账号",
+      "ParentId": "XX",
+      "SortOrder": 0,
+      "Children": []
+    },
+    {
+      "Id": "XX",
+      "Name": "材料相关",
+      "ParentId": "XX",
+      "SortOrder": 0,
+      "Children": []
+    },
+    {
+      "Id": "XX",
+      "Name": "梳理学习材料",
+      "ParentId": "XX",
+      "SortOrder": 0,
+      "Children": []
+    },
+    {
+      "Id": "XX",
+      "Name": "写材料",
+      "ParentId": "XX",
+      "SortOrder": 0,
+      "Children": []
+    },
+    {
+      "Id": "XX",
+      "Name": "写PPT",
+      "ParentId": "XX",
+      "SortOrder": 0,
+      "Children": []
+    },
+    {
+      "Id": "XX",
+      "Name": "盖章&跑手续",
+      "ParentId": "XX",
+      "SortOrder": 0,
+      "Children": []
+    },
+    {
+      "Id": "XX",
+      "Name": "日常工作",
+      "ParentId": "XX",
+      "SortOrder": 0,
+      "Children": []
+    },
+    {
+      "Id": "XX",
+      "Name": "电子取证",
+      "ParentId": "XX",
+      "SortOrder": 0,
+      "Children": []
+    },
+    {
+      "Id": "XX",
+      "Name": "云工作站",
+      "ParentId": "XX",
+      "SortOrder": 0,
+      "Children": []
+    },
+    {
+      "Id": "XX",
+      "Name": "数据导入",
+      "ParentId": "XX",
+      "SortOrder": 0,
+      "Children": []
+    },
+    {
+      "Id": "XX",
+      "Name": "数字建模",
+      "ParentId": "XX",
+      "SortOrder": 0,
+      "Children": []
+    },
+    {
+      "Id": "XX",
+      "Name": "驻场参与办案",
+      "ParentId": "XX",
+      "SortOrder": 0,
+      "Children": []
+    },
+    {
+      "Id": "XX",
+      "Name": "运维",
+      "ParentId": "XX",
+      "SortOrder": 0,
+      "Children": []
+    },
+    {
+      "Id": "XX",
+      "Name": "日常巡检",
+      "ParentId": "XX",
+      "SortOrder": 0,
+      "Children": []
+    },
+    {
+      "Id": "XX",
+      "Name": "设备维护&修复",
+      "ParentId": "XX",
+      "SortOrder": 0,
+      "Children": []
+    },
+    {
+      "Id": "XX",
+      "Name": "设备配置",
+      "ParentId": "XX",
+      "SortOrder": 0,
+      "Children": []
+    },
+    {
+      "Id": "XX",
+      "Name": "机房相关",
+      "ParentId": "XX",
+      "SortOrder": 0,
+      "Children": []
+    },
+    {
+      "Id": "XX",
+      "Name": "杂项",
+      "ParentId": "XX",
+      "SortOrder": 0,
+      "Children": []
+    },
+    {
+      "Id": "XX",
+      "Name": "日常问题解决",
+      "ParentId": "XX",
+      "SortOrder": 0,
+      "Children": []
+    },
+    {
+      "Id": "XX",
+      "Name": "建设项目",
+      "ParentId": "XX",
+      "SortOrder": 0,
+      "Children": []
+    },
+    {
+      "Id": "XX",
+      "Name": "前期论证",
+      "ParentId": "XX",
+      "SortOrder": 0,
+      "Children": []
+    },
+    {
+      "Id": "XX",
+      "Name": "开始阶段",
+      "ParentId": "XX",
+      "SortOrder": 0,
+      "Children": []
+    },
+    {
+      "Id": "XX",
+      "Name": "正在进行",
+      "ParentId": "XX",
+      "SortOrder": 0,
+      "Children": []
+    },
+    {
+      "Id": "XX",
+      "Name": "收尾阶段",
+      "ParentId": "XX",
+      "SortOrder": 0,
+      "Children": []
+    },
+    {
+      "Id": "XX",
+      "Name": "下载视频（留置）",
+      "ParentId": "XX",
+      "SortOrder": 0,
+      "Children": []
+    },
+    {
+      "Id": "XX",
+      "Name": "下载视频（走读）",
+      "ParentId": "XX",
+      "SortOrder": 0,
+      "Children": []
+    },
+    {
+      "Id": "XX",
+      "Name": "大型开会",
+      "ParentId": "XX",
+      "SortOrder": 0,
+      "Children": []
+    },
+    {
+      "Id": "XX",
+      "Name": "例会",
+      "ParentId": "XX",
+      "SortOrder": 0,
+      "Children": []
+    },
+    {
+      "Id": "XX",
+      "Name": "大数据中心",
+      "ParentId": "XX",
+      "SortOrder": 0,
+      "Children": []
+    }
+  ],
+  "Templates": [
+    {
+      "Id": "XX",
+      "Name": "日志",
+      "CategoryId": "XX",
+      "Content": "{杂项}",
+      "Tags": [],
+      "Placeholders": { "杂项": "textarea" },
+      "Options": {}
+    },
+    {
+      "Id": "XX",
+      "Name": "新建账号",
+      "CategoryId": "XX",
+      "Content": "{账号信息}",
+      "Tags": [],
+      "Placeholders": {
+        "是否来自案管": "checkbox",
+        "账号信息": "textarea",
+        "是否已经记录": "text"
+      },
+      "Options": { "是否来自案管": ["是", "否"] }
+    },
+    {
+      "Id": "XX",
+      "Name": "注销账号",
+      "CategoryId": "XX",
+      "Content": "",
+      "Tags": [],
+      "Placeholders": {},
+      "Options": {}
+    },
+    {
+      "Id": "XX",
+      "Name": "下载视频",
+      "CategoryId": "XX",
+      "Content": "",
+      "Tags": [],
+      "Placeholders": {},
+      "Options": {}
+    },
+    {
+      "Id": "XX",
+      "Name": "调整投屏",
+      "CategoryId": "XX",
+      "Content": "{具体时间:yyyy-MM-dd HH:mm}，由案管通知要求更改{更改投屏房间}的投屏，具体更改内容如下：{更改后的结果}。原投屏内容为",
+      "Tags": [],
+      "Placeholders": {
+        "更改投屏房间": "text",
+        "更改后的结果": "textarea",
+        "是否由案管发来的": "checkbox",
+        "具体时间": "datetime",
+        "原投屏内容（可选）": "textarea"
+      },
+      "Options": { "是否由案管发来的": ["是", "否"] }
+    },
+    {
+      "Id": "XX",
+      "Name": "新建&调整&注销账号",
+      "CategoryId": "XX",
+      "Content": "调整了{系统名称}，该系统为{系统类型}。具体执行操作为{具体操作流程}，影响到范围{涉及调整账号范围}，有无影响区市{是否影响区市}",
+      "Tags": [],
+      "Placeholders": {
+        "系统名称": "text",
+        "系统类型": "text",
+        "具体操作流程": "text",
+        "涉及调整账号范围": "textarea",
+        "是否影响区市": "select"
+      },
+      "Options": { "是否影响区市": ["无", "有"] }
+    },
+    {
+      "Id": "XX",
+      "Name": "梳理学习材料",
+      "CategoryId": "XX",
+      "Content": "",
+      "Tags": [],
+      "Placeholders": {},
+      "Options": {}
+    },
+    {
+      "Id": "XX",
+      "Name": "写材料",
+      "CategoryId": "XX",
+      "Content": "",
+      "Tags": [],
+      "Placeholders": {},
+      "Options": {}
+    },
+    {
+      "Id": "XX",
+      "Name": "写PPT",
+      "CategoryId": "XX",
+      "Content": "",
+      "Tags": [],
+      "Placeholders": {},
+      "Options": {}
+    },
+    {
+      "Id": "XX",
+      "Name": "盖章&跑手续",
+      "CategoryId": "XX",
+      "Content": "",
+      "Tags": [],
+      "Placeholders": {},
+      "Options": {}
+    },
+    {
+      "Id": "XX",
+      "Name": "电子取证",
+      "CategoryId": "XX",
+      "Content": "{取证单位}，{取证设备}，{注意事项}",
+      "Tags": [],
+      "Placeholders": {
+        "取证单位": "text",
+        "取证设备": "textarea",
+        "注意事项": "textarea"
+      },
+      "Options": {}
+    },
+    {
+      "Id": "XX",
+      "Name": "数据导入",
+      "CategoryId": "XX",
+      "Content": "",
+      "Tags": [],
+      "Placeholders": {},
+      "Options": {}
+    },
+    {
+      "Id": "XX",
+      "Name": "数字建模",
+      "CategoryId": "XX",
+      "Content": "",
+      "Tags": [],
+      "Placeholders": {},
+      "Options": {}
+    },
+    {
+      "Id": "XX",
+      "Name": "驻场参与办案",
+      "CategoryId": "XX",
+      "Content": "",
+      "Tags": [],
+      "Placeholders": {},
+      "Options": {}
+    },
+    {
+      "Id": "XX",
+      "Name": "日常巡检",
+      "CategoryId": "XX",
+      "Content": "",
+      "Tags": [],
+      "Placeholders": {},
+      "Options": {}
+    },
+    {
+      "Id": "XX",
+      "Name": "设备维护",
+      "CategoryId": "XX",
+      "Content": "",
+      "Tags": [],
+      "Placeholders": {},
+      "Options": {}
+    },
+    {
+      "Id": "XX",
+      "Name": "设备配置",
+      "CategoryId": "XX",
+      "Content": "",
+      "Tags": [],
+      "Placeholders": {},
+      "Options": {}
+    },
+    {
+      "Id": "XX",
+      "Name": "机房相关",
+      "CategoryId": "XX",
+      "Content": "",
+      "Tags": [],
+      "Placeholders": {},
+      "Options": {}
+    },
+    {
+      "Id": "XX",
+      "Name": "杂项",
+      "CategoryId": "XX",
+      "Content": "{杂项}",
+      "Tags": [],
+      "Placeholders": { "杂项": "textarea" },
+      "Options": {}
+    },
+    {
+      "Id": "XX",
+      "Name": "日常问题解决",
+      "CategoryId": "XX",
+      "Content": "在{地点}，处理了{人物}报告的{问题}。其中问题的原因是{原因}，解决方法为{解决方法}。",
+      "Tags": [],
+      "Placeholders": {
+        "地点": "text",
+        "人物": "text",
+        "问题": "textarea",
+        "原因": "textarea",
+        "解决方法": "textarea"
+      },
+      "Options": {}
+    },
+    {
+      "Id": "XX",
+      "Name": "前期论证",
+      "CategoryId": "XX",
+      "Content": "",
+      "Tags": [],
+      "Placeholders": {},
+      "Options": {}
+    },
+    {
+      "Id": "XX",
+      "Name": "开始阶段",
+      "CategoryId": "XX",
+      "Content": "",
+      "Tags": [],
+      "Placeholders": {},
+      "Options": {}
+    },
+    {
+      "Id": "XX",
+      "Name": "正在进行",
+      "CategoryId": "XX",
+      "Content": "以下为{项目名称}的每日进度：\n{每日进度}",
+      "Tags": [],
+      "Placeholders": { "项目名称": "text", "每日进度": "textarea" },
+      "Options": {}
+    },
+    {
+      "Id": "XX",
+      "Name": "收尾阶段",
+      "CategoryId": "XX",
+      "Content": "",
+      "Tags": [],
+      "Placeholders": {},
+      "Options": {}
+    },
+    {
+      "Id": "XX",
+      "Name": "下载视频（留置）",
+      "CategoryId": "XX",
+      "Content": "{申请部门}的{申请人}，下载留置视频。从{起始时间:yyyy-MM-dd HH:mm}到{结束时间:yyyy-MM-dd HH:mm}，房间为{房间}",
+      "Tags": [],
+      "Placeholders": {
+        "申请部门": "text",
+        "申请人": "text",
+        "起始时间": "datetime",
+        "结束时间": "datetime",
+        "房间": "text"
+      },
+      "Options": {}
+    },
+    {
+      "Id": "XX",
+      "Name": "下载视频（走读）",
+      "CategoryId": "XX",
+      "Content": "",
+      "Tags": [],
+      "Placeholders": {},
+      "Options": {}
+    },
+    {
+      "Id": "XX",
+      "Name": "开会",
+      "CategoryId": "XX",
+      "Content": "在{地点}召开了{会议内容}，都有{参会人员}参加，会后做了{会后安排}安排。",
+      "Tags": [],
+      "Placeholders": {
+        "地点": "text",
+        "参会人员": "text",
+        "会议内容": "textarea",
+        "会后安排": "text"
+      },
+      "Options": {}
+    },
+    {
+      "Id": "XX",
+      "Name": "例会",
+      "CategoryId": "XX",
+      "Content": "",
+      "Tags": [],
+      "Placeholders": {},
+      "Options": {}
+    },
+    {
+      "Id": "XX",
+      "Name": "大数据中心",
+      "CategoryId": "XX",
+      "Content": "通过{使用的数据库}，向大数据资源中心导入了{导入的库表名称}数据，总计条数为{导入条数}。",
+      "Tags": [],
+      "Placeholders": {
+        "使用的数据库": "textarea",
+        "导入的库表名称": "text",
+        "导入条数": "text"
+      },
+      "Options": {}
+    }
+  ]
+}

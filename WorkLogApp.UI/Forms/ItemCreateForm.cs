@@ -5,11 +5,12 @@ using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
+using WorkLogApp.Core.Constants;
 using WorkLogApp.Core.Enums;
 using WorkLogApp.Core.Helpers;
 using WorkLogApp.Core.Models;
 using WorkLogApp.Services.Interfaces;
-using WorkLogApp.Services.Implementations;
+using WorkLogApp.UI.Helpers;
 using WorkLogApp.UI.Controls;
 using WorkLogApp.UI.UI;
 
@@ -52,7 +53,7 @@ namespace WorkLogApp.UI.Forms
             _categoryCombo.TemplateService = _templateService;
             _categoryCombo.OnlySelectLeaf = true; // Only allow selecting leaf nodes (which map to templates)
             
-            _categoryCombo.SelectedCategoryChanged += (s, cat) => LoadTemplateForCategory(cat);
+            _categoryCombo.SelectedCategoryChanged += (s, category) => LoadTemplateForCategory(category);
 
             // 初始化状态下拉
             _statusCombo.DisplayMember = "Value";
@@ -83,29 +84,29 @@ namespace WorkLogApp.UI.Forms
         private void LoadTemplateForCategory(Category category)
         {
             _currentTemplate = null;
-            _formPanel.BuildForm(new Dictionary<string, string>()); // Clear form
+            _formPanel.BuildForm(new List<TemplateField>()); // Clear form
             
             if (category == null) return;
             
             var templates = _templateService.GetTemplatesByCategory(category.Id);
-            var tpl = templates.FirstOrDefault();
+            var template = templates.FirstOrDefault();
             
-            if (tpl != null)
+            if (template != null)
             {
-                _currentTemplate = tpl;
-                BuildFormForTemplate(tpl);
+                _currentTemplate = template;
+                BuildFormForTemplate(template);
                 
                 // Auto-fill title with template name (only if title is empty)
                 if (string.IsNullOrWhiteSpace(_titleBox.Text))
                 {
-                    _titleBox.Text = tpl.Name;
+                    _titleBox.Text = template.Name;
                 }
                 
                 // Auto-fill tags
-                if (tpl.Tags != null && tpl.Tags.Any())
+                if (template.Tags != null && template.Tags.Any())
                 {
                     var existingTags = _tagsBox.Text.Split(new[] { ',', '，', ' ' }, StringSplitOptions.RemoveEmptyEntries).ToList();
-                    foreach(var tag in tpl.Tags)
+                    foreach(var tag in template.Tags)
                     {
                         if (!existingTags.Contains(tag)) existingTags.Add(tag);
                     }
@@ -114,10 +115,16 @@ namespace WorkLogApp.UI.Forms
             }
         }
 
-        private void BuildFormForTemplate(WorkTemplate tpl)
+        /// <summary>
+        /// 根据模板构建表单
+        /// </summary>
+        /// <param name="template">工作模板</param>
+        private void BuildFormForTemplate(WorkTemplate template)
         {
-            if (tpl == null) return;
-            _formPanel.BuildForm(tpl.Placeholders, tpl.Options);
+            if (template == null) return;
+            // 使用新的 GetEffectiveFields() 方法，优先使用 Fields，否则转换 Placeholders
+            var fields = template.GetEffectiveFields();
+            _formPanel.BuildForm(fields);
         }
 
         private void OnGenerateAndSave(object sender, EventArgs e)
@@ -141,7 +148,16 @@ namespace WorkLogApp.UI.Forms
                 return;
             }
 
-            var values = _formPanel.GetFieldValues();
+            // 验证表单字段
+            var validationResult = _formPanel.ValidateForm();
+            if (!validationResult.IsValid)
+            {
+                var errorMsg = string.Join("\n", validationResult.Errors);
+                MessageBox.Show(this, "表单验证失败：\n" + errorMsg, "提示", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            var values = _formPanel.GetFieldValues(fillEmptyWithNone: true);
             
             // Build category path string for display/log if needed
             // We might want to store full path name or just ID.
@@ -183,17 +199,10 @@ namespace WorkLogApp.UI.Forms
             try
             {
                 var baseDir = AppDomain.CurrentDomain.BaseDirectory;
-                var dataDir = Path.Combine(baseDir, "Data");
+                var dataDir = Path.Combine(baseDir, AppConstants.DataDirectoryName);
                 if (!Directory.Exists(dataDir)) Directory.CreateDirectory(dataDir);
 
-                IImportExportService exportService = Program.Container?.GetInstance<IImportExportService>();
-                if (exportService == null)
-                {
-                    // 如果容器不可用，尝试创建（设计时支持）
-                    var pdfService = new PdfExportService();
-                    var wordService = new WordExportService();
-                    exportService = new ImportExportService(pdfService, wordService);
-                }
+                IImportExportService exportService = ServiceFactory.GetImportExportService();
                 var day = new WorkLog { LogDate = item.LogDate.Date, Items = new System.Collections.Generic.List<WorkLogItem> { item } };
                 var success = exportService.ExportMonth(item.LogDate, new[] { day }, dataDir);
 

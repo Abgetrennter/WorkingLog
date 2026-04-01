@@ -4,9 +4,11 @@ using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Windows.Forms;
+using WorkLogApp.Core.Constants;
+using WorkLogApp.Core.Helpers;
 using WorkLogApp.Core.Models;
 using WorkLogApp.Services.Interfaces;
-using WorkLogApp.Services.Implementations;
+using WorkLogApp.UI.Helpers;
 using WorkLogApp.UI.UI;
 
 namespace WorkLogApp.UI.Forms
@@ -87,19 +89,15 @@ namespace WorkLogApp.UI.Forms
             }
         }
 
+        /// <summary>
+        /// 预览文件内容
+        /// </summary>
         private void PreviewFile()
         {
             try
             {
-                IImportExportService svc = _importExportService ?? Program.Container?.GetInstance<IImportExportService>();
-                if (svc == null)
-                {
-                    // 如果容器不可用，尝试创建（设计时支持）
-                    var pdfService = new PdfExportService();
-                    var wordService = new WordExportService();
-                    svc = new ImportExportService(pdfService, wordService);
-                }
-                var days = svc.ImportFromFile(_sourcePath) ?? Enumerable.Empty<WorkLog>();
+                IImportExportService service = _importExportService ?? ServiceFactory.GetImportExportService();
+                var days = service.ImportFromFile(_sourcePath) ?? Enumerable.Empty<WorkLog>();
                 _imported = days.ToList();
                 _previewList.BeginUpdate();
                 _previewList.Items.Clear();
@@ -125,6 +123,9 @@ namespace WorkLogApp.UI.Forms
             }
         }
 
+        /// <summary>
+        /// 执行导入操作
+        /// </summary>
         private void OnImport(object sender, EventArgs e)
         {
             if (_imported == null || _imported.Count == 0)
@@ -136,16 +137,9 @@ namespace WorkLogApp.UI.Forms
             try
             {
                 var baseDir = AppDomain.CurrentDomain.BaseDirectory;
-                var dataDir = Path.Combine(baseDir, "Data");
+                var dataDir = Path.Combine(baseDir, AppConstants.DataDirectoryName);
                 Directory.CreateDirectory(dataDir);
-                IImportExportService svc = _importExportService ?? Program.Container?.GetInstance<IImportExportService>();
-                if (svc == null)
-                {
-                    // 如果容器不可用，尝试创建（设计时支持）
-                    var pdfService = new PdfExportService();
-                    var wordService = new WordExportService();
-                    svc = new ImportExportService(pdfService, wordService);
-                }
+                IImportExportService service = _importExportService ?? ServiceFactory.GetImportExportService();
 
                 // 按月份分组写入（按天聚合）
                 var groups = _imported.GroupBy(d => new { d.LogDate.Year, d.LogDate.Month });
@@ -155,7 +149,7 @@ namespace WorkLogApp.UI.Forms
                     var monthDate = new DateTime(g.Key.Year, g.Key.Month, 1);
                     var list = g.ToList();
                     total += list.SelectMany(d => d.Items ?? new List<WorkLogItem>()).Count();
-                    svc.ExportMonth(monthDate, list, dataDir);
+                    service.ExportMonth(monthDate, list, dataDir);
                 }
                 MessageBox.Show(this, $"导入完成，共导入 {total} 条记录。", "成功", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 DialogResult = DialogResult.OK;

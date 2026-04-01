@@ -160,8 +160,9 @@ namespace WorkLogApp.UI.Forms
             this._btnImport.Click += new System.EventHandler(this.OnImport);
             // 
             // ImportWizardForm
-            // 
-            this.ClientSize = new System.Drawing.Size(1000, 750);
+            //
+            this.ClientSize = new System.Drawing.Size(900, 650);
+            this.MinimumSize = new System.Drawing.Size(700, 450);
             this.rootLayout = new System.Windows.Forms.TableLayoutPanel();
             this.rootLayout.ColumnCount = 1;
             this.rootLayout.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
@@ -180,6 +181,7 @@ namespace WorkLogApp.UI.Forms
             this.Controls.Add(this.rootLayout);
             this.Name = "ImportWizardForm";
             this.Text = "导入日志";
+            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
             this.topPanel.ResumeLayout(false);
             this.topPanel.PerformLayout();
             this.bottomPanel.ResumeLayout(false);

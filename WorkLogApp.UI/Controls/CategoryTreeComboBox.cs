@@ -106,10 +106,10 @@ namespace WorkLogApp.UI.Controls
             // Restore selection
             if (currentId != null)
             {
-                var cat = _templateService.GetCategory(currentId);
-                if (cat != null)
+                var category = _templateService.GetCategory(currentId);
+                if (category != null)
                 {
-                    SetSelectedCategory(cat);
+                    SetSelectedCategory(category);
                 }
                 else
                 {
@@ -118,28 +118,33 @@ namespace WorkLogApp.UI.Controls
             }
         }
 
-        private List<TreeNode> BuildTree(List<Category> categories)
+        /// <summary>
+        /// 根据分类列表构建树形节点
+        /// </summary>
+        /// <param name="categories">分类列表</param>
+        /// <returns>根节点列表</returns>
+        private List<TreeNode> BuildTree(IReadOnlyList<Category> categories)
         {
             var nodes = new Dictionary<string, TreeNode>();
             var rootNodes = new List<TreeNode>();
 
             // First pass: create all nodes
-            foreach (var cat in categories)
+            foreach (var category in categories)
             {
-                var node = new TreeNode(cat.Name) { Tag = cat };
-                nodes[cat.Id] = node;
+                var node = new TreeNode(category.Name) { Tag = category };
+                nodes[category.Id] = node;
             }
 
             // Second pass: build hierarchy
-            foreach (var cat in categories)
+            foreach (var category in categories)
             {
-                if (!string.IsNullOrEmpty(cat.ParentId) && nodes.TryGetValue(cat.ParentId, out var parentNode))
+                if (!string.IsNullOrEmpty(category.ParentId) && nodes.TryGetValue(category.ParentId, out var parentNode))
                 {
-                    parentNode.Nodes.Add(nodes[cat.Id]);
+                    parentNode.Nodes.Add(nodes[category.Id]);
                 }
                 else
                 {
-                    rootNodes.Add(nodes[cat.Id]);
+                    rootNodes.Add(nodes[category.Id]);
                 }
             }
 
@@ -170,9 +175,12 @@ namespace WorkLogApp.UI.Controls
 
         public bool OnlySelectLeaf { get; set; } = false;
 
+        /// <summary>
+        /// 处理节点点击事件
+        /// </summary>
         private void OnNodeClicked(object sender, TreeNodeMouseClickEventArgs e)
         {
-            if (e.Node.Tag is Category cat)
+            if (e.Node.Tag is Category category)
             {
                 if (OnlySelectLeaf && e.Node.Nodes.Count > 0)
                 {
@@ -180,14 +188,18 @@ namespace WorkLogApp.UI.Controls
                     return;
                 }
                 
-                SetSelectedCategory(cat);
+                SetSelectedCategory(category);
                 _dropDown.Close();
             }
         }
 
-        private void SetSelectedCategory(Category cat)
+        /// <summary>
+        /// 设置选中的分类
+        /// </summary>
+        /// <param name="category">分类对象</param>
+        private void SetSelectedCategory(Category category)
         {
-            SelectedCategory = cat;
+            SelectedCategory = category;
         }
     }
 }

@@ -274,10 +274,11 @@ namespace WorkLogApp.UI.Forms
             this._toolBar.Name = "_toolBar";
             this._toolBar.Size = new System.Drawing.Size(1000, 56);
             this._toolBar.TabIndex = 0;
-            // 
+            //
             // MainForm
-            // 
+            //
             this.ClientSize = new System.Drawing.Size(1000, 700);
+            this.MinimumSize = new System.Drawing.Size(800, 500);
             this.Controls.Add(this.rootLayout);
             this.Name = "MainForm";
             this.Text = "工作日志 - 主界面";

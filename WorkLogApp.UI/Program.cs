@@ -1,8 +1,11 @@
 using System;
 using System.Configuration;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Windows.Forms;
 using SimpleInjector;
+using WorkLogApp.Core.Helpers;
+using WorkLogApp.Core.Constants;
 using WorkLogApp.Services.Implementations;
 using WorkLogApp.Services.Interfaces;
 using WorkLogApp.UI.UI;
@@ -20,40 +23,66 @@ namespace WorkLogApp.UI
         /// </summary>
         public static Container Container => _container;
 
+        // P/Invoke声明：设置DPI感知
+        [DllImport("user32.dll")]
+        private static extern bool SetProcessDPIAware();
+
         [STAThread]
         static void Main()
         {
+            // 初始化日志系统
+            try
+            {
+                Logger.Initialize();
+                Logger.Info("应用程序启动");
+            }
+            catch (Exception ex)
+            {
+                // 如果日志初始化失败，至少输出到调试器
+                System.Diagnostics.Debug.WriteLine($"日志初始化失败: {ex.Message}");
+            }
+
+            // 设置高DPI感知模式（支持PerMonitorV2）
+            if (Environment.OSVersion.Version.Major >= 6) // Windows Vista及以上
+            {
+                SetProcessDPIAware();
+            }
+            
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
             // 初始化全局样式（字体、缩放、渲染）
             UIStyleManager.Initialize();
-
+ 
             // 全局异常捕获，避免启动时静默失败
             Application.SetUnhandledExceptionMode(UnhandledExceptionMode.CatchException);
             Application.ThreadException += (s, e) =>
             {
-                try
-                {
-                    var baseDir = AppDomain.CurrentDomain.BaseDirectory;
-                    var logDir = Path.Combine(baseDir, "Logs");
-                    Directory.CreateDirectory(logDir);
-                    File.WriteAllText(Path.Combine(logDir, "thread_exception.log"), e.Exception?.ToString());
-                }
-                catch { }
-                MessageBox.Show($"UI线程异常:\n{e.Exception}", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                var logMsg = $"UI线程异常: {e.Exception?.Message}";
+                Logger.Error(logMsg, e.Exception);
+                MessageBox.Show(
+                    $"操作过程中发生错误:\n{e.Exception?.Message}\n\n详细信息已记录到日志文件。",
+                    "错误",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
             };
             AppDomain.CurrentDomain.UnhandledException += (s, e) =>
             {
                 var ex = e.ExceptionObject as Exception;
-                try
-                {
-                    var baseDir = AppDomain.CurrentDomain.BaseDirectory;
-                    var logDir = Path.Combine(baseDir, "Logs");
-                    Directory.CreateDirectory(logDir);
-                    File.WriteAllText(Path.Combine(logDir, "unhandled_exception.log"), ex?.ToString());
-                }
-                catch { }
-                MessageBox.Show($"未处理异常:\n{ex}", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                var logMsg = $"未处理异常: {ex?.Message}";
+                Logger.Error(logMsg, ex);
+                MessageBox.Show(
+                    $"应用程序遇到严重错误:\n{ex?.Message}\n\n详细信息已记录到日志文件。",
+                    "严重错误",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+            };
+ 
+            // 注册应用程序退出时的资源清理
+            Application.ApplicationExit += (s, e) =>
+            {
+                Logger.Info("应用程序退出，清理资源");
+                UIStyleManager.Dispose();
+                Logger.Dispose();
             };
 
             try
@@ -64,19 +93,20 @@ namespace WorkLogApp.UI
                 ResourceManager.ExtractConfigs(baseDir);
                 ResourceManager.ExtractTemplates(baseDir);
                 ResourceManager.EnsureDataDirectory(baseDir);
-
+ 
                 var env = ConfigurationManager.AppSettings["ConfigEnvironment"] ?? "dev";
-                var configPath = Path.Combine(baseDir, "Configs", $"{env}.config.json");
+                var configPath = Path.Combine(baseDir, AppConstants.ConfigsDirectoryName, $"{env}.config.json");
                 
-                var relativeTplPath = ConfigurationManager.AppSettings["TemplatesPath"] ?? "Templates\\templates.json";
-                var templatesPath = Path.Combine(baseDir, relativeTplPath);
-
+                var relativeTemplatePath = ConfigurationManager.AppSettings[AppConstants.TemplatesPathConfigKey]
+                    ?? Path.Combine(AppConstants.TemplatesDirectoryName, AppConstants.TemplatesFileName);
+                var templatesPath = Path.Combine(baseDir, relativeTemplatePath);
+ 
                 // 设置依赖注入容器
                 _container = new Container();
                 ConfigureServices(_container, templatesPath);
                 // 禁用验证以避免可释放瞬态组件警告
                 // _container.Verify();
-
+ 
                 // 解析主窗体
                 var main = _container.GetInstance<MainForm>();
                 UIStyleManager.ApplyVisualEnhancements(main);
@@ -84,15 +114,12 @@ namespace WorkLogApp.UI
             }
             catch (Exception ex)
             {
-                try
-                {
-                    var baseDir = AppDomain.CurrentDomain.BaseDirectory;
-                    var logDir = Path.Combine(baseDir, "Logs");
-                    Directory.CreateDirectory(logDir);
-                    File.WriteAllText(Path.Combine(logDir, "startup_error.log"), ex.ToString());
-                }
-                catch { }
-                MessageBox.Show($"启动失败:\n{ex}", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                Logger.Error("应用程序启动失败", ex);
+                MessageBox.Show(
+                    $"应用程序启动失败:\n{ex.Message}\n\n详细信息已记录到日志文件。",
+                    "启动错误",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
             }
         }
 
