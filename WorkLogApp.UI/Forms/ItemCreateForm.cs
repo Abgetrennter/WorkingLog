@@ -10,7 +10,6 @@ using WorkLogApp.Core.Enums;
 using WorkLogApp.Core.Helpers;
 using WorkLogApp.Core.Models;
 using WorkLogApp.Services.Interfaces;
-using WorkLogApp.UI.Helpers;
 using WorkLogApp.UI.Controls;
 using WorkLogApp.UI.UI;
 
@@ -19,6 +18,7 @@ namespace WorkLogApp.UI.Forms
     public partial class ItemCreateForm : Form
     {
         private readonly ITemplateService _templateService;
+        private readonly IImportExportService _importExportService;
         private WorkTemplate _currentTemplate;
         
         // 设计期支持：提供无参构造，便于设计器实例化
@@ -36,9 +36,10 @@ namespace WorkLogApp.UI.Forms
             }
         }
 
-        public ItemCreateForm(ITemplateService templateService)
+        public ItemCreateForm(ITemplateService templateService, IImportExportService importExportService)
         {
             _templateService = templateService;
+            _importExportService = importExportService;
             InitializeComponent();
 
             IconHelper.ApplyIcon(this);
@@ -202,7 +203,7 @@ namespace WorkLogApp.UI.Forms
                 var dataDir = Path.Combine(baseDir, AppConstants.DataDirectoryName);
                 if (!Directory.Exists(dataDir)) Directory.CreateDirectory(dataDir);
 
-                IImportExportService exportService = ServiceFactory.GetImportExportService();
+                IImportExportService exportService = _importExportService;
                 var day = new WorkLog { LogDate = item.LogDate.Date, Items = new System.Collections.Generic.List<WorkLogItem> { item } };
                 var success = exportService.ExportMonth(item.LogDate, new[] { day }, dataDir);
 

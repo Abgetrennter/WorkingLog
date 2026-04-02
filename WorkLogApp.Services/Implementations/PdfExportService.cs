@@ -618,18 +618,18 @@ namespace WorkLogApp.Services.Implementations
                                 {
                                     _fontCache[fontName] = fontData;
                                 }
-                                System.Diagnostics.Debug.WriteLine($"Loaded font: {fontName} from {fontPath}");
+                                Logger.Debug($"已加载字体: {fontName} from {fontPath}");
                             }
                             catch (Exception ex)
                             {
-                                System.Diagnostics.Debug.WriteLine($"Failed to load font {fontFile}: {ex.Message}");
+                                Logger.Warning($"字体加载失败 {fontFile}: {ex.Message}");
                             }
                         }
                     }
                 }
                 catch (Exception ex)
                 {
-                    System.Diagnostics.Debug.WriteLine($"Error loading custom fonts: {ex.Message}");
+                    Logger.Warning($"自定义字体加载异常: {ex.Message}");
                 }
             }
 
@@ -657,7 +657,7 @@ namespace WorkLogApp.Services.Implementations
                     }
                     catch (Exception ex)
                     {
-                        System.Diagnostics.Debug.WriteLine($"Failed to load system font {faceFileName}: {ex.Message}");
+                        Logger.Warning($"系统字体加载失败 {faceFileName}: {ex.Message}");
                     }
                 }
 

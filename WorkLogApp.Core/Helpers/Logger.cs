@@ -12,10 +12,12 @@ namespace WorkLogApp.Core.Helpers
     {
         private static readonly object _lock = new object();
         private static string _logPath;
+        private static StreamWriter _writer;
 
         static Logger()
         {
-            Initialize();
+            // 静态构造函数中不自动初始化，等待显式调用 Initialize()
+            // 避免 AppDomain.CurrentDomain.BaseDirectory 在静态构造时不可用
         }
 
         /// <summary>
@@ -23,14 +25,30 @@ namespace WorkLogApp.Core.Helpers
         /// </summary>
         public static void Initialize(string logDirectory = null)
         {
-            if (logDirectory == null)
+            lock (_lock)
             {
-                logDirectory = Path.Combine(
-                    AppDomain.CurrentDomain.BaseDirectory,
-                    AppConstants.LogsDirectoryName);
+                // 关闭旧的 Writer（支持重复调用 Initialize）
+                if (_writer != null)
+                {
+                    try { _writer.Flush(); _writer.Dispose(); }
+                    catch { /* 忽略关闭异常 */ }
+                    _writer = null;
+                }
+
+                if (logDirectory == null)
+                {
+                    logDirectory = Path.Combine(
+                        AppDomain.CurrentDomain.BaseDirectory,
+                        AppConstants.LogsDirectoryName);
+                }
+                Directory.CreateDirectory(logDirectory);
+                _logPath = Path.Combine(logDirectory, $"app_{DateTime.Now:yyyyMMdd}.log");
+
+                _writer = new StreamWriter(new FileStream(_logPath, FileMode.Append, FileAccess.Write, FileShare.Read))
+                {
+                    AutoFlush = true
+                };
             }
-            Directory.CreateDirectory(logDirectory);
-            _logPath = Path.Combine(logDirectory, $"app_{DateTime.Now:yyyyMMdd}.log");
         }
 
         /// <summary>
@@ -70,7 +88,19 @@ namespace WorkLogApp.Core.Helpers
         /// </summary>
         public static void Dispose()
         {
-            // 目前无需特殊清理，保留接口以便扩展
+            lock (_lock)
+            {
+                if (_writer != null)
+                {
+                    try
+                    {
+                        _writer.Flush();
+                        _writer.Dispose();
+                    }
+                    catch { /* 忽略关闭异常 */ }
+                    _writer = null;
+                }
+            }
         }
 
         private static void Write(string level, string message, Exception ex)
@@ -89,7 +119,18 @@ namespace WorkLogApp.Core.Helpers
             {
                 try
                 {
-                    File.AppendAllText(_logPath, logEntry + Environment.NewLine);
+                    if (_writer != null)
+                    {
+                        _writer.WriteLine(logEntry);
+                    }
+                    else
+                    {
+                        // Writer 未初始化，回退到 File.AppendAllText
+                        if (_logPath != null)
+                            File.AppendAllText(_logPath, logEntry + Environment.NewLine);
+                        else
+                            System.Diagnostics.Debug.WriteLine(logEntry);
+                    }
                 }
                 catch
                 {

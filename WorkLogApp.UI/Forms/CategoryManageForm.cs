@@ -144,23 +144,10 @@ namespace WorkLogApp.UI.Forms
             _treeView.DragDrop += OnTreeDragDrop;
 
             // Editor events
-             _gridPlaceholders.CellDoubleClick += (s, e) =>
-            {
-                if (e.RowIndex < 0) return;
-                if (e.ColumnIndex != _gridPlaceholders.Columns["colName"].Index) return;
-                var row = _gridPlaceholders.Rows[e.RowIndex];
-                if (row.IsNewRow) return;
-                var name = Convert.ToString(row.Cells["colName"].Value)?.Trim();
-                var displayType = Convert.ToString(row.Cells["colType"].Value)?.Trim();
-                if (string.IsNullOrEmpty(name)) return;
-                // Convert display name to internal type
-                var typeKey = _typeMap.FirstOrDefault(x => x.Value == displayType).Key ?? "text";
-                InsertPlaceholderToken(name, typeKey);
-                _txtFormatTemplate.Focus();
-            };
-            _gridPlaceholders.RowsAdded += (s, e) => RefreshPlaceholderInsertList();
-            _gridPlaceholders.RowsRemoved += (s, e) => RefreshPlaceholderInsertList();
-            _gridPlaceholders.CellValueChanged += (s, e) => RefreshPlaceholderInsertList();
+             _gridPlaceholders.CellDoubleClick += OnGridCellDoubleClick;
+            _gridPlaceholders.RowsAdded += OnGridRowsChanged;
+            _gridPlaceholders.RowsRemoved += OnGridRowsChanged;
+            _gridPlaceholders.CellValueChanged += OnGridRowsChanged;
 
             // Save Button
             _btnSave.Click -= OnSave; // Remove old if any
@@ -168,6 +155,51 @@ namespace WorkLogApp.UI.Forms
 
             // Add root category button (if exists in UI, or add one)
             // Assuming there is a button to add category in original UI, likely handled by context menu now.
+        }
+
+        /// <summary>
+        /// 取消事件订阅，防止内存泄漏
+        /// </summary>
+        private void UnbindEvents()
+        {
+            if (_treeView != null)
+            {
+                _treeView.AfterSelect -= OnTreeAfterSelect;
+                _treeView.ItemDrag -= OnTreeItemDrag;
+                _treeView.DragEnter -= OnTreeDragEnter;
+                _treeView.DragDrop -= OnTreeDragDrop;
+            }
+            if (_gridPlaceholders != null)
+            {
+                _gridPlaceholders.CellDoubleClick -= OnGridCellDoubleClick;
+                _gridPlaceholders.RowsAdded -= OnGridRowsChanged;
+                _gridPlaceholders.RowsRemoved -= OnGridRowsChanged;
+                _gridPlaceholders.CellValueChanged -= OnGridRowsChanged;
+            }
+            if (_btnSave != null)
+            {
+                _btnSave.Click -= OnSave;
+            }
+        }
+
+        private void OnGridCellDoubleClick(object sender, DataGridViewCellEventArgs e)
+        {
+            if (e.RowIndex < 0) return;
+            if (e.ColumnIndex != _gridPlaceholders.Columns["colName"].Index) return;
+            var row = _gridPlaceholders.Rows[e.RowIndex];
+            if (row.IsNewRow) return;
+            var name = Convert.ToString(row.Cells["colName"].Value)?.Trim();
+            var displayType = Convert.ToString(row.Cells["colType"].Value)?.Trim();
+            if (string.IsNullOrEmpty(name)) return;
+            // Convert display name to internal type
+            var typeKey = _typeMap.FirstOrDefault(x => x.Value == displayType).Key ?? "text";
+            InsertPlaceholderToken(name, typeKey);
+            _txtFormatTemplate.Focus();
+        }
+
+        private void OnGridRowsChanged(object sender, EventArgs e)
+        {
+            RefreshPlaceholderInsertList();
         }
 
         #region Tree Logic

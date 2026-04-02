@@ -475,7 +475,7 @@ namespace WorkLogApp.Services.Implementations
                     }
                 }
             }
-            catch { /* 忽略模板加载失败 */ }
+            catch (Exception ex) { Logger.Warning($"模板加载失败，分类名将使用原始值: {ex.Message}"); }
             return idToName;
         }
 
@@ -783,7 +783,7 @@ namespace WorkLogApp.Services.Implementations
             }
             finally
             {
-                try { if (File.Exists(tempPath)) File.Delete(tempPath); } catch {}
+                try { if (File.Exists(tempPath)) File.Delete(tempPath); } catch (Exception ex) { Logger.Warning($"临时文件清理失败: {tempPath}, {ex.Message}"); }
             }
             return result;
         }

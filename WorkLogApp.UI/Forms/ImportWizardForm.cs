@@ -5,10 +5,8 @@ using System.IO;
 using System.Linq;
 using System.Windows.Forms;
 using WorkLogApp.Core.Constants;
-using WorkLogApp.Core.Helpers;
 using WorkLogApp.Core.Models;
 using WorkLogApp.Services.Interfaces;
-using WorkLogApp.UI.Helpers;
 using WorkLogApp.UI.UI;
 
 namespace WorkLogApp.UI.Forms
@@ -96,7 +94,7 @@ namespace WorkLogApp.UI.Forms
         {
             try
             {
-                IImportExportService service = _importExportService ?? ServiceFactory.GetImportExportService();
+                IImportExportService service = _importExportService;
                 var days = service.ImportFromFile(_sourcePath) ?? Enumerable.Empty<WorkLog>();
                 _imported = days.ToList();
                 _previewList.BeginUpdate();
@@ -139,7 +137,7 @@ namespace WorkLogApp.UI.Forms
                 var baseDir = AppDomain.CurrentDomain.BaseDirectory;
                 var dataDir = Path.Combine(baseDir, AppConstants.DataDirectoryName);
                 Directory.CreateDirectory(dataDir);
-                IImportExportService service = _importExportService ?? ServiceFactory.GetImportExportService();
+                IImportExportService service = _importExportService;
 
                 // 按月份分组写入（按天聚合）
                 var groups = _imported.GroupBy(d => new { d.LogDate.Year, d.LogDate.Month });

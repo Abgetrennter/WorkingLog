@@ -20,6 +20,15 @@ namespace WorkLogApp.Services.Implementations
         private string _templatesPath;
         private readonly System.Threading.ReaderWriterLockSlim _rwLock = new System.Threading.ReaderWriterLockSlim();
 
+        // 渲染用 Regex，编译为静态实例避免重复编译
+        private static readonly Regex TemplatePlaceholderRegex = new Regex(
+            "\\{([^:{}|]+)(?::([^{}|]+))?(?:\\|([^{}]+))?\\}",
+            RegexOptions.Compiled);
+
+        // 缓存
+        private List<Category> _categoriesCache;
+        private Dictionary<string, List<WorkTemplate>> _templatesByCategoryCache;
+
         public bool LoadTemplates(string templatesJsonPath)
         {
             _rwLock.EnterWriteLock();
@@ -48,6 +57,8 @@ namespace WorkLogApp.Services.Implementations
                     // Ensure lists are not null
                     if (_templateStore.Categories == null) _templateStore.Categories = new List<Category>();
                     if (_templateStore.Templates == null) _templateStore.Templates = new List<WorkTemplate>();
+
+                    InvalidateCache();
 
                     return true;
                 }
@@ -87,6 +98,7 @@ namespace WorkLogApp.Services.Implementations
                     if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
                     File.WriteAllText(_templatesPath, json);
                     Logger.Info($"模板已保存: {_templatesPath}");
+                    InvalidateCache();
                     return true;
                 }
                 catch (Exception ex)
@@ -118,6 +130,7 @@ namespace WorkLogApp.Services.Implementations
                 if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
                 File.WriteAllText(_templatesPath, json);
                 Logger.Info($"模板已保存: {_templatesPath}");
+                InvalidateCache();
                 return true;
             }
             catch (Exception ex)
@@ -130,6 +143,15 @@ namespace WorkLogApp.Services.Implementations
         #region Category Operations
 
         /// <summary>
+        /// 清除缓存，在写操作后调用
+        /// </summary>
+        private void InvalidateCache()
+        {
+            _categoriesCache = null;
+            _templatesByCategoryCache = null;
+        }
+
+        /// <summary>
         /// 获取所有分类（返回只读列表，防止外部修改内部数据）
         /// </summary>
         /// <returns>分类列表，按 SortOrder 排序</returns>
@@ -138,10 +160,11 @@ namespace WorkLogApp.Services.Implementations
             _rwLock.EnterReadLock();
             try
             {
-                // 返回只读列表，防止外部修改内部数据
-                // UI 可以根据需要构建树形结构
-                // 按 SortOrder 排序
-                return _templateStore?.Categories.OrderBy(c => c.SortOrder).ToList() ?? new List<Category>();
+                if (_categoriesCache != null)
+                    return _categoriesCache;
+
+                _categoriesCache = _templateStore?.Categories.OrderBy(c => c.SortOrder).ToList() ?? new List<Category>();
+                return _categoriesCache;
             }
             finally
             {
@@ -335,7 +358,16 @@ namespace WorkLogApp.Services.Implementations
             _rwLock.EnterReadLock();
             try
             {
-                return _templateStore?.Templates.Where(t => t.CategoryId == categoryId).ToList() ?? new List<WorkTemplate>();
+                if (_templatesByCategoryCache != null && _templatesByCategoryCache.TryGetValue(categoryId, out var cached))
+                    return cached;
+
+                // 懒初始化分类索引缓存
+                if (_templatesByCategoryCache == null)
+                    _templatesByCategoryCache = new Dictionary<string, List<WorkTemplate>>();
+
+                var list = _templateStore?.Templates.Where(t => t.CategoryId == categoryId).ToList() ?? new List<WorkTemplate>();
+                _templatesByCategoryCache[categoryId] = list;
+                return list;
             }
             finally
             {
@@ -422,7 +454,7 @@ namespace WorkLogApp.Services.Implementations
             if (fieldValues != null)
             {
                 // 支持 {字段} 与 {字段:格式} 与 {字段|函数}
-                result = Regex.Replace(result, "\\{([^:{}|]+)(?::([^{}|]+))?(?:\\|([^{}]+))?\\}", match =>
+                result = TemplatePlaceholderRegex.Replace(result, match =>
                 {
                     var name = match.Groups[1].Value.Trim();
                     var format = match.Groups[2].Success ? match.Groups[2].Value : null;

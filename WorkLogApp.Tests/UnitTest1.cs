@@ -1,10 +1,2 @@
-﻿namespace WorkLogApp.Tests;
-
-public class UnitTest1
-{
-    [Fact]
-    public void Test1()
-    {
-
-    }
-}
+// This placeholder file has been removed.
+// See ImportExportServiceTests.cs, StatusHelperTests.cs, TemplateServiceTests.cs for actual tests.

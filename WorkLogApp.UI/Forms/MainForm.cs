@@ -296,9 +296,7 @@ namespace WorkLogApp.UI.Forms
         {
             try
             {
-                var baseDir = AppDomain.CurrentDomain.BaseDirectory;
-                var relativePath = ConfigurationManager.AppSettings[AppConstants.DataPathConfigKey] ?? AppConstants.DataDirectoryName;
-                var dataDir = Path.Combine(baseDir, relativePath);
+                var dataDir = GetDataDir();
                 Directory.CreateDirectory(dataDir);
 
                 using (var dialog = new ExportDialog(
@@ -366,9 +364,7 @@ namespace WorkLogApp.UI.Forms
                 UpdateSortOrderByCurrentView();
 
                 // 保存到当月 Excel
-                var baseDir = AppDomain.CurrentDomain.BaseDirectory;
-                var relativePath = ConfigurationManager.AppSettings[AppConstants.DataPathConfigKey] ?? AppConstants.DataDirectoryName;
-                var dataDir = Path.Combine(baseDir, relativePath);
+                var dataDir = GetDataDir();
                 Directory.CreateDirectory(dataDir);
 
                 var selectedDate = _dayPicker.Value;
@@ -463,9 +459,7 @@ namespace WorkLogApp.UI.Forms
         {
             try
             {
-                var baseDir = AppDomain.CurrentDomain.BaseDirectory;
-                var relativePath = ConfigurationManager.AppSettings[AppConstants.DataPathConfigKey] ?? AppConstants.DataDirectoryName;
-                var dataDir = Path.Combine(baseDir, relativePath);
+                var dataDir = GetDataDir();
                 Directory.CreateDirectory(dataDir);
 
                 var selectedDate = _dayPicker.Value;
@@ -624,7 +618,7 @@ namespace WorkLogApp.UI.Forms
             var item = _listView.SelectedItems[0].Tag as WorkLogItem;
             if (item == null) return;
 
-            using (var form = new ItemEditForm(item, null))
+            using (var form = new ItemEditForm(item, null, _importExportService))
             {
                 form.StartPosition = FormStartPosition.CenterParent;
                 if (form.ShowDialog(this) == DialogResult.OK)
@@ -680,7 +674,7 @@ namespace WorkLogApp.UI.Forms
             var item = _listView.SelectedItems[0].Tag as WorkLogItem;
             if (item == null) return;
 
-            using (var form = new ItemEditForm(item, null))
+            using (var form = new ItemEditForm(item, null, _importExportService))
             {
                 form.StartPosition = FormStartPosition.CenterParent;
                 if (form.ShowDialog(this) == DialogResult.OK)
@@ -955,11 +949,21 @@ namespace WorkLogApp.UI.Forms
         {
             try
             {
-                var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, AppConstants.DataDirectoryName);
+                var path = GetDataDir();
                 if (!Directory.Exists(path)) Directory.CreateDirectory(path);
                 System.Diagnostics.Process.Start("explorer.exe", path);
             }
             catch { }
+        }
+
+        /// <summary>
+        /// 获取数据目录路径（从配置或默认值）
+        /// </summary>
+        private static string GetDataDir()
+        {
+            var baseDir = AppDomain.CurrentDomain.BaseDirectory;
+            var relativePath = ConfigurationManager.AppSettings[AppConstants.DataPathConfigKey] ?? AppConstants.DataDirectoryName;
+            return Path.Combine(baseDir, relativePath);
         }
     }
 }

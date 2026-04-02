@@ -143,7 +143,8 @@ namespace WorkLogApp.UI
 
             // 注册其他窗体为瞬态，使用带依赖的构造函数
             container.Register<ItemCreateForm>(() => new ItemCreateForm(
-                container.GetInstance<ITemplateService>()));
+                container.GetInstance<ITemplateService>(),
+                container.GetInstance<IImportExportService>()));
             container.Register<ItemEditForm>(() => new ItemEditForm());
             container.Register<CategoryManageForm>(() => new CategoryManageForm(
                 container.GetInstance<ITemplateService>()));
